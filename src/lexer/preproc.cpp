@@ -117,7 +117,6 @@ std::vector<location> preprocess(std::vector<std::string> content){
                         for(int n=pname.start;n<=pname.end;n++){
                             pval += content.at(pname.line).at(n);
                         }
-                        std::cout<<pval<<std::endl;
                         i += 3;
                         platform p;
                         if(pval == "windows"){
@@ -147,13 +146,11 @@ std::vector<location> preprocess(std::vector<std::string> content){
                             }
                             i--;
                         }
-                        else{
-                            std::cout<<"is the same platform"<<std::endl;
-                        }
                     }
                 }
                 else if(cmd == "end"){
-                    std::cout<<"PREPROCESSOR WARN: Uncatched end at ("<<src.at(i+1).line<<":"<<src.at(i+1).start<<")"<<std::endl;
+                    // It's normal behaviour now
+                    //std::cout<<"PREPROCESSOR WARN: Uncatched end at ("<<src.at(i+1).line<<":"<<src.at(i+1).start<<")"<<std::endl;
                     i++;
                 }
                 else{
@@ -167,14 +164,6 @@ std::vector<location> preprocess(std::vector<std::string> content){
             result.push_back(src.at(i));
         }
     }
-
-    for(location l : result){
-        std::string value;
-        for(int i = l.start; i <= l.end; i++){
-            value += content.at(l.line).at(i);
-        }
-        std::cout<<">"<<value<<"<"<<std::endl;
-    }
-
+    
     return result;
 }

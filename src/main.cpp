@@ -37,8 +37,17 @@ int main(int argc, char** argv)
 
     // Preprocessing & Lexing
     std::vector<location> proccesed = preprocess(content);
+    std::vector<token> tkns = lexe(proccesed,content);
+    for(token t:tkns){
+        std::cout<<t.util_dump()<<std::endl;
+    }
+    // Parsing
 
-    std::vector<token> tkns = lexe(proccesed);
+    // AST Generation
+
+    // Code Generation
+
+    // Tooling
 
     return 0;
 }

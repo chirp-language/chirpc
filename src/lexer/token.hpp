@@ -19,13 +19,19 @@ enum tkn_type
     comma, // ,
     assign_op, // =
     math_op, // + - * /
+    lparen,rparen, // ( )
+    lbrace,rbrace, // { } 
+    lbracket,rbracket, // [ ]
 
     
     // HELPER(best name I could)
-
+    
+    identifer,
+    literal,
+    unknown,
     whitespace,
     newline,
-    end // end of input
+    eof // end of input
 };
 
 class token
@@ -34,4 +40,7 @@ class token
     tkn_type type;
     std::string value;
     location loc;
+
+    // Utility Function
+    std::string util_dump();
 };

@@ -5,4 +5,4 @@
 #include <utility>
 
 // Very very very simple lexer
-std::vector<token> lexe(std::vector<location>);
+std::vector<token> lexe(std::vector<location>,std::vector<std::string>);
