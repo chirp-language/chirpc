@@ -69,11 +69,13 @@ std::vector<location> preprocess(std::vector<std::string> content){
 
     for(size_t i = 0; i < src.size(); i++){
         location loc = src.at(i);
-        std::string dumb;
-        for(int idk = loc.start; idk <= loc.end; idk++){
-            dumb += content.at(loc.line).at(idk);
+
+        if(content.at(loc.line).at(loc.start) == '#'){
+            size_t first_line = loc.line;
+            while(i < src.size() && first_line == src.at(i).line){i++;}
+            i--;
         }
-        if(content.at(loc.line).at(loc.start) == '@'){
+        else if(content.at(loc.line).at(loc.start) == '@'){
             // Check if it's the first non-whitespace character on line
             // If first tracked location, it is certain to be whitespace
             if(
@@ -142,7 +144,6 @@ std::vector<location> preprocess(std::vector<std::string> content){
         {
             result.push_back(src.at(i));
         }
-
     }
 
     for(location l : result){
