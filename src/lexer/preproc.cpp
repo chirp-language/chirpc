@@ -4,11 +4,11 @@
 
 // Cuts the input into individual words/locations -> will later become tokens
 std::vector<location> disjoint(std::vector<std::string> content){
-    std::vector<location> result; // <-- what the fuck am I supposed to call this
+    std::vector<location> result;
 
-    size_t l = 0; // lmao good variable names
+    size_t l = 0; // line counter
     for(std::string& line : content){
-        for(int i = 0; i < line.size(); i++){
+        for(size_t i = 0; i < line.size(); i++){
             if(isalnum(line.at(i)) != 0){
                 location loc;
                 loc.start = i;
@@ -39,21 +39,119 @@ std::vector<location> disjoint(std::vector<std::string> content){
         }
         l++;
     }
-    
-    // PREPROCESSOR TOKEN DUMP
-    for(location loc : result){
-        std::string value;
-        for(int i = loc.start; i <= loc.end; i++){
-            value += content.at(loc.line).at(i);
-        }
-        std::cout<<value<<":"<<loc.line<<"<"<<loc.start<<"::"<<loc.end<<">"<<std::endl;
-    }
-
     return result;
 }
 
-//TODO: Actual preprocessor 
+// This function should have no side-effects
 std::vector<location> preprocess(std::vector<std::string> content){
-    std::vector<location> result = disjoint(content);
+    enum class platform {WINDOWS,LINUX,BSD,OSX,UNIX,UNKNOWN};
+
+    // Currently it only takes into account the system where it was compiled
+    platform target_platform;
+
+    // Note: Linux should always be before the Unix macro
+    #if defined(_WIN64) || defined(_WIN32) || defined(__WINDOWS__)
+    target_platform = platform::WINDOWS;
+    #elif defined(__linux) || defined (linux) || defined(__linux__)
+    target_platform = platform::LINUX;
+    #elif defined(__DragonFly__) || defined(__FreeBSD)
+    target_platform = platform::BSD;
+    #elif defined(__APPLE__) || defined(macintosh) || defined(__MACH__)
+    target_platform = platform::OSX;
+    #elif defined(__unix) || defined(unix)
+    target_platform = platform::UNIX;
+    #else
+    target_platform = platform::UNKOWN;
+    #endif 
+
+    std::vector<location> src = disjoint(content);
+    std::vector<location> result;
+
+    for(size_t i = 0; i < src.size(); i++){
+        location loc = src.at(i);
+        std::string dumb;
+        for(int idk = loc.start; idk <= loc.end; idk++){
+            dumb += content.at(loc.line).at(idk);
+        }
+        if(content.at(loc.line).at(loc.start) == '@'){
+            // Check if it's the first non-whitespace character on line
+            // If first tracked location, it is certain to be whitespace
+            if(
+                (i==0||src.at(i-1).line!=src.at(i).line)&&
+                (i+1<src.size()&&src.at(i).line==src.at(i+1).line)
+            ){
+                std::string cmd;
+                for(int n=src.at(i+1).start;n<=src.at(i+1).end;n++){
+                    cmd += content.at(src.at(i+1).line).at(n);
+                }
+
+                if(cmd == "platform"){
+                    // Doesn't check  if on same line tho
+                    if(i + 3 < src.size()){
+                        location pname = src.at(i+3); // platform name
+                        std::string pval;
+                        for(int n=pname.start;n<=pname.end;n++){
+                            pval += content.at(pname.line).at(n);
+                        }
+                        std::cout<<pval<<std::endl;
+                        i += 3;
+                        platform p;
+                        if(pval == "windows"){
+                            p = platform::WINDOWS;
+                        }
+                        else if(pval == "linux"){
+                            p = platform::LINUX;
+                        }
+                        else if(pval == "bsd"){
+                            p = platform::BSD;
+                        }
+                        else if(pval == "apple" || pval == "osx" || pval == "mac"){
+                            p = platform::OSX;
+                        }
+                        else if(pval == "unix"){
+                            p = platform::UNIX;
+                        }
+                        else{
+                            p = platform::UNKNOWN;
+                        }
+
+                        if(target_platform != p){
+                            // Doesn't check for @end, just checks for @
+                            // which should be improved
+                            while(i<src.size()&&content.at(src.at(i).line).at(src.at(i).start)!='@'){
+                                i++;
+                            }
+                            i--;
+                        }
+                        else{
+                            std::cout<<"is the same platform"<<std::endl;
+                        }
+                    }
+                }
+                else if(cmd == "end"){
+                    std::cout<<"PREPROCESSOR WARN: Uncatched end at ("<<src.at(i+1).line<<":"<<src.at(i+1).start<<")"<<std::endl;
+                    i++;
+                }
+                else{
+                    std::cout<<"PREPROCESSOR WARN: Unknown at ("<<src.at(i+1).line<<":"<<src.at(i+1).start<<")"<<std::endl;
+                    i++;
+                }
+            }
+        }
+        else
+        {
+            result.push_back(src.at(i));
+        }
+
+    }
+
+    for(location l : result){
+        std::string value;
+        for(int i = l.start; i <= l.end; i++){
+            value += content.at(l.line).at(i);
+        }
+        std::cout<<">"<<value<<"<"<<std::endl;
+    }
+
     return result;
 }
