@@ -9,7 +9,29 @@ std::vector<location> disjoint(std::vector<std::string> content){
     size_t l = 0; // line counter
     for(std::string& line : content){
         for(size_t i = 0; i < line.size(); i++){
-            if(isalnum(line.at(i)) != 0){
+            if(line.at(i) == '"'){
+                location loc;
+                loc.start = i;
+                loc.line = l;
+                // Doesn't handle \"
+                i++;
+                while(i<line.size()&&line.at(i)!='"'){i++;}
+                //i--;
+                loc.end = i;
+                result.push_back(loc);
+            }
+            else if(line.at(i) == '\''){
+                location loc;
+                loc.start = i;
+                loc.line = l;
+                // Doesn't handle \'
+                i++;
+                while(i<line.size()&&line.at(i)!='\''){i++;}
+                //i--;
+                loc.end = i;
+                result.push_back(loc);
+            }
+            else if(isalnum(line.at(i)) != 0){
                 location loc;
                 loc.start = i;
                 loc.line = l;
