@@ -1,4 +1,4 @@
-CXX = clang++
+CXX = g++
 APP_NAME = chirpc
 
 CXX_FLAGS =-std=c++17 $(FLAGS)
@@ -30,7 +30,7 @@ setup:
 	@mkdir -p $(DEST_DIR)
 
 $(DEST_DIR)/%.o: %.cpp
-	$(CXX) -c $< -o $@ $(CXX_FLAGS) $(INCLUDES)
+	$(CXX) -g -c $< -o $@ $(CXX_FLAGS) $(INCLUDES)
 
 clean:
 	rm $(APP_NAME)

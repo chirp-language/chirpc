@@ -32,5 +32,9 @@ cmd parse_cmd(int argc, char* argv[])
             }
         }
     }
+
+    if(c.filename.empty() && c.help == false){
+        c.error = true;
+    }
     return c;
 }
