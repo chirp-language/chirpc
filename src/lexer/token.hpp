@@ -1,5 +1,5 @@
 #pragma once
-#include "location.hpp"
+#include "../shared/location.hpp"
 #include <string>
 
 enum tkn_type

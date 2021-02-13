@@ -2,3 +2,4 @@ chirpc
 bin/*
 # temp
 test.ch
+build/*
