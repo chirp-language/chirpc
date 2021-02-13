@@ -13,6 +13,7 @@ class cmd
     bool verbose = false;
     bool help = false;
     bool dump_tkns = false;
+    bool dump_ast = false;
     std::string filename;
 };
 

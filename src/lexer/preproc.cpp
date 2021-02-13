@@ -65,7 +65,7 @@ std::vector<location> disjoint(std::vector<std::string> content){
 }
 
 // This function should have no side-effects
-std::vector<location> preprocess(std::vector<std::string> content){
+std::vector<location> preprocess(std::string fname, std::vector<std::string> content){
     enum class platform {WINDOWS,LINUX,BSD,OSX,UNIX,UNKNOWN};
 
     // Currently it only takes into account the system where it was compiled
@@ -161,6 +161,7 @@ std::vector<location> preprocess(std::vector<std::string> content){
         }
         else
         {
+            src.at(i).filename = fname;
             result.push_back(src.at(i));
         }
     }

@@ -3,12 +3,15 @@
 and this represents some place in the with some message linked to it
 */
 #pragma once
+#include <vector>
 #include <string>
 #include "location.hpp"
 enum helper_type 
 {
     global_warning,
     global_err,
+    line_warning,
+    line_err,
     location_warning,
     location_err
 };
@@ -18,5 +21,6 @@ class helper{
     helper_type type;
     location l;
     std::string msg;
-    std::string file; // Filename for the file, very hacky..
+    // Takes in a location & file content and create a code snippet
+    std::string write_helper(std::vector<std::string>);
 };

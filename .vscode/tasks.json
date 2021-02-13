@@ -5,7 +5,7 @@
 			"type": "cppbuild",
 			"label": "build",
 			"command": "make",
-			"args": [""],
+			"args": ["-j8"],
 			"options": {
 				"cwd": "${workspaceFolder}"
 			},

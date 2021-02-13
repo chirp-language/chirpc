@@ -17,6 +17,12 @@ cmd parse_cmd(int argc, char* argv[])
         if(arg == "-v"){
             c.verbose = true;
         }
+        else if(arg == "-dump-tokens"){
+            c.dump_tkns = true;
+        }
+        else if(arg == "-dump-ast"){
+            c.dump_ast = true;
+        }
         else if(arg == "--help"){
             c.help = true;
             return c;
