@@ -62,7 +62,6 @@ int main(int argc, char** argv)
         if(options.dump_tkns){
             std::cout<<"--------------------"<<std::endl;
         }
-        std::cout<<"Ast:"<<std::endl;
         std::cout<<p.get_ast().dump()<<std::endl;
     }
     // Code Generation

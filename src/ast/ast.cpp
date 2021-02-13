@@ -44,6 +44,7 @@ std::string identifier::dump(int depth)
     }
     result += "> ";
     result += this->name;
+    result += "\n";
     return result;
 }
 std::string literal_node::dump(int depth){
@@ -57,7 +58,7 @@ std::string txt_literal::dump(int depth){
     result += indent(depth);
     result += "text_literal \"";
     result += value;
-    result += "\":\n";
+    result += "\";\n";
     return result;
 }
 std::string num_literal::dump(int depth){
@@ -65,12 +66,13 @@ std::string num_literal::dump(int depth){
     result += indent(depth);
     result += "number_literal ";
     result += value;
-    result += ":\n";
+    result += ";\n";
     return result;
 }
 std::string arguments::dump(int depth){
     std::string result;
-    result = "arguments";
+    result += indent(depth);
+    result += "arguments;\n";
     return result;
 }
 std::string stmt::dump(int depth){
@@ -92,25 +94,28 @@ std::string entry_stmt::dump(int depth){
     std::string result;
     result += indent(depth);
     result += "entry_statement:\n";
-    //printf("%p\n",this->code);
-    result += this->code->dump(depth);
+    result += this->code->dump(depth+1);
     return result;
 }
 std::string import_stmt::dump(int depth){
     std::string result;
     result += indent(depth);
     result += "import_statement:\n";
+    result += this->filename.dump(depth+1);
     return result;
 }
 std::string ret_stmt::dump(int depth){
     std::string result;
     result += indent(depth);
     result += "ret_statement:\n";
+    result += this->val->dump(depth+1);
     return result;
 }
 std::string func_call_stmt::dump(int depth){
     std::string result;
     result += indent(depth);
     result += "function_call:\n";
+    result += this->ident.dump(depth+1);
+    result += this->args.dump(depth+1);
     return result;
 }

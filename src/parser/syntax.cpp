@@ -72,12 +72,12 @@ literal_node* parser::get_literal()
     std::string val = peek().value;
     if(val.at(0) == '"' || val.at(0) == '\''){
         node = new txt_literal;
-        *node = get_txt_lit();
+        *static_cast<txt_literal*>(node) = get_txt_lit();
     }
     // oof, doesn't check for booleans, too bad
     else{
         node = new num_literal;
-        *node = get_num_lit();
+        *static_cast<num_literal*>(node) = get_num_lit();
     }
     return node;
 }
@@ -173,8 +173,9 @@ compound_stmt parser::get_compound_stmt()
     node.line = peek().loc.line;
     expect(lbrace);
     while(this->ok && !match(rbrace) && !match(eof)){
-        stmt* aaaa = get_stmt();
-        node.body.push_back(aaaa);
+        //stmt* aaaa = get_stmt();
+        //node.body.push_back(aaaa);
+        node.body.push_back(get_stmt());
     }
     return node;
 }
