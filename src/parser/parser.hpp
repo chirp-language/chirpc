@@ -30,6 +30,25 @@ class parser
 
     // Actual parser stuff
 
+    bool is_func_call();
+
+    identifier get_identifier();
+
+    txt_literal get_txt_lit();
+    num_literal get_num_lit();
+    literal_node* get_literal();
+
+    arguments get_arguments();
+
+    entry_stmt get_entry();
+    import_stmt get_import();
+    ret_stmt get_ret(); // MLG wooo
+
+    func_call_stmt get_fcall(); // fcall->function call
+
+    stmt* get_stmt();
+    compound_stmt get_compound_stmt();
+
     bool ok = false;
     std::string filename;
     ast tree;

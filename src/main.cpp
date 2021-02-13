@@ -17,6 +17,7 @@ int main(int argc, char** argv)
     cmd options = parse_cmd(argc,argv);
 
     if(options.error){
+        std::cout<<"Error in provided arguments"<<std::endl;
         return -1;
     }
 
@@ -62,7 +63,7 @@ int main(int argc, char** argv)
             std::cout<<"--------------------"<<std::endl;
         }
         std::cout<<"Ast:"<<std::endl;
-        std::cout<<p.get_ast().util_dump_xml()<<std::endl;
+        std::cout<<p.get_ast().dump()<<std::endl;
     }
     // Code Generation
 

@@ -19,10 +19,19 @@ ast parser::get_ast()
 
 void parser::parse()
 {
+    this->ok = true;
+    while(!match(eof) && this->ok){
+        this->tree.root.children.push_back(this->get_stmt());
+    }
 }
 
 bool parser::match(tkn_type v)
 {
+    // Probably good enough to stop like 99% of bad behaviour
+    if(!this->ok){
+        return false;
+    }
+
     if(this->peek().type == v){
         cursor++;
         return true;

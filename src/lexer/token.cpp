@@ -13,6 +13,7 @@ std::string token::util_dump(){
         tknstr(kw_func)
         tknstr(kw_while)
         tknstr(kw_for)
+        tknstr(kw_ret)
         tknstr(period)
         tknstr(colon)
         tknstr(comma)

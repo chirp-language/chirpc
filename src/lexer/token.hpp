@@ -11,6 +11,7 @@ enum tkn_type
     kw_if,kw_else, // if else
     kw_func, // func
     kw_while,kw_for, // while for
+    kw_ret,
     
     // SYMBOLS
 

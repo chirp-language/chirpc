@@ -56,6 +56,9 @@ std::vector<token> lexe(std::vector<location>src,std::vector<std::string>content
         else if(t.value == "for"){
             t.type = tkn_type::kw_for;
         }
+        else if(t.value == "ret"){
+            t.type = tkn_type::kw_ret;
+        }
         // Symbols
         else if(t.value == "."){
             t.type = tkn_type::period;

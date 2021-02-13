@@ -49,7 +49,7 @@ std::vector<location> disjoint(std::vector<std::string> content){
                 {i++;}
                 i--;
                 loc.end = i;
-                result.push_back(loc);
+                //result.push_back(loc);
             }
             else{
                 location loc;
