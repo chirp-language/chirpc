@@ -3,10 +3,12 @@
 and this represents some place in the with some message linked to it
 */
 #pragma once
+
 #include <vector>
 #include <string>
 #include "location.hpp"
-enum helper_type 
+
+enum class helper_type 
 {
     global_warning,
     global_err,
@@ -16,8 +18,9 @@ enum helper_type
     location_err
 };
 
-class helper{
-    public:
+class helper
+{
+public:
     helper_type type;
     location l;
     std::string msg;

@@ -10,7 +10,7 @@ Parses tokens into an AST
 // (bootleg)Parser  
 class parser
 {
-    public:
+public:
     void parse();
 
     void load_tokens(std::string,std::vector<token>);

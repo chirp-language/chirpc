@@ -2,7 +2,7 @@
 #include "../shared/location.hpp"
 #include <string>
 
-enum tkn_type
+enum class tkn_type
 {
     // KEYWORDS
 

@@ -8,7 +8,7 @@ This does all the command line parsing stuff, and then
 // Command line options
 class cmd
 {
-    public:
+public:
     bool error = false;
     bool verbose = false;
     bool help = false;
@@ -17,4 +17,4 @@ class cmd
     std::string filename;
 };
 
-cmd parse_cmd(int,char*[]);
+cmd parse_cmd(int, char*[]);

@@ -14,14 +14,14 @@ All possible AST nodes are defined here
 
 class ast_node
 {
-    public:
+public:
     virtual std::string dump(int);
     std::vector<ast_node*> children;
 };
 
 class ast
 {
-    public:
+public:
     // Could probably store more stuff than just the root node
     ast_node root;
     std::string dump();
@@ -31,24 +31,24 @@ class ast
 
 class identifier : public ast_node
 {
-    public:
+public:
     // The namespace vector for a.b.c.foo() would be like:
     // {"a","b","c"}.. Further in vector => More nested
     std::vector<std::string> namespaces;
     std::string name;
-    virtual std::string dump(int);
+    virtual std::string dump(int) override;
 };
 
 class literal_node : public ast_node
 {
-    public:
-    virtual std::string dump(int);
+public:
+    virtual std::string dump(int) override;
 };
 
 class txt_literal : public literal_node
 {
-    public:
-    virtual std::string dump(int);
+public:
+    virtual std::string dump(int) override;
     bool single_char;
     std::string value;
 };
@@ -56,64 +56,64 @@ class txt_literal : public literal_node
 // Should be replaced by a different literal for each types
 class num_literal : public literal_node
 {
-    public:
+public:
     std::string value;
-    virtual std::string dump(int);
+    virtual std::string dump(int) override;
 };
 
 // === Stuff that likes has literals in it but not a statement ish
 
 class arguments : public ast_node
 {
-    public:
+public:
     // expression?? lol what's that 
     std::vector<literal_node*> body;
-    virtual std::string dump(int);
+    virtual std::string dump(int) override;
 };
 
 // === STATEMENTS ===
 
 class stmt : public ast_node
 {
-    public:
+public:
     // It's kindof a location-ish
     int line;
-    virtual std::string dump(int);
+    virtual std::string dump(int) override;
 };
 
 class compound_stmt : public stmt
 {
-    public:
+public:
     std::vector<stmt*> body;
-    virtual std::string dump(int);
+    virtual std::string dump(int) override;
 };
 
 class entry_stmt : public stmt
 {
-    public:
+public:
     stmt* code;
-    virtual std::string dump(int);
+    virtual std::string dump(int) override;
 };
 
 class import_stmt : public stmt
 {
-    public:
+public:
     txt_literal filename;
-    virtual std::string dump(int);
+    virtual std::string dump(int) override;
 };
 
 class ret_stmt : public stmt
 {
-    public:
+public:
     // Should be replaced by expr, when I get to those
     literal_node* val;
-    virtual std::string dump(int);
+    virtual std::string dump(int) override;
 };
 
 class func_call_stmt : public stmt
 {
-    public:
+public:
     identifier ident;
     arguments args;
-    virtual std::string dump(int);
+    virtual std::string dump(int) override;
 };

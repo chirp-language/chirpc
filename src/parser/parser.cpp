@@ -16,11 +16,11 @@ ast parser::get_ast()
     return this->tree;
 }
 
-
 void parser::parse()
 {
     this->ok = true;
-    while(!match(eof) && this->ok){
+    while (!match(tkn_type::eof) && this->ok)
+    {
         this->tree.root.children.push_back(this->get_stmt());
     }
 }
@@ -28,11 +28,13 @@ void parser::parse()
 bool parser::match(tkn_type v)
 {
     // Probably good enough to stop like 99% of bad behaviour
-    if(!this->ok){
+    if (!this->ok)
+    {
         return false;
     }
 
-    if(this->peek().type == v){
+    if (this->peek().type == v)
+    {
         cursor++;
         return true;
     }
@@ -41,20 +43,23 @@ bool parser::match(tkn_type v)
 
 bool parser::expect(tkn_type v)
 {
-    if(!match(v)){
+    if (!match(v))
+    {
         helper e;
-        if(cursor >= this->tkns.size()){
-            e.type = line_err;
+        if (cursor >= this->tkns.size())
+        {
+            e.type = helper_type::line_err;
             // If line err, doesn't care about start or end, just line
             location l;
             l.filename = this->filename;
-            l.line = this->tkns.at(this->tkns.size()-1).loc.line;
+            l.line = this->tkns.at(this->tkns.size() - 1).loc.line;
             e.msg = "Unexpected end of file.";
         }
-        else{
+        else
+        {
             e.l = tkns.at(this->cursor).loc;
             e.l.filename = this->filename;
-            e.type = location_err;
+            e.type = helper_type::location_err;
             e.msg = "Unexpected token";
         }
         this->helpers.push_back(e);
@@ -64,36 +69,42 @@ bool parser::expect(tkn_type v)
 
 token parser::peekb()
 {
-    if(cursor > 0){
-        return this->tkns.at(cursor-1);
+    if (cursor > 0)
+    {
+        return this->tkns.at(cursor - 1);
     }
-    else{
+    else
+    {
         token t;
-        t.type = eof;
+        t.type = tkn_type::eof;
         return t;
     }
 }
 
 token parser::peek()
 {
-    if(cursor >= 0 && cursor < this->tkns.size()){
+    if (cursor >= 0 && cursor < this->tkns.size())
+    {
         return this->tkns.at(cursor);
     }
-    else{
+    else
+    {
         token t;
-        t.type = eof;
+        t.type = tkn_type::eof;
         return t;
     }
 }
 
 token parser::peekf()
 {
-    if(cursor + 1 < this->tkns.size()){
-        return this->tkns.at(cursor+1);
+    if (cursor + 1 < this->tkns.size())
+    {
+        return this->tkns.at(cursor + 1);
     }
-    else{
+    else
+    {
         token t;
-        t.type = eof;
+        t.type = tkn_type::eof;
         return t;
     }
 }
