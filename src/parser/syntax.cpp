@@ -124,18 +124,6 @@ entry_stmt parser::get_entry()
     entry_stmt node;
     node.line = this->peek().loc.line;
     expect(tkn_type::kw_entry);
-    node.has_args = false;
-
-    // Then the entry has arguments
-    if(peek().type == tkn_type::lparen)
-    {
-        node.has_args = true;
-        node.args = std::make_shared<arguments>(get_arguments());
-    }
-    else{
-        node.args = std::shared_ptr<arguments>(nullptr);
-    }
-
     node.code = get_stmt();
     return node;
 }

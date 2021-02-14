@@ -173,16 +173,8 @@ std::string entry_stmt::dump(int depth)
     std::string result;
     result += indent(depth);
     result += "entry_statement ";
-    if(this->has_args)
-    {
-        result += "(has_args)";
-        result += ":\n";
-        result += this->args->dump(depth+1);
-    }
-    else{
-        result += "(no_args)";
-        result += ":\n";
-    }
+    result += "(no_args)";
+    result += ":\n";
     result += this->code->dump(depth + 1);
     return result;
 }

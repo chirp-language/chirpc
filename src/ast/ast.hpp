@@ -122,10 +122,6 @@ public:
 class entry_stmt : public stmt
 {
 public:
-    bool has_args;
-    // Arguments may not exist
-    std::shared_ptr<arguments> args;
-
     std::shared_ptr<stmt> code;
     virtual std::string dump(int) override;
 };
