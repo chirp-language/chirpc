@@ -68,7 +68,14 @@ std::string txt_literal::dump(int depth)
 {
     std::string result;
     result += indent(depth);
-    result += "text_literal \"";
+    result += "text_literal ";
+    if(this->single_char){
+        result += "(char) ";
+    }
+    else{
+        result += "(string) ";
+    }
+    result += "\"";
     result += value;
     result += "\";\n";
     return result;
@@ -81,6 +88,51 @@ std::string num_literal::dump(int depth)
     result += "number_literal ";
     result += value;
     result += ";\n";
+    return result;
+}
+
+
+std::string mathop::dump(int depth)
+{
+    std::string result;
+    result += indent(depth);
+    result += "Math Operator ";
+    result += this->type;
+    result += ":\n";
+    result += this->left.dump(depth+1);
+    result += this->right.dump(depth+1);
+    return result;
+}
+
+// Operator precedence?? What is that
+std::string mathexpr::dump(int depth)
+{
+    std::string result;
+    result += indent(depth);
+    result += "mathexpr:\n";
+
+    for(mathop& op : operands)
+    {
+        result += op.dump(depth+1);
+    }
+
+    return result;
+}
+
+std::string staticexpr::dump(int depth)
+{
+    std::string result;
+    result += indent(depth);
+    result += "static_expression:\n";
+    result += this->value.get()->dump(depth+1);
+    return result;
+}
+
+std::string expr::dump(int depth)
+{
+    std::string result;
+    result += indent(depth);
+    result += "basic_expression;\n";
     return result;
 }
 

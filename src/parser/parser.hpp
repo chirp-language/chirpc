@@ -39,6 +39,11 @@ private:
     num_literal get_num_lit();
     std::shared_ptr<literal_node> get_literal();
 
+    mathop get_math_op();
+    mathexpr get_math_expr();
+    staticexpr get_static_expr();
+    std::shared_ptr<expr> get_expr();
+
     arguments get_arguments();
 
     entry_stmt get_entry();

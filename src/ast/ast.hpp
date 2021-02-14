@@ -61,13 +61,44 @@ public:
     virtual std::string dump(int) override;
 };
 
+// === Expression Stuff ===
+
+class mathop : public ast_node
+{
+    public:
+    char type;
+    num_literal left;
+    num_literal right;
+    virtual std::string dump(int) override;
+};
+
+class expr : public ast_node
+{
+    public:
+    virtual std::string dump(int) override;
+};
+
+class mathexpr : public expr
+{
+    public:
+    // Litteraly just the same char
+    std::vector<mathop> operands;
+    virtual std::string dump(int) override;
+};
+
+class staticexpr : public expr
+{
+    public:
+    std::shared_ptr<literal_node> value;
+    virtual std::string dump(int) override;
+};
+
 // === Stuff that likes has literals in it but not a statement ish
 
 class arguments : public ast_node
 {
 public:
-    // expression?? lol what's that 
-    std::vector<std::shared_ptr<literal_node>> body;
+    std::vector<std::shared_ptr<expr>> body;
     virtual std::string dump(int) override;
 };
 
@@ -110,7 +141,7 @@ class ret_stmt : public stmt
 {
 public:
     // Should be replaced by expr, when I get to those
-    std::shared_ptr<literal_node> val;
+    std::shared_ptr<expr> val;
     virtual std::string dump(int) override;
 };
 

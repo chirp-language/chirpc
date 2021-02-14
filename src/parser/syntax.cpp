@@ -73,6 +73,15 @@ num_literal parser::get_num_lit()
     num_literal node;
     token t = peek();
     expect(tkn_type::literal);
+    
+    if(t.value.at(0) == '\'' || t.value.at(0) == '"'){
+        helper e;
+        e.l = t.loc;
+        e.msg = "Trying to perform math operation with a string literal";
+        e.type = helper_type::location_err;
+        this->ok = false;
+        this->helpers.push_back(e);
+    } // Carries on after that, as it shouldn't break anything, until the codegen phase, but it throws an error so it won't reach that
     node.value = t.value;
     return node;
 }
@@ -101,9 +110,10 @@ arguments parser::get_arguments()
     arguments node;
     expect(tkn_type::lparen);
     
-    while (!match(tkn_type::rparen) && !match(tkn_type::eof))
+    while (!match(tkn_type::rparen) && !match(tkn_type::eof) && this->ok)
     {
-        node.body.push_back(get_literal());
+        match(tkn_type::comma);
+        node.body.push_back(get_expr());
     }
     
     return node;
@@ -144,7 +154,8 @@ ret_stmt parser::get_ret()
     ret_stmt node;
     node.line = this->peek().loc.line;
     expect(tkn_type::kw_ret);
-    node.val = get_literal();
+    node.val = get_expr();
+    //node.val = get_literal();
     return node;
 }
 

@@ -60,7 +60,7 @@ std::string helper::write_helper(std::vector<std::string> content,cmd& options)
         {
             result += "    | ";
             result += content.at(l.line - 1);
-            result += "\n";
+            result += "\n\n";
         }
 
         result += std::to_string(l.line);
