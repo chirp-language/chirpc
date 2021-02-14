@@ -4,9 +4,10 @@ and this represents some place in the with some message linked to it
 */
 #pragma once
 
+#include "location.hpp"
+#include "../cmd.hpp"
 #include <vector>
 #include <string>
-#include "location.hpp"
 
 enum class helper_type 
 {
@@ -24,6 +25,8 @@ public:
     helper_type type;
     location l;
     std::string msg;
-    // Takes in a location & file content and create a code snippet
-    std::string write_helper(std::vector<std::string>);
+
+    // Writes the helper, in a human readable way
+    // Possible Improvement: Add an option to create a "machine-readable" error prompt
+    std::string write_helper(std::vector<std::string>,cmd&);
 };

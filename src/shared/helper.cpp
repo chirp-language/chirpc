@@ -1,8 +1,8 @@
 #include "helper.hpp"
-
+#include "../color.hpp"
 #include <iostream>
 
-std::string helper::write_helper(std::vector<std::string> content)
+std::string helper::write_helper(std::vector<std::string> content,cmd& options)
 {
     std::string result;
     
@@ -11,7 +11,15 @@ std::string helper::write_helper(std::vector<std::string> content)
         type == helper_type::line_warning || 
         type == helper_type::location_warning )
     {
-        result = "[WARNING] ";
+        if(options.has_color)
+        {
+            result = write_color("[WARNING]",color::yellow);
+        }
+        else
+        {
+            result = "[WARNING]";
+        }
+
         result += this->msg;
     }
     else if (
@@ -19,7 +27,15 @@ std::string helper::write_helper(std::vector<std::string> content)
         type == helper_type::line_err || 
         type == helper_type::location_err )
     {
-        result = "[ERROR] ";
+        if(options.has_color)
+        {
+            result = write_color("[ERROR]",color::red);//"[ERROR] ";
+        }
+        else
+        {
+            result = "[ERROR]";
+        }
+
         result += this->msg;
     }
     
@@ -63,7 +79,12 @@ std::string helper::write_helper(std::vector<std::string> content)
             {
                 identation += "^";
             }
-            result += identation;
+            if(options.has_color){
+                result += write_color(identation,color::red);
+            }
+            else{
+                result += identation;
+            }
             result += "\n";
         }
         if (l.line + 1 < content.size())

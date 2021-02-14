@@ -114,6 +114,18 @@ entry_stmt parser::get_entry()
     entry_stmt node;
     node.line = this->peek().loc.line;
     expect(tkn_type::kw_entry);
+    node.has_args = false;
+
+    // Then the entry has arguments
+    if(peek().type == tkn_type::lparen)
+    {
+        node.has_args = true;
+        node.args = std::make_shared<arguments>(get_arguments());
+    }
+    else{
+        node.args = std::shared_ptr<arguments>(nullptr);
+    }
+
     node.code = get_stmt();
     return node;
 }
@@ -182,7 +194,7 @@ std::shared_ptr<stmt> parser::get_stmt()
         helper e;
         e.type = helper_type::location_err;
         e.l = this->peek().loc;
-        e.msg = "Unexpected token in statement or something idk";
+        e.msg = "Statement could not be parsed";
 
         this->helpers.push_back(e);
         result = nullptr;

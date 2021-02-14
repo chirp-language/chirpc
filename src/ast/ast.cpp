@@ -88,7 +88,11 @@ std::string arguments::dump(int depth)
 {
     std::string result;
     result += indent(depth);
-    result += "arguments;\n";
+    result += "arguments:\n";
+    for(auto n : body)
+    {
+        result += n.get()->dump(depth+1);
+    }
     return result;
 }
 
@@ -116,7 +120,17 @@ std::string entry_stmt::dump(int depth)
 {
     std::string result;
     result += indent(depth);
-    result += "entry_statement:\n";
+    result += "entry_statement ";
+    if(this->has_args)
+    {
+        result += "(has_args)";
+        result += ":\n";
+        result += this->args->dump(depth+1);
+    }
+    else{
+        result += "(no_args)";
+        result += ":\n";
+    }
     result += this->code->dump(depth + 1);
     return result;
 }

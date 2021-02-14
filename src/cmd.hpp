@@ -9,12 +9,20 @@ This does all the command line parsing stuff, and then
 class cmd
 {
 public:
+    // State information
     bool error = false;
     bool verbose = false;
+    // Special commands
     bool help = false;
+    bool version = false;
+    // Options
     bool dump_tkns = false;
     bool dump_ast = false;
+    bool has_color = true;
+
     std::string filename;
+    void write_help();
+    void write_version();
 };
 
 cmd parse_cmd(int, char*[]);

@@ -13,4 +13,7 @@ class frontend
     bool find_compiler();
 
     void remove_tmp_folder();
+    private:
+    bool has_gcc;
+    bool has_clang;
 };

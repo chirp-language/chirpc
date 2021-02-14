@@ -1,5 +1,6 @@
 // This manages to pretty much interface all components with eachothers
 #include "cmd.hpp"
+#include "color.hpp"
 #include "lexer/lexer.hpp"
 #include "lexer/preproc.hpp"
 #include "parser/parser.hpp"
@@ -16,6 +17,16 @@
 int main(int argc, char** argv)
 {
     cmd options = parse_cmd(argc,argv);
+
+    if(options.version){
+        options.write_version();
+        return 0;
+    }
+
+    if(options.help){
+        options.write_help();
+        return 0;
+    }
 
     if(options.error){
         std::cout << "Error in provided arguments\n";
@@ -60,7 +71,7 @@ int main(int argc, char** argv)
     for(helper& h : phelpers) {
         // Always copying the file content is like
         // really really really bad & inneficient
-        std::cout << h.write_helper(content) << '\n';
+        std::cout << h.write_helper(content,options) << '\n';
 
         if(
             h.type==helper_type::global_err||
@@ -85,9 +96,17 @@ int main(int argc, char** argv)
     frontend frontend;
 
     if(!frontend.find_compiler()){
+        if(options.has_color){
+            std::cout<<write_color("[TOOL MISSING]",color::red);
+        }
+        else{
+            std::cout<<"[TOOL MISSING] ";
+        }
+
         std::cout<<"Couldn't find supported C compiler on this machine.\n";
-        std::cout<<"Supported compilers are clang-10 and gcc7.5.0\n";
-        std::cout<<"The compiler may still work on earlier versions.\n";
+        std::cout<<"Supported compilers are clang and gcc\n";
+        std::cout<<"To specify C compiler use option -compiler-path, and then the path to the compiler.\n";
+
         return -1;
     }
 
