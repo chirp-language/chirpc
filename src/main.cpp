@@ -3,6 +3,7 @@
 #include "lexer/lexer.hpp"
 #include "lexer/preproc.hpp"
 #include "parser/parser.hpp"
+#include "frontend/frontend.hpp"
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -54,12 +55,20 @@ int main(int argc, char** argv)
     p.load_tokens(options.filename, tkns);
     p.parse();
     std::vector<helper> phelpers = p.get_helpers();
-    bool ok = false;
+    bool ok = true;
 
     for(helper& h : phelpers) {
         // Always copying the file content is like
         // really really really bad & inneficient
         std::cout << h.write_helper(content) << '\n';
+
+        if(
+            h.type==helper_type::global_err||
+            h.type==helper_type::line_err||
+            h.type==helper_type::location_err
+        ){
+            ok = false;
+        }
     }
 
     if(options.dump_ast) {
@@ -69,8 +78,25 @@ int main(int argc, char** argv)
         std::cout << p.get_ast().dump() << '\n';
     }
     // Code Generation
+    if(!ok){
+        return -1;
+    }
 
+    frontend frontend;
+
+    if(!frontend.find_compiler()){
+        std::cout<<"Couldn't find supported C compiler on this machine.\n";
+        std::cout<<"Supported compilers are clang-10 and gcc7.5.0\n";
+        std::cout<<"The compiler may still work on earlier versions.\n";
+        return -1;
+    }
+
+    frontend.make_tmp_folder();
+    
     // Tooling
+
+    // Cleanup
+    frontend.remove_tmp_folder();
 
     return 0;
 }
