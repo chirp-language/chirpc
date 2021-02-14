@@ -9,14 +9,14 @@ All possible AST nodes are defined here
 */
 #include <string>
 #include <vector>
-
+#include <memory>
 // === SHARED ===
 
 class ast_node
 {
 public:
     virtual std::string dump(int);
-    std::vector<ast_node*> children;
+    std::vector<std::shared_ptr<ast_node>> children;
 };
 
 class ast
@@ -67,7 +67,7 @@ class arguments : public ast_node
 {
 public:
     // expression?? lol what's that 
-    std::vector<literal_node*> body;
+    std::vector<std::shared_ptr<literal_node>> body;
     virtual std::string dump(int) override;
 };
 
@@ -84,14 +84,14 @@ public:
 class compound_stmt : public stmt
 {
 public:
-    std::vector<stmt*> body;
+    std::vector<std::shared_ptr<stmt>> body;
     virtual std::string dump(int) override;
 };
 
 class entry_stmt : public stmt
 {
 public:
-    stmt* code;
+    std::shared_ptr<stmt> code;
     virtual std::string dump(int) override;
 };
 
@@ -106,7 +106,7 @@ class ret_stmt : public stmt
 {
 public:
     // Should be replaced by expr, when I get to those
-    literal_node* val;
+    std::shared_ptr<literal_node> val;
     virtual std::string dump(int) override;
 };
 

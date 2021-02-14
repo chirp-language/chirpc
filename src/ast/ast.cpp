@@ -29,7 +29,7 @@ std::string ast_node::dump(int depth)
     std::string result;
     result += indent(depth);
     result += "default_node:\n";
-    for (ast_node *child : this->children)
+    for (auto& child : this->children)
     {
         result += child->dump(depth + 1);
     }
@@ -105,7 +105,7 @@ std::string compound_stmt::dump(int depth)
     std::string result;
     result += indent(depth);
     result += "compound_statement:\n";
-    for (stmt *s : this->body)
+    for (auto& s : this->body)
     {
         result += s->dump(depth + 1);
     }

@@ -13,10 +13,11 @@ class parser
 public:
     void parse();
 
-    void load_tokens(std::string,std::vector<token>);
+    void load_tokens(std::string, std::vector<token>);
     std::vector<helper> get_helpers();
     ast get_ast();
-    private:
+
+private:
     size_t cursor = 0;
 
     // Shared functions
@@ -36,7 +37,7 @@ public:
 
     txt_literal get_txt_lit();
     num_literal get_num_lit();
-    literal_node* get_literal();
+    std::shared_ptr<literal_node> get_literal();
 
     arguments get_arguments();
 
@@ -46,7 +47,7 @@ public:
 
     func_call_stmt get_fcall(); // fcall->function call
 
-    stmt* get_stmt();
+    std::shared_ptr<stmt> get_stmt();
     compound_stmt get_compound_stmt();
 
     bool ok = false;

@@ -17,9 +17,8 @@ bool parser::is_func_call()
         }
         else if (match(tkn_type::period))
         {
-            while (match(tkn_type::identifer) && match(tkn_type::period))
-            {
-            }
+            while (match(tkn_type::identifer) && match(tkn_type::period));
+
             if (match(tkn_type::lparen))
             {
                 result = true;
@@ -78,21 +77,21 @@ num_literal parser::get_num_lit()
     return node;
 }
 
-literal_node* parser::get_literal()
+std::shared_ptr<literal_node> parser::get_literal()
 {
-    literal_node* node;
+    std::shared_ptr<literal_node> node;
     std::string val = peek().value;
 
     if (val.at(0) == '"' || val.at(0) == '\'')
     {
-        node = new txt_literal;
-        *static_cast<txt_literal *>(node) = get_txt_lit();
+        node = std::make_shared<txt_literal>();
+        *static_cast<txt_literal*>(node.get()) = get_txt_lit();
     }
     // oof, doesn't check for booleans, too bad
     else
     {
-        node = new num_literal;
-        *static_cast<num_literal *>(node) = get_num_lit();
+        node = std::make_shared<num_literal>();;
+        *static_cast<num_literal*>(node.get()) = get_num_lit();
     }
     return node;
 }
@@ -101,10 +100,12 @@ arguments parser::get_arguments()
 {
     arguments node;
     expect(tkn_type::lparen);
+    
     while (!match(tkn_type::rparen) && !match(tkn_type::eof))
     {
         node.body.push_back(get_literal());
     }
+    
     return node;
 }
 
@@ -143,36 +144,36 @@ func_call_stmt parser::get_fcall()
     return node;
 }
 
-stmt* parser::get_stmt()
+std::shared_ptr<stmt> parser::get_stmt()
 {
-    // Should probably be a std::unique_ptr tbh
-    stmt* result = nullptr;
+    // Should probably be a std::shared_ptr tbh
+    std::shared_ptr<stmt> result;
     tkn_type t = this->peek().type;
     // Switches get stiches
     if (t == tkn_type::kw_entry)
     {
-        result = new entry_stmt;
-        *static_cast<entry_stmt*>(result) = get_entry();
+        result = std::make_shared<entry_stmt>();
+        *static_cast<entry_stmt*>(result.get()) = get_entry();
     }
     else if (t == tkn_type::kw_import)
     {
-        result = new import_stmt;
-        *static_cast<import_stmt*>(result) = get_import();
+        result = std::make_shared<import_stmt>();
+        *static_cast<import_stmt*>(result.get()) = get_import();
     }
     else if (t == tkn_type::kw_ret)
     {
-        result = new ret_stmt;
-        *static_cast<ret_stmt*>(result) = get_ret();
+        result = std::make_shared<ret_stmt>();
+        *static_cast<ret_stmt*>(result.get()) = get_ret();
     }
     else if (t == tkn_type::lbrace)
     {
-        result = new compound_stmt;
-        *static_cast<compound_stmt*>(result) = get_compound_stmt();
+        result = std::make_shared<compound_stmt>();
+        *static_cast<compound_stmt*>(result.get()) = get_compound_stmt();
     }
     else if (is_func_call())
     {
-        result = new func_call_stmt;
-        *static_cast<func_call_stmt*>(result) = get_fcall();
+        result = std::make_shared<func_call_stmt>();
+        *static_cast<func_call_stmt*>(result.get()) = get_fcall();
     }
     else
     {
