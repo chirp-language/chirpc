@@ -32,7 +32,7 @@ std::vector<token> lexe(std::vector<location> src, std::vector<std::string> cont
     {
         token t;
         t.loc = loc;
-        // Efficiency ?? What's that lol
+        // String Views are a conspirancy 
         for (int i = loc.start; i <= loc.end; i++)
         {
             t.value += content.at(loc.line).at(i);
@@ -73,6 +73,20 @@ std::vector<token> lexe(std::vector<location> src, std::vector<std::string> cont
         else if (t.value == "ret")
         {
             t.type = tkn_type::kw_ret;
+        }
+        else if(
+            t.value == "int" || t.value == "char" ||
+            t.value == "float" || t.value == "double" ||
+            t.value == "bool" || t.value == "none"
+        ){
+            t.type = tkn_type::datatype;
+        }
+        else if(t.value == "ptr" || t.value == "signed" ||t.value == "unsigned"){
+            t.type = tkn_type::datamod;
+        }
+        else if(t.value == "true" || t.value == "false")
+        {
+            t.type = tkn_type::bool_val;
         }
         // Symbols
         else if (t.value == ".")

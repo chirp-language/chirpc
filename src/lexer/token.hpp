@@ -12,6 +12,11 @@ enum class tkn_type
     kw_func, // func
     kw_while,kw_for, // while for
     kw_ret,
+
+    // Tokens with multiple keywords 
+    datatype, // int,char,float,double,bool..
+    datamod, // ptr,signed,unsigned..
+    bool_val, // true, false
     
     // SYMBOLS
 

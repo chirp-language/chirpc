@@ -16,6 +16,41 @@ entry{...}
 entry(){...}
 ```
 
+# Datatypes & Values
+
+> This section is basicaly certain to change
+
+The datatypes in Chirp are very similar to those in C.
+
+| Keyword | Size |
+| --- | --- | --- |
+| ``int`` | 4 bytes |
+| ``float`` | 4 bytes |
+| ``double`` | 8 bytes |
+| ``char`` | 1 byte |
+| ``byte`` | 1 byte |
+| ``bool`` | 1 byte |
+| ``none`` | 0 byte |
+
+The none datatype is used to represent that there is no datatype, it cannot be used alone. It has to be used with either the ``func`` or ``ptr`` keyword.
+
+The modifiers are the following. Some of these modifiers can be used alone
+
+| Keyword | Standalone | Effect |
+| --- | --- | --- |
+| ``ptr`` | Yes | Makes it into the size of ptr |
+| ``signed`` | No | Default state of variables, make them signed |
+| ``unsigned`` | No | Makes the variable's data unsigned |
+| ``func`` | No | Is used both to declare a function, and when declaring a function pointer|
+
+Values in Chirps are as follow
+
+| Keyword | Description |
+| --- | --- |
+|``false``|Boolean value equivalent to 0|
+|``true``|Boolean value equivalent to 1|
+
+
 # Variables
 
 Declaring a variable in Chirp is done like this:
