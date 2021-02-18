@@ -1,6 +1,6 @@
 # Chirp Language Reference
 
-This is simple language reference, to vaguely describe most/all of the features of the language, a specification should be written soon. 
+This is simple language reference, to vaguely describe most/all of the features of the language, I will write a specification sometime.
 
 # Entry point
 
@@ -55,3 +55,41 @@ int: a = deref(data) as(int)
 ```
 
 > On the ``ref``,``deref``, and ``as``, and be used with or without a ``()`` as they are operators, not functions.
+
+## Functions
+
+Functions are defined with the ``func`` keyword and then the data type. If the function has no return value, it's datatype should be ``none``.
+
+> Having it so if the function has no return value, it would only have to have the ``func`` keyword, is a feature that might get implemented.
+
+Unlike with variables, the datatype in the function is **NOT** followed by a ``:``(semicolon).
+
+```
+func int foo(int: a, int: b)
+{
+    ret a + b
+}
+```
+
+## Ret
+
+The ``ret`` keyword is exactly what ``return`` does in C.
+
+## Pointer to a function
+
+Just like in C, you can create a pointer to a function in chirp. Chirp being much more verbose.
+
+```ch
+func int foo()
+{
+    return 123;
+}
+
+entry
+{
+    func int ptr: fun = ref foo
+    deref fun()
+}
+```
+
+A function ptr needs to have a ``func`` keyword, which in this case acts as a datatype instead of a keyword (subject to change).
