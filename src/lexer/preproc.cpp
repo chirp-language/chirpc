@@ -21,6 +21,10 @@ std::vector<location> disjoint(std::vector<std::string> content)
                 i++;
                 while (i < line.size() && line.at(i) != '"')
                 {
+                    // Skips escape characters
+                    if(line.at(i)=='\\'){
+                        i++;
+                    }
                     i++;
                 }
                 //i--;
@@ -36,6 +40,10 @@ std::vector<location> disjoint(std::vector<std::string> content)
                 i++;
                 while (i < line.size() && line.at(i) != '\'')
                 {
+                    // Skips escape characters
+                    if(line.at(i)=='\\'){
+                        i++;
+                    }
                     i++;
                 }
                 //i--;
