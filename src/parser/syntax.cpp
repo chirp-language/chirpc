@@ -4,32 +4,6 @@
 #include <new>
 #include <iostream>
 
-bool parser::is_func_call()
-{
-    bool result = false;
-    int og = this->cursor;
-
-    if (match(tkn_type::identifer))
-    {
-        if (match(tkn_type::lparen))
-        {
-            result = true;
-        }
-        else if (match(tkn_type::period))
-        {
-            while (match(tkn_type::identifer) && match(tkn_type::period));
-
-            if (match(tkn_type::lparen))
-            {
-                result = true;
-            }
-        }
-    }
-
-    this->cursor = og;
-    return result;
-}
-
 identifier parser::get_identifier()
 {
     identifier node;
@@ -105,20 +79,6 @@ std::shared_ptr<literal_node> parser::get_literal()
     return node;
 }
 
-arguments parser::get_arguments()
-{
-    arguments node;
-    expect(tkn_type::lparen);
-    
-    while (!match(tkn_type::rparen) && !match(tkn_type::eof) && this->ok)
-    {
-        match(tkn_type::comma);
-        node.body.push_back(get_expr());
-    }
-    
-    return node;
-}
-
 entry_stmt parser::get_entry()
 {
     entry_stmt node;
@@ -144,14 +104,6 @@ ret_stmt parser::get_ret()
     expect(tkn_type::kw_ret);
     node.val = get_expr();
     //node.val = get_literal();
-    return node;
-}
-
-func_call_stmt parser::get_fcall()
-{
-    func_call_stmt node;
-    node.ident = get_identifier();
-    node.args = get_arguments();
     return node;
 }
 
@@ -185,6 +137,16 @@ std::shared_ptr<stmt> parser::get_stmt()
     {
         result = std::make_shared<func_call_stmt>();
         *static_cast<func_call_stmt*>(result.get()) = get_fcall();
+    }
+    else if(is_var_decl())
+    {
+        result = std::make_shared<decl_stmt>();
+        *static_cast<decl_stmt*>(result.get()) = get_decl_stmt();
+    }
+    else if(is_var_def())
+    {
+        result = std::make_shared<def_stmt>();
+        *static_cast<def_stmt*>(result.get()) = get_def_stmt();
     }
     else
     {

@@ -148,11 +148,41 @@ std::string arguments::dump(int depth)
     return result;
 }
 
+std::string parameters::dump(int depth)
+{
+
+}
+
 std::string stmt::dump(int depth)
 {
     std::string result;
     result += indent(depth);
     result += "default_statement:\n";
+    return result;
+}
+
+std::string dtype::dump(int depth)
+{
+    std::string result;
+    result += indent(depth);
+    result += "data_type;\n";
+    return result;
+}
+
+std::string decl_stmt::dump(int depth)
+{
+    std::string result;
+    result += indent(depth);
+    result += "decl_statement;\n";
+    this->type.dump(depth+1);
+    return result;
+}
+
+std::string def_stmt::dump(int depth)
+{
+    std::string result;
+    result += indent(depth);
+    result += "def_statement;\n";
     return result;
 }
 
@@ -194,6 +224,22 @@ std::string ret_stmt::dump(int depth)
     result += indent(depth);
     result += "ret_statement:\n";
     result += this->val->dump(depth + 1);
+    return result;
+}
+
+std::string func_def_stmt::dump(int depth)
+{
+    std::string result;
+    result += indent(depth);
+    result += "function_definition:\n";
+    return result;
+}
+
+std::string func_decl_stmt::dump(int depth)
+{
+    std::string result;
+    result += indent(depth);
+    result += "function_declaration:\n";
     return result;
 }
 

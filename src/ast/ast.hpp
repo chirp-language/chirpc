@@ -102,6 +102,13 @@ public:
     virtual std::string dump(int) override;
 };
 
+class parameters : public ast_node
+{
+    public:
+    //std::vector<std::shared_ptr<>> body;
+    virtual std::string dump(int) override;
+};
+
 // === STATEMENTS ===
 
 class stmt : public ast_node
@@ -109,6 +116,25 @@ class stmt : public ast_node
 public:
     // It's kindof a location-ish
     int line;
+    virtual std::string dump(int) override;
+};
+
+class dtype : public ast_node
+{
+    public:
+    virtual std::string dump(int) override;
+};
+
+class decl_stmt : public stmt
+{
+    public:
+    dtype type;
+    virtual std::string dump(int) override;
+};
+
+class def_stmt : public stmt
+{
+    public:
     virtual std::string dump(int) override;
 };
 
@@ -138,6 +164,19 @@ class ret_stmt : public stmt
 public:
     // Should be replaced by expr, when I get to those
     std::shared_ptr<expr> val;
+    virtual std::string dump(int) override;
+};
+
+// Like a function declaration but without the code
+class func_def_stmt : public stmt
+{
+    public:
+    virtual std::string dump(int) override;
+};
+
+class func_decl_stmt : public stmt
+{
+    public:
     virtual std::string dump(int) override;
 };
 

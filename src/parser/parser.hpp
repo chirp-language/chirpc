@@ -31,6 +31,11 @@ private:
 
     // Actual parser stuff
 
+    bool is_datatype();
+
+    bool is_var_decl(); // (data specifiers) (:) (identifier)
+    bool is_var_def();  // (identifier) (=) (value)
+
     bool is_func_call();
 
     identifier get_identifier();
@@ -44,13 +49,16 @@ private:
     staticexpr get_static_expr();
     std::shared_ptr<expr> get_expr();
 
+    dtype get_datatype();
+    decl_stmt get_decl_stmt();
+    def_stmt get_def_stmt();
+
     arguments get_arguments();
+    func_call_stmt get_fcall(); // fcall->function call
 
     entry_stmt get_entry();
     import_stmt get_import();
     ret_stmt get_ret(); // MLG wooo
-
-    func_call_stmt get_fcall(); // fcall->function call
 
     std::shared_ptr<stmt> get_stmt();
     compound_stmt get_compound_stmt();
