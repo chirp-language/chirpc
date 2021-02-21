@@ -41,6 +41,7 @@ The modifiers are the following. Some of these modifiers can be used alone
 | ``ptr`` | Yes | Makes it into the size of ptr |
 | ``signed`` | No | Default state of variables, make them signed |
 | ``unsigned`` | No | Makes the variable's data unsigned |
+| ``const`` | No | Makes the variable unmodifiable |
 | ``func`` | No | Is used both to declare a function, and when declaring a function pointer|
 
 Values in Chirps are as follow

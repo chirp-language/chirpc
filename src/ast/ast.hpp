@@ -1,12 +1,7 @@
 /*
-Abstract Syntax Tree definition
-This contains all the possible nodes, cuz why not
-The code for creating the ast, in parser
-*/
-
-/*
 All possible AST nodes are defined here
 */
+#include "types.hpp"
 #include <string>
 #include <vector>
 #include <memory>
@@ -122,6 +117,8 @@ public:
 class dtype : public ast_node
 {
     public:
+    dtypename tname;
+    std::vector<char> tmods; // Enums are cast to/from a char
     virtual std::string dump(int) override;
 };
 

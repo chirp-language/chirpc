@@ -4,6 +4,9 @@
 #include <queue>
 #include <utility>
 
+// === UTILS FUNCTIONS FOR THE UTIL AST DUMPS ===
+// ^ meta
+
 std::string indent(int x)
 {
     std::string result;
@@ -14,7 +17,62 @@ std::string indent(int x)
     return result;
 }
 
-// === UTIL DUMPS ===
+// I don't even care about names now
+std::string dump_dtname(dtypename n)
+{
+    std::string result;
+    switch(n)
+    {
+        case dtypename::_int:
+        result = "int";
+        break;
+        case dtypename::_float:
+        result = "float";
+        break;
+        case dtypename::_double:
+        result = "double";
+        break;
+        case dtypename::_char:
+        result = "char";
+        break;
+        case dtypename::_byte:
+        result = "byte";
+        break;
+        case dtypename::_bool:
+        result = "bool";
+        break;
+        case dtypename::_none:
+        result = "none";
+        break;
+    }
+    return result;
+}
+
+std::string dump_dtmod(dtypemod m)
+{
+    std::string result;
+    switch(m)
+    {
+        case dtypemod::_ptr:
+        result = "ptr";
+        break;
+        case dtypemod::_signed:
+        result = "signed";
+        break;
+        case dtypemod::_unsigned:
+        result = "unsigned";
+        break;
+        case dtypemod::_const:
+        result = "const";
+        break;
+        case dtypemod::_func:
+        result = "func";
+        break;
+    }
+    return result;
+}
+
+// === AST UTIL DUMPS ===
 // Doesn't dump in any particular format(yet)
 
 std::string ast::dump()
@@ -165,7 +223,25 @@ std::string dtype::dump(int depth)
 {
     std::string result;
     result += indent(depth);
-    result += "data_type;\n";
+    result += "data_type:\n";
+    result += indent(depth+1);
+    result += "typename: ";
+    result += dump_dtname(this->tname);
+    result += ";\n";
+    result += indent(depth+1);
+    if(this->tmods.size() == 0){
+        result += "(no type modifiers)\n";
+    }
+    else{
+        result += "type modifiers:\n";
+        // I really gave up on naming thing well there
+        for(char x : this->tmods){
+            dtypemod w = static_cast<dtypemod>(x);
+            result += indent(depth+2);
+            result += dump_dtmod(w);
+            result += "\n";
+        }
+    }
     return result;
 }
 

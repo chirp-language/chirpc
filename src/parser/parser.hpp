@@ -31,11 +31,12 @@ private:
 
     // Actual parser stuff
 
-    bool is_datatype();
+    dtypename get_dtypename(std::string);
+    dtypemod get_dtypemod(std::string);
 
+    bool is_datatype();
     bool is_var_decl(); // (data specifiers) (:) (identifier)
     bool is_var_def();  // (identifier) (=) (value)
-
     bool is_func_call();
 
     identifier get_identifier();
