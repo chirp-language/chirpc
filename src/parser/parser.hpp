@@ -34,10 +34,15 @@ private:
     dtypename get_dtypename(std::string);
     dtypemod get_dtypemod(std::string);
 
-    bool is_datatype();
-    bool is_var_decl(); // (data specifiers) (:) (identifier)
-    bool is_var_def();  // (identifier) (=) (value)
-    bool is_func_call();
+    // Check if it's a datatype, and if so returns true
+    // If the option is true, it will return to the first token, so it can be parsed
+    // If it's false it will stay at the last token(useful is inside another is_xxx func)
+    bool is_datatype(bool);
+
+    bool is_var_decl(bool); // (data specifiers) (:) (identifier)
+    bool is_var_def(bool);  // (identifier) (=) (value)
+    bool is_var_decldef(); // (data specifiers) (:) (identifier) (=) (value)
+    bool is_func_call(); // (identifier) ( arguments )
 
     identifier get_identifier();
 
@@ -53,6 +58,7 @@ private:
     dtype get_datatype();
     decl_stmt get_decl_stmt();
     def_stmt get_def_stmt();
+    decldef_stmt get_decldef_stmt();
 
     arguments get_arguments();
     func_call_stmt get_fcall(); // fcall->function call

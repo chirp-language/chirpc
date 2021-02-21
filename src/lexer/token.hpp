@@ -16,7 +16,6 @@ enum class tkn_type
     // Tokens with multiple keywords 
     datatype, // int,char,float,double,bool..
     datamod, // ptr,signed,unsigned..
-    bool_val, // true, false
     
     // SYMBOLS
 

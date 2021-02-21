@@ -24,6 +24,44 @@ bool is_number(std::string txt)
     return true;
 }
 
+bool is_float(std::string txt)
+{
+    if(txt.size() > 3)
+    {
+        if(isdigit(txt.at(0)) &&  txt.at(1) == '.' && txt.at(txt.size()-1) == 'f'){
+            return true;
+        }
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool ishex(char c)
+{
+    if(
+        isdigit(c)||c=='a'||c=='b'||c=='c'||c=='d'||c=='e'||c=='f'
+    ){
+        return true;
+    }
+    return false;
+}
+
+bool is_addr(std::string txt)
+{
+    if(txt.size() > 3)
+    {
+        if( txt.at(0) == '0' && txt.at(1) && ishex(txt.at(txt.size()-1)) ){
+            return true;
+        }
+    }
+    else
+    {
+        return false;
+    }
+}
+
 std::vector<token> lexe(std::vector<location> src, std::vector<std::string> content)
 {
     std::vector<token> result;
@@ -77,17 +115,23 @@ std::vector<token> lexe(std::vector<location> src, std::vector<std::string> cont
         else if(
             t.value == "int" || t.value == "char" ||
             t.value == "float" || t.value == "double" ||
-            t.value == "bool" || t.value == "none"
+            t.value == "byte" || t.value == "bool" || 
+            t.value == "none"
         ){
             t.type = tkn_type::datatype;
         }
-        else if(t.value == "ptr" || t.value == "signed" ||t.value == "unsigned"){
+        else if(
+            t.value == "ptr" || t.value == "signed" ||
+            t.value == "unsigned"||t.value=="const"
+        ){
             t.type = tkn_type::datamod;
         }
+        /*
         else if(t.value == "true" || t.value == "false")
         {
             t.type = tkn_type::bool_val;
         }
+        */
         // Symbols
         else if (t.value == ".")
         {
@@ -141,8 +185,10 @@ std::vector<token> lexe(std::vector<location> src, std::vector<std::string> cont
         }
         else
         {
-            if (t.value.at(0) == '"' || t.value.at(0) == '\'' || is_number(t.value))
-            {
+            if (
+                t.value.at(0) == '"' || t.value.at(0) == '\'' || is_number(t.value) || is_float(t.value) ||
+                t.value == "true" || t.value == "false" || is_addr(t.value)
+            ){
                 t.type = tkn_type::literal;
             }
             else

@@ -17,6 +17,7 @@ identifier parser::get_identifier()
         else
         {
             node.name = ns.value;
+            break;
         }
     }
     return node;
@@ -138,12 +139,17 @@ std::shared_ptr<stmt> parser::get_stmt()
         result = std::make_shared<func_call_stmt>();
         *static_cast<func_call_stmt*>(result.get()) = get_fcall();
     }
-    else if(is_var_decl())
+    else if(is_var_decldef())
+    {
+        result = std::make_shared<decldef_stmt>();
+        *static_cast<decldef_stmt*>(result.get()) = get_decldef_stmt();
+    }
+    else if(is_var_decl(true))
     {
         result = std::make_shared<decl_stmt>();
         *static_cast<decl_stmt*>(result.get()) = get_decl_stmt();
     }
-    else if(is_var_def())
+    else if(is_var_def(true))
     {
         result = std::make_shared<def_stmt>();
         *static_cast<def_stmt*>(result.get()) = get_def_stmt();

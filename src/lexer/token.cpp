@@ -19,7 +19,6 @@ std::string token::util_dump(){
         tknstr(tkn_type::kw_ret    , kw_ret    )
         tknstr(tkn_type::datatype  , datatype  )
         tknstr(tkn_type::datamod   , datamod )
-        tknstr(tkn_type::bool_val  , bool_val  )
         tknstr(tkn_type::period    , period    )
         tknstr(tkn_type::colon     , colon     )
         tknstr(tkn_type::comma     , comma     )

@@ -44,12 +44,16 @@ The modifiers are the following. Some of these modifiers can be used alone
 | ``const`` | No | Makes the variable unmodifiable |
 | ``func`` | No | Is used both to declare a function, and when declaring a function pointer|
 
+*The type specifiers can be written in any order without changing the semantics. So ``char ptr`` is a valid as ``ptr char``.
+
 Values in Chirps are as follow
 
 | Keyword | Description |
 | --- | --- |
 |``false``|Boolean value equivalent to 0|
 |``true``|Boolean value equivalent to 1|
+| ``'some string'`` | Either a character or a string |
+| ``"some string"`` | Either a character or a string |
 
 
 # Variables

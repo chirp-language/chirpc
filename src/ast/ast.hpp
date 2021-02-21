@@ -126,13 +126,24 @@ class decl_stmt : public stmt
 {
     public:
     dtype type;
+    identifier ident;
     virtual std::string dump(int) override;
 };
 
 class def_stmt : public stmt
 {
     public:
+    identifier ident;
+    std::shared_ptr<expr> value;
     virtual std::string dump(int) override;
+};
+
+class decldef_stmt : public stmt
+{
+    public:
+    decl_stmt decl;
+    def_stmt def;
+    virtual std::string dump(int override);
 };
 
 class compound_stmt : public stmt

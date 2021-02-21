@@ -57,6 +57,11 @@ std::vector<location> disjoint(std::vector<std::string> content)
                 loc.line = l;
                 while (i < line.size() && isalnum(line.at(i)) != 0)
                 {
+                    if(i < line.size() - 2){
+                        if(line.at(i+1) == '.' && isdigit(line.at(i+2))){
+                            i += 2;
+                        }
+                    }
                     i++;
                 }
                 i--;

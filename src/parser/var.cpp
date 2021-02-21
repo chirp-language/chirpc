@@ -34,11 +34,11 @@ dtypemod parser::get_dtypemod(std::string txt)
     return mod;
 }
 
-bool parser::is_datatype()
+bool parser::is_datatype(bool reset)
 {
     bool result = false;
     int op = this->cursor;
-    while(match(tkn_type::datamod)||match(tkn_type::datamod)){
+    while(match(tkn_type::datamod)||match(tkn_type::datatype)){
         result = true;
     }
     if(result == true)
@@ -52,49 +52,112 @@ bool parser::is_datatype()
             result = false;
         }
     }
-    this->cursor = op;
+    if(reset){
+        this->cursor = op;
+    }
     return result;
 }
 
-bool parser::is_var_decl()
+bool parser::is_var_decl(bool reset)
 {
-    bool result = false;
+    bool result = false; 
     int op = this->cursor;
-    if(is_datatype())
+    if(is_datatype(false))
     {
         if(match(tkn_type::identifer)){
             result = true;
         }
     }
-    this->cursor = op;
-    return false;
+    if(reset){
+        this->cursor = op;
+    }
+    return result;
 }
 
-bool parser::is_var_def()
+bool parser::is_var_def(bool reset)
 {
     bool result = false;
     int op = this->cursor;
+    // Doesn't care about cast (yet)
+    if(match(tkn_type::identifer) && match(tkn_type::assign_op))
+    {
+        result = true;
+    }
+    if(reset){
+        this->cursor = op;
+    }
+    return result;
+}
 
+bool parser::is_var_decldef()
+{
+    bool result = false;
+    int op = this->cursor;
+    if(is_var_decl(false))
+    {
+        this->cursor--;
+        if(is_var_def(false))
+        {
+            result = true;
+        }
+    }
     this->cursor = op;
-    return false;
+    return result;
 }
 
 dtype parser::get_datatype()
 {
     dtype node;
-    
+    //  Mods before the typename
+    while(match(tkn_type::datamod))
+    {
+        node.tmods.push_back(static_cast<char>(get_dtypemod(peekb().value)));
+    }
+
+    // Get the typename, although it could also be a token identifier, it's a class object
+    // but we don't care about that yet
+    expect(tkn_type::datatype);
+
+    node.tname = get_dtypename(this->peekb().value);
+
+    if(!this->ok)
+    {
+        return node;
+    }
+
+    // Mods after the typename
+    while(match(tkn_type::datamod))
+    {
+        node.tmods.push_back(static_cast<char>(get_dtypemod(peekb().value)));
+    }
+    expect(tkn_type::colon);
     return node;
 }
 
 decl_stmt parser::get_decl_stmt()
 {
     decl_stmt node;
-
+    node.type = get_datatype();
+    node.ident = get_identifier();
     return node;
 }
 
 def_stmt parser::get_def_stmt()
 {
     def_stmt node;
+    node.ident = get_identifier();
+    expect(tkn_type::assign_op);
+    if(!this->ok){return node;}
+    node.value = get_expr();
+    return node;
+}
+
+decldef_stmt parser::get_decldef_stmt()
+{
+    decldef_stmt node;
+    node.decl = get_decl_stmt();
+    if(!this->ok){return node;}
+    this->cursor--; // Go back to the identifier
+    node.def = get_def_stmt();
     return node;
 }

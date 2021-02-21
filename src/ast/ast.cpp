@@ -245,12 +245,23 @@ std::string dtype::dump(int depth)
     return result;
 }
 
+std::string decldef_stmt::dump(int depth)
+{
+    std::string result;
+    result = indent(depth);
+    result += "declaration&definition:\n";
+    result += this->decl.dump(depth+1);
+    result += this->def.dump(depth+1);
+    return result;
+}
+
 std::string decl_stmt::dump(int depth)
 {
     std::string result;
     result += indent(depth);
-    result += "decl_statement;\n";
-    this->type.dump(depth+1);
+    result += "decl_statement:\n";
+    result += this->type.dump(depth+1);
+    result += this->ident.dump(depth+1);
     return result;
 }
 
@@ -258,7 +269,9 @@ std::string def_stmt::dump(int depth)
 {
     std::string result;
     result += indent(depth);
-    result += "def_statement;\n";
+    result += "def_statement:\n";
+    result += this->ident.dump(depth+1);
+    result += this->value.get()->dump(depth+1);
     return result;
 }
 
