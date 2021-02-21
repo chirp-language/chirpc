@@ -21,6 +21,7 @@ enum class tkn_type
 
     period, // .
     colon, // :
+    semicolon, // ;
     comma, // ,
     assign_op, // =
     math_op, // + - * /

@@ -19,18 +19,39 @@ ast parser::get_ast()
 void parser::parse()
 {
     this->ok = true;
-    while (!match(tkn_type::eof) && this->ok)
+    while (!match(tkn_type::eof) && !this->should_quit)
     {
         this->tree.root.children.push_back(this->get_stmt());
+
+        // Ignores the rest of the tokens until next line/statement
+        if(!this->ok && !this->should_quit)
+        {
+            while( this->cursor<this->tkns.size()&&
+            (!match(tkn_type::semicolon)&&!match(tkn_type::newline)) ){
+                this->cursor++;
+            }
+        }
+        else
+        {
+            match(tkn_type::newline);
+            match(tkn_type::semicolon);
+            match(tkn_type::newline);
+        }
     }
 }
 
+// Note: Will ignore newlines, unless specifically checking for newline
 bool parser::match(tkn_type v)
 {
     // Probably good enough to stop like 99% of bad behaviour
-    if (!this->ok)
+    if (!this->ok && !(v == tkn_type::eof || v == tkn_type::newline))
     {
         return false;
+    }
+
+    if(this->peek().type == tkn_type::newline && v != tkn_type::newline)
+    {
+        cursor++;
     }
 
     if (this->peek().type == v)
@@ -54,6 +75,7 @@ bool parser::expect(tkn_type v)
             l.filename = this->filename;
             l.line = this->tkns.at(this->tkns.size() - 1).loc.line;
             e.msg = "Unexpected end of file.";
+            this->should_quit = true;
         }
         else
         {
@@ -62,6 +84,7 @@ bool parser::expect(tkn_type v)
             e.type = helper_type::location_err;
             e.msg = "Unexpected token";
         }
+        this->ok = false;
         this->helpers.push_back(e);
     }
     return true;

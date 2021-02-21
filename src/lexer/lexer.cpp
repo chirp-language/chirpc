@@ -65,9 +65,17 @@ bool is_addr(std::string txt)
 std::vector<token> lexe(std::vector<location> src, std::vector<std::string> content)
 {
     std::vector<token> result;
-
+    int i = 0;
     for (location loc : src)
     {
+        if(i > 0){
+            if(src.at(i-1).line != src.at(i).line){
+                token t;
+                t.type = tkn_type::newline;
+                result.push_back(t);
+            }
+        }
+
         token t;
         t.loc = loc;
         // String Views are a conspirancy 
@@ -137,6 +145,10 @@ std::vector<token> lexe(std::vector<location> src, std::vector<std::string> cont
         {
             t.type = tkn_type::period;
         }
+        else if(t.value == ";")
+        {
+            t.type = tkn_type::semicolon;
+        }
         else if (t.value == ":")
         {
             t.type = tkn_type::colon;
@@ -197,6 +209,7 @@ std::vector<token> lexe(std::vector<location> src, std::vector<std::string> cont
             }
         }
         result.push_back(t);
+        i++;
     }
 
     return result;

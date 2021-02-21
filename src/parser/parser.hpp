@@ -71,6 +71,7 @@ private:
     compound_stmt get_compound_stmt();
 
     bool ok = false;
+    bool should_quit = false;
     std::string filename;
     ast tree;
     std::vector<helper> helpers;
