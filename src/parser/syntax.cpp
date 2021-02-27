@@ -111,10 +111,6 @@ ret_stmt parser::get_ret()
 std::shared_ptr<stmt> parser::get_stmt()
 {
     // Should probably be a std::shared_ptr tbh
-
-    // in case
-    match(tkn_type::newline);
-
     std::shared_ptr<stmt> result;
     tkn_type t = this->peek().type;
     // Switches get stiches
@@ -180,26 +176,9 @@ compound_stmt parser::get_compound_stmt()
     expect(tkn_type::lbrace);
     while (this->ok && !match(tkn_type::rbrace) && !match(tkn_type::eof))
     {
-        std::shared_ptr<stmt> s = get_stmt();
-        if(s.get() != nullptr){
-            node.body.push_back(s);
-        }
-
-        // Ignores the rest of the tokens until next line/statement
-        if(!this->ok && !this->should_quit)
-        {
-            while( this->cursor<this->tkns.size()&&
-            !match(tkn_type::semicolon)&&!match(tkn_type::newline) ){
-                this->cursor++;
-            }
-            this->ok = true;
-        }
-        else
-        {
-            match(tkn_type::newline);
-            match(tkn_type::semicolon);
-            match(tkn_type::newline);
-        }
+        //stmt* aaaa = get_stmt();
+        //node.body.push_back(aaaa);
+        node.body.push_back(get_stmt());
     }
     return node;
 }
