@@ -114,17 +114,7 @@ std::shared_ptr<stmt> parser::get_stmt()
     std::shared_ptr<stmt> result;
     tkn_type t = this->peek().type;
     // Switches get stiches
-    if (t == tkn_type::kw_entry)
-    {
-        result = std::make_shared<entry_stmt>();
-        *static_cast<entry_stmt*>(result.get()) = get_entry();
-    }
-    else if (t == tkn_type::kw_import)
-    {
-        result = std::make_shared<import_stmt>();
-        *static_cast<import_stmt*>(result.get()) = get_import();
-    }
-    else if (t == tkn_type::kw_ret)
+    if (t == tkn_type::kw_ret)
     {
         result = std::make_shared<ret_stmt>();
         *static_cast<ret_stmt*>(result.get()) = get_ret();

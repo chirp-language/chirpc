@@ -15,14 +15,6 @@ public:
     std::vector<std::shared_ptr<ast_node>> children;
 };
 
-class ast
-{
-public:
-    // Could probably store more stuff than just the root node
-    ast_node root;
-    std::string dump();
-};
-
 // === LITERALS & SIMILAR??! ===
 
 class identifier : public ast_node
@@ -183,6 +175,7 @@ class func_def_stmt : public stmt
     virtual std::string dump(int) override;
 };
 
+// Declares(and probably defines too) a function
 class func_decl_stmt : public stmt
 {
     public:
@@ -195,4 +188,15 @@ public:
     identifier ident;
     arguments args;
     virtual std::string dump(int) override;
+};
+
+class ast
+{
+public:
+    // Vectors are in order
+    std::vector<import_stmt> imports;
+    std::vector<func_decl_stmt> fdecls;
+    std::vector<func_def_stmt> fdefs;
+    entry_stmt entry;
+    std::string dump();
 };

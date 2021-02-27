@@ -78,7 +78,31 @@ std::string dump_dtmod(dtypemod m)
 std::string ast::dump()
 {
     std::string result;
-    result = root.dump(0);
+    result += "Top Level:\n";
+
+    if(this->imports.size() == 0)
+    {
+        result += "-- No imports --\n";
+    }
+    else
+    {
+        for(import_stmt import : this->imports)
+        {
+            result += import.dump(0);
+        }
+    }
+
+    if(this->fdecls.size() == 0)
+    {
+        result += "-- No function declarations on top-level --\n";
+    }
+
+    if(this->fdefs.size() == 0)
+    {
+        result += "-- No function definitions on top-level --\n";
+    }
+    
+    result += this->entry.dump(0);
     return result;
 }
 
@@ -208,7 +232,10 @@ std::string arguments::dump(int depth)
 
 std::string parameters::dump(int depth)
 {
-
+    std::string result;
+    result += indent(depth);
+    result += "parameters:\n";
+    return result;
 }
 
 std::string stmt::dump(int depth)

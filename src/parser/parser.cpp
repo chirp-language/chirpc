@@ -19,9 +19,29 @@ ast parser::get_ast()
 void parser::parse()
 {
     this->ok = true;
-    while (!match(tkn_type::eof) && this->ok)
+    //this->tree.root.children.push_back(this->get_stmt());
+    // Only gets the top-level stuff
+    while(!match(tkn_type::eof) && this->ok)
     {
-        this->tree.root.children.push_back(this->get_stmt());
+        tkn_type t = this->peek().type;
+
+        if(t == tkn_type::kw_entry)
+        {
+            this->tree.entry = get_entry();
+        }
+        else if(t == tkn_type::kw_import)
+        {
+            this->tree.imports.push_back(get_import());
+        }
+        else
+        {
+            this->ok = false;
+            helper e;
+            e.type = helper_type::location_err;
+            e.l = this->peek().loc;
+            e.msg = "Invalid top-level statement";
+            this->helpers.push_back(e);
+        }
     }
 }
 
