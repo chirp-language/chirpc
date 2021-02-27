@@ -111,10 +111,10 @@ std::string ast_node::dump(int depth)
     std::string result;
     result += indent(depth);
     result += "default_node:\n";
-    for (auto& child : this->children)
-    {
-        result += child->dump(depth + 1);
-    }
+    //for (auto& child : this->children)
+    //{
+    //    result += child->dump(depth + 1);
+    //}
     return result;
 }
 
@@ -179,7 +179,7 @@ std::string mathop::dump(int depth)
     std::string result;
     result += indent(depth);
     result += "Math Operator ";
-    result += this->type;
+    result += this->optype;
     result += ":\n";
     result += this->left.dump(depth+1);
     result += this->right.dump(depth+1);
@@ -287,7 +287,7 @@ std::string decl_stmt::dump(int depth)
     std::string result;
     result += indent(depth);
     result += "decl_statement:\n";
-    result += this->type.dump(depth+1);
+    result += this->data_type.dump(depth+1);
     result += this->ident.dump(depth+1);
     return result;
 }

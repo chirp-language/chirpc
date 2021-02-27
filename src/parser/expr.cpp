@@ -18,7 +18,7 @@ mathop parser::get_math_op()
     }
     else
     {
-        node.type = this->peek().value.at(0);
+        node.optype = this->peek().value.at(0);
     }
     expect(tkn_type::math_op);
     node.right = get_num_lit();
@@ -30,7 +30,7 @@ mathop parser::get_math_op()
 mathexpr parser::get_math_expr()
 {
     mathexpr node;
-
+    node.expr_type = exprtype::emath;
     node.operands.push_back(get_math_op());
     while(peek().type == tkn_type::math_op && this->ok)
     {
@@ -44,6 +44,7 @@ mathexpr parser::get_math_expr()
 staticexpr parser::get_static_expr()
 {
     staticexpr node;
+    node.expr_type = exprtype::estatic;
     node.value = this->get_literal();
     return node;
 }

@@ -12,7 +12,7 @@ class ast_node
 {
 public:
     virtual std::string dump(int);
-    std::vector<std::shared_ptr<ast_node>> children;
+    //std::vector<std::shared_ptr<ast_node>> children;
 };
 
 // === LITERALS & SIMILAR??! ===
@@ -27,9 +27,16 @@ public:
     virtual std::string dump(int) override;
 };
 
+enum class littype
+{
+    txt,
+    num
+};
+
 class literal_node : public ast_node
 {
 public:
+    littype ltype;
     virtual std::string dump(int) override;
 };
 
@@ -54,15 +61,22 @@ public:
 class mathop : public ast_node
 {
     public:
-    char type;
+    char optype;
     num_literal left;
     num_literal right;
     virtual std::string dump(int) override;
 };
 
+enum class exprtype
+{
+    emath,
+    estatic
+};
+
 class expr : public ast_node
 {
     public:
+    exprtype expr_type;
     virtual std::string dump(int) override;
 };
 
@@ -99,9 +113,21 @@ class parameters : public ast_node
 
 // === STATEMENTS ===
 
+enum class stmt_type
+{
+    decl,def,decldef,
+    compound,
+    entry,
+    import,
+    ret,
+    fdef,fdecl,fcall
+};
+
 class stmt : public ast_node
 {
 public:
+    // There's a bunch of them so gotta make another enum smh
+    stmt_type type;
     // It's kindof a location-ish
     int line;
     virtual std::string dump(int) override;
@@ -118,7 +144,7 @@ class dtype : public ast_node
 class decl_stmt : public stmt
 {
     public:
-    dtype type;
+    dtype data_type;
     identifier ident;
     virtual std::string dump(int) override;
 };

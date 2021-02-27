@@ -137,7 +137,8 @@ dtype parser::get_datatype()
 decl_stmt parser::get_decl_stmt()
 {
     decl_stmt node;
-    node.type = get_datatype();
+    node.type = stmt_type::decl;
+    node.data_type = get_datatype();
     node.ident = get_identifier();
     return node;
 }
@@ -145,6 +146,7 @@ decl_stmt parser::get_decl_stmt()
 def_stmt parser::get_def_stmt()
 {
     def_stmt node;
+    node.type = stmt_type::def;
     node.ident = get_identifier();
     expect(tkn_type::assign_op);
     if(!this->ok){return node;}
@@ -155,6 +157,7 @@ def_stmt parser::get_def_stmt()
 decldef_stmt parser::get_decldef_stmt()
 {
     decldef_stmt node;
+    node.type = stmt_type::decldef;
     node.decl = get_decl_stmt();
     if(!this->ok){return node;}
     this->cursor--; // Go back to the identifier

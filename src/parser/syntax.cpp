@@ -26,6 +26,7 @@ identifier parser::get_identifier()
 txt_literal parser::get_txt_lit()
 {
     txt_literal node;
+    node.ltype = littype::txt;
     token t = peek();
     expect(tkn_type::literal);
     node.value = t.value;
@@ -46,6 +47,7 @@ txt_literal parser::get_txt_lit()
 num_literal parser::get_num_lit()
 {
     num_literal node;
+    node.ltype = littype::num;
     token t = peek();
     expect(tkn_type::literal);
     
@@ -83,6 +85,7 @@ std::shared_ptr<literal_node> parser::get_literal()
 entry_stmt parser::get_entry()
 {
     entry_stmt node;
+    node.type = stmt_type::entry;
     node.line = this->peek().loc.line;
     expect(tkn_type::kw_entry);
     node.code = get_stmt();
@@ -92,6 +95,7 @@ entry_stmt parser::get_entry()
 import_stmt parser::get_import()
 {
     import_stmt node;
+    node.type = stmt_type::import;
     node.line = this->peek().loc.line;
     expect(tkn_type::kw_import);
     node.filename = get_txt_lit();
@@ -101,6 +105,7 @@ import_stmt parser::get_import()
 ret_stmt parser::get_ret()
 {
     ret_stmt node;
+    node.type = stmt_type::ret;
     node.line = this->peek().loc.line;
     expect(tkn_type::kw_ret);
     node.val = get_expr();
@@ -162,6 +167,7 @@ std::shared_ptr<stmt> parser::get_stmt()
 compound_stmt parser::get_compound_stmt()
 {
     compound_stmt node;
+    node.type = stmt_type::compound;
     node.line = peek().loc.line;
     expect(tkn_type::lbrace);
     while (this->ok && !match(tkn_type::rbrace) && !match(tkn_type::eof))

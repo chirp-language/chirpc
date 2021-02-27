@@ -43,6 +43,7 @@ arguments parser::get_arguments()
 func_call_stmt parser::get_fcall()
 {
     func_call_stmt node;
+    node.type = stmt_type::fcall;
     node.ident = get_identifier();
     node.args = get_arguments();
     return node;
