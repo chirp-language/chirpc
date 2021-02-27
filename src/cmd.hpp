@@ -18,6 +18,7 @@ public:
     // Options
     bool dump_tkns = false;
     bool dump_ast = false;
+    bool keep_tmp = false;
     bool has_color = true;
 
     std::string filename;

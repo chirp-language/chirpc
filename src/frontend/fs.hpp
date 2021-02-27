@@ -9,6 +9,6 @@ in the Experimental folder.
 namespace fs
 {
     bool create_folder(std::string);
-
+    bool write_file(std::string,std::string);
     bool remove_folder(std::string);
 };

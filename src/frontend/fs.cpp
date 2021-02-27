@@ -1,5 +1,7 @@
 #include "fs.hpp"
 
+#include <fstream>
+
 namespace fs
 {
     // AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -11,6 +13,14 @@ namespace fs
         #elif 
         system("echo Cannot create folder on this platform.");
         #endif 
+        return true;
+    }
+
+    bool write_file(std::string fn, std::string c)
+    {
+        std::ofstream f(fn);
+        f << c;
+        f.close();
         return true;
     }
 

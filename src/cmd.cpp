@@ -15,6 +15,7 @@ void cmd::write_help()
     std::cout<<"--- Utility Options ---\n";
     std::cout<<"\t-dump-tokens\tDumps the lexer tokens of the source file\n";
     std::cout<<"\t-dump-ast\tDumps the AST in a human readable view\n";
+    std::cout<<"\t-keep-tmp\tKeeps the temporary folder, instead of deleting it after compiling.\n";
 }
 
 void cmd::write_version()
@@ -52,6 +53,9 @@ cmd parse_cmd(int argc, char* argv[])
         }
         else if(std::strcmp(argv[i], "-dump-ast") == 0){
             c.dump_ast = true;
+        }
+        else if(std::strcmp(argv[i], "-keep-tmp") == 0){
+            c.keep_tmp = true;
         }
         else
         {

@@ -35,6 +35,11 @@ bool frontend::find_compiler()
     #endif 
 }
 
+void frontend::write_out(std::string fname, std::string content)
+{
+    fs::write_file("tmp/" + fname + ".c", content);
+}
+
 void frontend::remove_tmp_folder()
 {
     fs::remove_folder("tmp");   

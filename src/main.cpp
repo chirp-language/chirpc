@@ -4,6 +4,7 @@
 #include "lexer/lexer.hpp"
 #include "lexer/preproc.hpp"
 #include "parser/parser.hpp"
+#include "codegen/codegen.hpp"
 #include "frontend/frontend.hpp"
 #include <iostream>
 #include <sstream>
@@ -88,7 +89,7 @@ int main(int argc, char** argv)
         }
         std::cout << p.get_ast().dump() << '\n';
     }
-    // Code Generation
+
     if(!ok){
         return -1;
     }
@@ -110,12 +111,28 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    frontend.make_tmp_folder();
+    // Code Generation
+    codegen generator;
     
+    tracker* t = new tracker;
+    t->init();
+    
+    generator.set_tree(p.get_ast());
+    generator.set_tracker(t);
+    generator.gen();
+
+    frontend.make_tmp_folder();
+
+    frontend.write_out("dump",generator.get_result());
+
     // Tooling
+    // (use the compiler)
 
     // Cleanup
-    frontend.remove_tmp_folder();
+    if(!options.keep_tmp)
+    {
+        frontend.remove_tmp_folder();
+    }
 
     return 0;
 }

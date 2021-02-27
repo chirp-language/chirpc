@@ -1,3 +1,4 @@
+#pragma once
 /*
 All possible AST nodes are defined here
 */
