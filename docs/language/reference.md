@@ -23,7 +23,7 @@ entry(){...}
 The datatypes in Chirp are very similar to those in C.
 
 | Keyword | Size |
-| --- | --- | --- |
+| --- | --- |
 | ``int`` | 4 bytes |
 | ``float`` | 4 bytes |
 | ``double`` | 8 bytes |
