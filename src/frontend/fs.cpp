@@ -28,6 +28,10 @@ namespace fs
     }
 
     bool remove_folder(std::string name) {
-        return !nftw(name.c_str(), delete_file, 64, FTW_DEPTH | FTW_PHYS);
+        // Clears all files in the folder.
+        bool success = !nftw(name.c_str(), delete_file, 64, FTW_DEPTH | FTW_PHYS);
+        // Delete the folder itself
+        success |= remove(name.c_str());
+        return success;
     }
 }
