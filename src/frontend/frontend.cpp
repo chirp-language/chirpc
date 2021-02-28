@@ -9,7 +9,7 @@ void frontend::make_tmp_folder()
 
 bool frontend::find_compiler()
 {
-    #ifdef __unix__
+    #if defined(__unix__) || defined(__APPLE_CC__)
     this->has_gcc = false;
     this->has_clang = false;
     
