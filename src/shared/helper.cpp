@@ -51,7 +51,7 @@ std::string helper::write_helper(std::vector<std::string> content,cmd& options)
     {
         if(options.has_color)
         {
-            result = write_color("[ERROR]",color::red);//"[ERROR] ";
+            result = write_color("[ERROR]",color::red);
         }
         else
         {
@@ -117,6 +117,10 @@ std::string helper::write_helper(std::vector<std::string> content,cmd& options)
                 result += identation;
             }
             result += "\n";
+        }
+        else
+        {
+            result += "    |\n";
         }
         if (l.line + 1 < content.size() && is_important(content.at(l.line+1)))
         {

@@ -117,9 +117,17 @@ int main(int argc, char** argv)
     tracker* t = new tracker;
     t->init();
     
-    generator.set_tree(p.get_ast());
+    generator.set_tree(p.get_ast(), options.filename);
     generator.set_tracker(t);
     generator.gen();
+
+    if(generator.errored)
+    {
+        for(helper& h : generator.helpers)
+        {
+            std::cout << h.write_helper(content,options) << '\n';
+        }
+    }
 
     frontend.make_tmp_folder();
 
