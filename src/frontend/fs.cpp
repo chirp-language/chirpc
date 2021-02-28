@@ -1,6 +1,8 @@
 #include "fs.hpp"
 
 #include <fstream>
+#include <ftw.h>
+#include <sys/stat.h>
 
 namespace fs
 {
