@@ -6,14 +6,9 @@ namespace fs
 {
     // AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
     bool create_folder(std::string name){
-        #ifdef __linux__
-        std::string cmd = "mkdir ";
-        cmd += name;
-        system(cmd.c_str());
-        #elif 
-        system("echo Cannot create folder on this platform.");
-        #endif 
-        return true;
+        // On any system with <sys/stat.h> this should be good
+        int st = mkdir(name.c_str(), 0777);
+        return !st; // a status of 0 from st is success
     }
 
     bool write_file(std::string fn, std::string c)
@@ -24,14 +19,13 @@ namespace fs
         return true;
     }
 
-    bool remove_folder(std::string name){
-        #ifdef __linux__
-        std::string cmd = "rm -r ";
-        cmd += name;
-        system(cmd.c_str());
-        #elif
-        system("echo Error idk it's almost 3AM and I can't remove that folder");
-        #endif
-        return true;
+    // Delete a single file
+    int delete_file(char const* path, struct stat const * stat, int flag, struct FTW* ftw) {
+        int st = remove(path);
+        return !st; // same story as create_folder
+    }
+
+    bool remove_folder(std::string name) {
+        return !nftw(name.c_str(), delete_file, 64, FTW_DEPTH | FTW_PHYS);
     }
 }
