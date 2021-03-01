@@ -131,7 +131,7 @@ dtype parser::get_datatype()
     {
         node.tmods.push_back(static_cast<char>(get_dtypemod(peekb().value)));
     }
-    expect(tkn_type::colon);
+    // expect(tkn_type::colon);
     return node;
 }
 
@@ -141,6 +141,7 @@ decl_stmt parser::get_decl_stmt()
     node.line = peek().loc.line;
     node.type = stmt_type::decl;
     node.data_type = get_datatype();
+    expect(tkn_type::colon);
     node.ident = get_identifier();
     return node;
 }

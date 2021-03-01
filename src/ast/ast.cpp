@@ -101,8 +101,15 @@ std::string ast::dump()
     {
         result += "-- No function definitions on top-level --\n";
     }
-    
-    result += this->entry.dump(0);
+
+    if(this->has_entry)
+    {
+        result += this->entry.dump(0);
+    }
+    else
+    {
+        result += "-- No entry --\n";
+    }
     return result;
 }
 
@@ -235,6 +242,12 @@ std::string parameters::dump(int depth)
     std::string result;
     result += indent(depth);
     result += "parameters:\n";
+    for(decl_stmt param : this->body)
+    {
+    //    result += indent(depth+1);
+        result += param.dump(depth+1);
+    //    result += "\n";
+    }
     return result;
 }
 
@@ -348,6 +361,10 @@ std::string func_def_stmt::dump(int depth)
     std::string result;
     result += indent(depth);
     result += "function_definition:\n";
+    result += data_type.dump(depth+1);
+    result += ident.dump(depth+1);
+    result += params.dump(depth+1);
+    result += body.dump(depth+1);
     return result;
 }
 
@@ -356,6 +373,9 @@ std::string func_decl_stmt::dump(int depth)
     std::string result;
     result += indent(depth);
     result += "function_declaration:\n";
+    result += data_type.dump(depth+1);
+    result += ident.dump(depth+1);
+    result += params.dump(depth+1);
     return result;
 }
 

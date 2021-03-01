@@ -37,11 +37,11 @@ void parser::parse()
         {
             if(is_func_def(true))
             {
-                int a = 123;
+                this->tree.fdefs.push_back(get_func_def());
             }
             else if(is_func_decl(true))
             {
-                int a = 123;
+                this->tree.fdecls.push_back(get_func_decl());
             }
             else
             {
@@ -51,6 +51,7 @@ void parser::parse()
                 e.msg = "I am a lazy person";
                 e.type = helper_type::location_err;
                 this->helpers.push_back(e);
+                this->ok = false;
             }
         }
         else

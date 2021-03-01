@@ -104,13 +104,6 @@ public:
     virtual std::string dump(int) override;
 };
 
-class parameters : public ast_node
-{
-    public:
-    //std::vector<std::shared_ptr<>> body;
-    virtual std::string dump(int) override;
-};
-
 // === STATEMENTS ===
 
 enum class stmt_type
@@ -194,17 +187,31 @@ public:
     virtual std::string dump(int) override;
 };
 
-// Like a function declaration but without the code
-class func_def_stmt : public stmt
+class parameters : public ast_node
 {
     public:
+    std::vector<decl_stmt> body;
     virtual std::string dump(int) override;
 };
 
-// Declares(and probably defines too) a function
+// Like a function definition but without the code
 class func_decl_stmt : public stmt
 {
     public:
+    dtype data_type;
+    identifier ident;
+    parameters params;
+    virtual std::string dump(int) override;
+};
+
+// A function definition but with code
+class func_def_stmt : public stmt
+{
+    public:
+    dtype data_type;
+    identifier ident;
+    parameters params;
+    compound_stmt body;
     virtual std::string dump(int) override;
 };
 
@@ -223,6 +230,7 @@ public:
     std::vector<import_stmt> imports;
     std::vector<func_decl_stmt> fdecls;
     std::vector<func_def_stmt> fdefs;
+    bool has_entry = false;
     entry_stmt entry;
     std::string dump();
 };

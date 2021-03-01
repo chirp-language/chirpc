@@ -65,6 +65,10 @@ private:
     def_stmt get_def_stmt();
     decldef_stmt get_decldef_stmt();
 
+    parameters get_parameters();
+    func_decl_stmt get_func_decl();
+    func_def_stmt get_func_def();
+
     arguments get_arguments();
     func_call_stmt get_fcall(); // fcall->function call
 
