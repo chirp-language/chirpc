@@ -39,9 +39,14 @@ private:
     // If it's false it will stay at the last token(useful is inside another is_xxx func)
     bool is_datatype(bool);
 
+    bool is_params(bool);
+
     bool is_var_decl(bool); // (data specifiers) (:) (identifier)
     bool is_var_def(bool);  // (identifier) (=) (value)
     bool is_var_decldef(); // (data specifiers) (:) (identifier) (=) (value)
+
+    bool is_func_decl(bool); // (func) (data_types) (identifier) (params)
+    bool is_func_def(bool); // (func_decl) (compound_statement)
     bool is_func_call(); // (identifier) ( arguments )
 
     identifier get_identifier();

@@ -1,5 +1,69 @@
 #include "parser.hpp"
 
+bool parser::is_params(bool reset)
+{
+    bool result = false;
+    int op = this->cursor;
+
+    if(match(tkn_type::lparen))
+    {
+        while(is_var_decl(false)){}
+        if(match(tkn_type::rparen))
+        {
+            result = true;
+        }
+    }
+
+    if(reset)
+    {
+        this->cursor = op;
+    }
+    return result;
+}
+
+bool parser::is_func_decl(bool reset)
+{
+    bool result = false;
+    int op = this->cursor;
+
+    if(match(tkn_type::kw_func))
+    {
+        if(is_datatype(false) && match(tkn_type::identifer))
+        {
+            if(is_params(false))
+            {
+                result = true;
+            }
+        }
+    }
+
+    if(reset){
+        this->cursor = op;
+    }
+
+    return result;
+}
+
+bool parser::is_func_def(bool reset)
+{
+    bool result = false;
+    int op = this->cursor;
+
+    if(is_func_decl(false))
+    {
+        if(match(tkn_type::lbrace))
+        {
+            result = true;
+        }
+    }
+
+    if(reset){
+        this->cursor = op;
+    }
+
+    return result;
+}
+
 bool parser::is_func_call()
 {
     bool result = false;

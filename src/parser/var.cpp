@@ -41,7 +41,8 @@ bool parser::is_datatype(bool reset)
     while(match(tkn_type::datamod)||match(tkn_type::datatype)){
         result = true;
     }
-    if(result == true)
+    // This has been removed, because data types aren't only in variable declarations
+    /*if(result == true)
     {
         if(match(tkn_type::colon))
         {
@@ -51,7 +52,7 @@ bool parser::is_datatype(bool reset)
         {
             result = false;
         }
-    }
+    }*/
     if(reset){
         this->cursor = op;
     }
@@ -62,7 +63,7 @@ bool parser::is_var_decl(bool reset)
 {
     bool result = false; 
     int op = this->cursor;
-    if(is_datatype(false))
+    if(is_datatype(false) && match(tkn_type::colon))
     {
         if(match(tkn_type::identifer)){
             result = true;

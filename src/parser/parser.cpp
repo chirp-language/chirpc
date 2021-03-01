@@ -33,6 +33,26 @@ void parser::parse()
         {
             this->tree.imports.push_back(get_import());
         }
+        else if(t == tkn_type::kw_func)
+        {
+            if(is_func_def(true))
+            {
+                int a = 123;
+            }
+            else if(is_func_decl(true))
+            {
+                int a = 123;
+            }
+            else
+            {
+                // Is either a var or an error
+                helper e;
+                e.l = peek().loc;
+                e.msg = "I am a lazy person";
+                e.type = helper_type::location_err;
+                this->helpers.push_back(e);
+            }
+        }
         else
         {
             this->ok = false;
