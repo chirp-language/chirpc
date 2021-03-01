@@ -96,10 +96,24 @@ std::string ast::dump()
     {
         result += "-- No function declarations on top-level --\n";
     }
+    else
+    {
+        for(func_decl_stmt node : this->fdecls)
+        {
+            result += node.dump(1);
+        }
+    }
 
     if(this->fdefs.size() == 0)
     {
         result += "-- No function definitions on top-level --\n";
+    }
+    else
+    {
+        for(func_def_stmt node : this->fdefs)
+        {
+            result += node.dump(1);
+        }
     }
 
     if(this->has_entry)

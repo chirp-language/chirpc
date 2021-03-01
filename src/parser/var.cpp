@@ -109,17 +109,29 @@ bool parser::is_var_decldef()
 dtype parser::get_datatype()
 {
     dtype node;
+    bool has_candidate = false;
     //  Mods before the typename
     while(match(tkn_type::datamod))
     {
         node.tmods.push_back(static_cast<char>(get_dtypemod(peekb().value)));
+        if(static_cast<dtypemod>(get_dtypemod(peekb().value)) == dtypemod::_ptr)
+        {
+            has_candidate = true;
+        }
     }
 
-    // Get the typename, although it could also be a token identifier, it's a class object
-    // but we don't care about that yet
-    expect(tkn_type::datatype);
-
-    node.tname = get_dtypename(this->peekb().value);
+    // Could also be a token identifier, but we don't care about that yet
+    if(!match(tkn_type::datatype))
+    {
+        if(has_candidate)
+        {
+            node.tname = dtypename::_none;
+        }
+    }
+    else
+    {
+        node.tname = get_dtypename(this->peekb().value);
+    }
 
     if(!this->ok)
     {

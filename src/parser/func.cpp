@@ -116,17 +116,11 @@ func_decl_stmt parser::get_func_decl()
     node.line = peek().loc.line;
     
     expect(tkn_type::kw_func);
-
     if(!this->ok){return node;}
-
     node.data_type = get_datatype();
-
     if(!this->ok){return node;}
-
     node.ident = get_identifier();
-
     if(!this->ok){return node;}
-
     node.params = get_parameters();
 
     return node;
@@ -139,6 +133,17 @@ func_def_stmt parser::get_func_def()
     // Inherited stuff
     node.type = stmt_type::fdef;
     node.line = peek().loc.line;
+
+    expect(tkn_type::kw_func);
+    if(!this->ok){return node;}
+    node.data_type = get_datatype();
+    if(!this->ok){return node;}
+    node.ident = get_identifier();
+    if(!this->ok){return node;}
+    node.params = get_parameters();
+    if(!this->ok){return node;}
+    node.body = get_compound_stmt();
+
     return node;
 }
 
