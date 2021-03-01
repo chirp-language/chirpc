@@ -112,6 +112,10 @@ std::vector<token> lexe(std::vector<location> src, std::vector<std::string> cont
         {
             t.type = tkn_type::kw_ret;
         }
+        else if (t.value == "extern")
+        {
+            t.type = tkn_type::kw_extern;
+        }
         else if(
             t.value == "int" || t.value == "char" ||
             t.value == "float" || t.value == "double" ||

@@ -76,6 +76,8 @@ private:
     import_stmt get_import();
     ret_stmt get_ret(); // MLG wooo
 
+    extern_stmt get_extern();
+
     std::shared_ptr<stmt> get_stmt();
     compound_stmt get_compound_stmt();
 

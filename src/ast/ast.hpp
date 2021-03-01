@@ -187,6 +187,19 @@ public:
     virtual std::string dump(int) override;
 };
 
+class extern_stmt : public stmt
+{
+    public:
+    // Too lazy to make an enum
+    // 0 - None
+    // 1 - Function
+    // 2 - Variable
+    unsigned char type;
+    txt_literal real_name;
+    std::shared_ptr<stmt> stmt;
+    virtual std::string dump(int) override;
+};
+
 class parameters : public ast_node
 {
     public:
@@ -228,6 +241,7 @@ class ast
 public:
     // Vectors are in order
     std::vector<import_stmt> imports;
+    std::vector<extern_stmt> externs;
     std::vector<func_decl_stmt> fdecls;
     std::vector<func_def_stmt> fdefs;
     bool has_entry = false;

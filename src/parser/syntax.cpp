@@ -113,6 +113,23 @@ ret_stmt parser::get_ret()
     return node;
 }
 
+extern_stmt parser::get_extern()
+{
+    extern_stmt node;
+    expect(tkn_type::kw_extern);
+    node.real_name = get_txt_lit();
+    node.type = 0;
+    if(is_func_decl(true)){
+        node.type = 1;
+        node.stmt = std::make_shared<func_decl_stmt>(get_func_decl());
+    }
+    else if(is_var_decl(true)){
+        node.type = 2;
+        node.stmt = std::make_shared<decl_stmt>(get_decl_stmt());
+    }
+    return node;
+}
+
 std::shared_ptr<stmt> parser::get_stmt()
 {
     // Should probably be a std::shared_ptr tbh

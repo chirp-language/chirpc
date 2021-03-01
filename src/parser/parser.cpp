@@ -28,10 +28,15 @@ void parser::parse()
         if(t == tkn_type::kw_entry)
         {
             this->tree.entry = get_entry();
+            this->tree.has_entry = true;
         }
         else if(t == tkn_type::kw_import)
         {
             this->tree.imports.push_back(get_import());
+        }
+        else if(t == tkn_type::kw_extern)
+        {
+            this->tree.externs.push_back(get_extern());
         }
         else if(t == tkn_type::kw_func)
         {

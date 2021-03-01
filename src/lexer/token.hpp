@@ -12,6 +12,7 @@ enum class tkn_type
     kw_func, // func
     kw_while,kw_for, // while for
     kw_ret,
+    kw_extern,
 
     // Tokens with multiple keywords 
     datatype, // int,char,float,double,bool..

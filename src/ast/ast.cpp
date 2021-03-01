@@ -92,6 +92,18 @@ std::string ast::dump()
         }
     }
 
+    if(this->externs.size() == 0)
+    {
+        result += "-- No externs --\n";
+    }
+    else
+    {
+        for(extern_stmt ext : this->externs)
+        {
+            result += ext.dump(1);
+        }
+    }
+
     if(this->fdecls.size() == 0)
     {
         result += "-- No function declarations on top-level --\n";
@@ -367,6 +379,37 @@ std::string ret_stmt::dump(int depth)
     result += indent(depth);
     result += "ret_statement:\n";
     result += this->val->dump(depth + 1);
+    return result;
+}
+
+std::string extern_stmt::dump(int depth)
+{
+    std::string result;
+    result += indent(depth);
+    result += "extern (";
+    switch(this->type)
+    {
+        case 0:
+        result += "None";
+        break;
+        case 1:
+        result += "Function";
+        break;
+        case 2:
+        result += "Variable";
+        break;
+    }
+    result += "): \n";
+
+    if(this->type == 1)
+    {
+        result += static_cast<func_decl_stmt*>(this->stmt.get())->dump(depth+1);
+    }
+    else if(this->type == 2)
+    {
+        result += static_cast<decl_stmt*>(this->stmt.get())->dump(depth+1);
+    }
+
     return result;
 }
 

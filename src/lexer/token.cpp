@@ -17,6 +17,7 @@ std::string token::util_dump(){
         tknstr(tkn_type::kw_while  , kw_while  )
         tknstr(tkn_type::kw_for    , kw_for    )
         tknstr(tkn_type::kw_ret    , kw_ret    )
+        tknstr(tkn_type::kw_extern , kw_extern )
         tknstr(tkn_type::datatype  , datatype  )
         tknstr(tkn_type::datamod   , datamod )
         tknstr(tkn_type::period    , period    )
