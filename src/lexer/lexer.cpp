@@ -130,12 +130,6 @@ std::vector<token> lexe(std::vector<location> src, std::vector<std::string> cont
         ){
             t.type = tkn_type::datamod;
         }
-        /*
-        else if(t.value == "true" || t.value == "false")
-        {
-            t.type = tkn_type::bool_val;
-        }
-        */
         // Symbols
         else if (t.value == ".")
         {
@@ -157,6 +151,21 @@ std::vector<token> lexe(std::vector<location> src, std::vector<std::string> cont
             t.value == "+" || t.value == "-" || t.value == "-" || t.value == "*")
         {
             t.type = tkn_type::math_op;
+        }
+        else if(
+            t.value == "ref"
+        ){
+            t.type = tkn_type::ref_op;
+        }
+        else if(
+            t.value == "deref"
+        ){
+            t.type = tkn_type::deref_op;
+        }
+        else if(
+            t.value == "as"
+        ){
+            t.type = tkn_type::as_op;
         }
         else if (t.value == "(")
         {

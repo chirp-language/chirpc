@@ -25,6 +25,7 @@ enum class tkn_type
     comma, // ,
     assign_op, // =
     math_op, // + - * /
+    ref_op,deref_op,as_op, // Should probably all be the same token
     lparen,rparen, // ( )
     lbrace,rbrace, // { } 
     lbracket,rbracket, // [ ]
