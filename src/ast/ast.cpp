@@ -12,7 +12,8 @@ std::string indent(int x)
     std::string result;
     for (int i = 0; i < x; i++)
     {
-        result += "\t";
+        //result += "\t";
+        result += "   ";
     }
     return result;
 }
@@ -210,8 +211,9 @@ std::string subexpr::dump(int depth)
 {
     std::string result;
     result += indent(depth);
-    result += "subexpr (";
-    result += ");\n";
+    result += "subexpr ";
+    result += op.dump(0);
+    //result += ");\n";
     result += indent(depth+1);
     result += "left:\n";
     result += left.dump(depth+1);
@@ -257,7 +259,7 @@ std::string operand::dump(int depth)
 {
     std::string result;
     result = indent(depth);
-    result += "operand;\n";
+    result += "operand:\n";
     switch(this->type)
     {
         case optype::lit:
