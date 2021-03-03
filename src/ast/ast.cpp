@@ -221,6 +221,38 @@ std::string subexpr::dump(int depth)
     return result;
 }
 
+std::string exprop::dump(int depth)
+{
+    std::string result;
+    result = indent(depth);
+    result += "expr_operator (";
+    switch(this->type){
+        case '+':
+        result += "add";
+        break;
+        case '-':
+        result += "sub";
+        break;
+        case '/':
+        result += "div";
+        break;
+        case '*':
+        result += "mult";
+        break;
+        case 'd':
+        result += "deref";
+        break;
+        case 'r':
+        result += "ref";
+        break;
+        case 'a':
+        result += "as";
+        break;
+    }
+    result += ");\n";
+    return result;
+}
+
 std::string operand::dump(int depth)
 {
     std::string result;
@@ -239,6 +271,13 @@ std::string operand::dump(int depth)
         break;
         case optype::subexpr:
         result += static_cast<subexpr*>(this->node.get())->dump(depth+1);
+        break;
+        case optype::op:
+        result += static_cast<exprop*>(this->node.get())->dump(depth+1);
+        break;
+        case optype::invalid:
+        result += indent(depth+1);
+        result += "(INVALID EXPR)\n";
         break;
     }
     return result;

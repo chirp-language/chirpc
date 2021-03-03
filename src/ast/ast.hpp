@@ -66,7 +66,19 @@ enum class optype
     lit,
     ident,
     call,
-    subexpr
+    subexpr,
+    op, // just used during parsing
+    invalid
+};
+
+
+// Operator
+class exprop : public ast_node
+{
+    public:
+    char type;
+    //bool binary;
+    virtual std::string dump(int) override;
 };
 
 class operand : public ast_node
@@ -80,8 +92,7 @@ class operand : public ast_node
 class subexpr : public ast_node
 {
     public:
-    char op;
-    bool binary; // if false, then is unary
+    exprop op;
     operand left;
     operand right;
     virtual std::string dump(int) override;

@@ -55,7 +55,7 @@ private:
     num_literal get_num_lit();
     std::shared_ptr<literal_node> get_literal();
 
-    subexpr get_subexpr(int,int);
+    subexpr get_subexpr(std::vector<operand>);
     operand get_operand();
     expr get_expr();
 
