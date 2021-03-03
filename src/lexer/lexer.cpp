@@ -148,7 +148,7 @@ std::vector<token> lexe(std::vector<location> src, std::vector<std::string> cont
             t.type = tkn_type::assign_op;
         }
         else if (
-            t.value == "+" || t.value == "-" || t.value == "-" || t.value == "*")
+            t.value == "+" || t.value == "-" || t.value == "-" || t.value == "*" || t.value == "/")
         {
             t.type = tkn_type::math_op;
         }

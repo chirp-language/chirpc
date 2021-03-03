@@ -28,7 +28,7 @@ bool parser::is_func_decl(bool reset)
 
     if(match(tkn_type::kw_func))
     {
-        if(is_datatype(false) && match(tkn_type::identifer))
+        if(is_datatype(false) && is_identifier(false))
         {
             if(is_params(false))
             {
@@ -64,30 +64,41 @@ bool parser::is_func_def(bool reset)
     return result;
 }
 
-bool parser::is_func_call()
+bool parser::is_func_call(bool reset)
 {
     bool result = false;
     int og = this->cursor;
 
-    if (match(tkn_type::identifer))
+    if (is_identifier(false))
     {
-        if (match(tkn_type::lparen))
+        if(match(tkn_type::lparen))
         {
             result = true;
-        }
-        else if (match(tkn_type::period))
-        {
-            // Doesn't care about casts or any of that "fancy stuff"
-            while (match(tkn_type::identifer) && match(tkn_type::period));
 
-            if (match(tkn_type::lparen))
+            // Just skips until lparen
+            int depth = 1;
+            while(depth != 0)
             {
-                result = true;
+                if(peek().type == tkn_type::lparen){
+                    depth++;
+                }
+                if(peek().type == tkn_type::rparen){
+                    depth--;
+                }
+                this->cursor++;
             }
+        }
+        else
+        {
+            result = false;
+            this->cursor = og;
         }
     }
 
-    this->cursor = og;
+    if(reset)
+    {
+        this->cursor = og;
+    }
     return result;
 }
 

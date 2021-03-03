@@ -4,6 +4,32 @@
 #include <new>
 #include <iostream>
 
+bool parser::is_identifier(bool reset)
+{
+    bool result = false;
+    int op = this->cursor;
+
+    do
+    {
+        if(match(tkn_type::identifer))
+        {
+            result = true;
+        }
+        else
+        {
+            result = false;
+        }
+    }
+    while(match(tkn_type::comma));
+    
+    if(reset)
+    {
+        this->cursor = op;
+    }
+
+    return result;
+}
+
 identifier parser::get_identifier()
 {
     identifier node;
@@ -146,7 +172,7 @@ std::shared_ptr<stmt> parser::get_stmt()
         result = std::make_shared<compound_stmt>();
         *static_cast<compound_stmt*>(result.get()) = get_compound_stmt();
     }
-    else if (is_func_call())
+    else if (is_func_call(true))
     {
         result = std::make_shared<func_call_stmt>();
         *static_cast<func_call_stmt*>(result.get()) = get_fcall();

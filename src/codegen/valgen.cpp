@@ -102,30 +102,7 @@ std::string codegen::emit_literal(std::shared_ptr<literal_node>& node)
     return result;
 }
 
-std::string codegen::emit_math_expr(mathexpr& node)
+std::string codegen::emit_expr(expr node)
 {
-    std::string result;
-
-    return result;
-}
-
-std::string codegen::emit_static_expr(staticexpr& node)
-{
-    std::string result;
-    result = emit_literal(node.value);
-    return result;
-}
-
-std::string codegen::emit_expr(std::shared_ptr<expr> node)
-{
-    switch(node.get()->expr_type)
-    {
-        case exprtype::emath:
-        // the whole error method is like terribly bad
-        return "#error can't emit math expression\n";
-        break;
-        case exprtype::estatic:
-        return emit_static_expr(*static_cast<staticexpr*>(node.get()));
-        break;
-    }
+    return "/*An expr should be here*/";
 }

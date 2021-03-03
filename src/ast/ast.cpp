@@ -206,40 +206,41 @@ std::string num_literal::dump(int depth)
     return result;
 }
 
-
-std::string mathop::dump(int depth)
+std::string subexpr::dump(int depth)
 {
     std::string result;
     result += indent(depth);
-    result += "Math Operator ";
-    result += this->optype;
-    result += ":\n";
-    result += this->left.dump(depth+1);
-    result += this->right.dump(depth+1);
+    result += "subexpr (";
+    result += ");\n";
+    result += indent(depth+1);
+    result += "left:\n";
+    result += left.dump(depth+1);
+    result += indent(depth+1);
+    result += "right:\n";
+    result += right.dump(depth+1);
     return result;
 }
 
-// Operator precedence?? What is that
-std::string mathexpr::dump(int depth)
+std::string operand::dump(int depth)
 {
     std::string result;
-    result += indent(depth);
-    result += "mathexpr:\n";
-
-    for(mathop& op : operands)
+    result = indent(depth);
+    result += "operand;\n";
+    switch(this->type)
     {
-        result += op.dump(depth+1);
+        case optype::lit:
+        result += static_cast<literal_node*>(this->node.get())->dump(depth+1);
+        break;
+        case optype::ident:
+        result += static_cast<identifier*>(this->node.get())->dump(depth+1);
+        break;
+        case optype::call:
+        result += static_cast<func_call_stmt*>(this->node.get())->dump(depth+1);
+        break;
+        case optype::subexpr:
+        result += static_cast<subexpr*>(this->node.get())->dump(depth+1);
+        break;
     }
-
-    return result;
-}
-
-std::string staticexpr::dump(int depth)
-{
-    std::string result;
-    result += indent(depth);
-    result += "static_expression:\n";
-    result += this->value.get()->dump(depth+1);
     return result;
 }
 
@@ -247,7 +248,8 @@ std::string expr::dump(int depth)
 {
     std::string result;
     result += indent(depth);
-    result += "basic_expression;\n";
+    result += "expression;\n";
+    result += this->root.dump(depth+1);
     return result;
 }
 
@@ -258,7 +260,7 @@ std::string arguments::dump(int depth)
     result += "arguments:\n";
     for(auto n : body)
     {
-        result += n.get()->dump(depth+1);
+        result += n.dump(depth+1);
     }
     return result;
 }
@@ -337,7 +339,7 @@ std::string def_stmt::dump(int depth)
     result += indent(depth);
     result += "def_statement:\n";
     result += this->ident.dump(depth+1);
-    result += this->value.get()->dump(depth+1);
+    result += this->value.dump(depth+1);
     return result;
 }
 
@@ -378,7 +380,7 @@ std::string ret_stmt::dump(int depth)
     std::string result;
     result += indent(depth);
     result += "ret_statement:\n";
-    result += this->val->dump(depth + 1);
+    result += this->val.dump(depth + 1);
     return result;
 }
 

@@ -57,41 +57,40 @@ public:
 };
 
 // === Expression Stuff ===
+// I am spoon brain so I just like, improvised expression parsing..
+// Cuz pfff what is Shunting-yard ???! All I know is Bink's-Yard amirite
 
-class mathop : public ast_node
+// Operand type
+enum class optype
+{
+    lit,
+    ident,
+    call,
+    subexpr
+};
+
+class operand : public ast_node
 {
     public:
-    char optype;
-    num_literal left;
-    num_literal right;
+    optype type;
+    std::shared_ptr<ast_node> node;
     virtual std::string dump(int) override;
 };
 
-enum class exprtype
+class subexpr : public ast_node
 {
-    emath,
-    estatic
+    public:
+    char op;
+    bool binary; // if false, then is unary
+    operand left;
+    operand right;
+    virtual std::string dump(int) override;
 };
 
 class expr : public ast_node
 {
     public:
-    exprtype expr_type;
-    virtual std::string dump(int) override;
-};
-
-class mathexpr : public expr
-{
-    public:
-    // Litteraly just the same char
-    std::vector<mathop> operands;
-    virtual std::string dump(int) override;
-};
-
-class staticexpr : public expr
-{
-    public:
-    std::shared_ptr<literal_node> value;
+    operand root;
     virtual std::string dump(int) override;
 };
 
@@ -100,7 +99,7 @@ class staticexpr : public expr
 class arguments : public ast_node
 {
 public:
-    std::vector<std::shared_ptr<expr>> body;
+    std::vector<expr> body;
     virtual std::string dump(int) override;
 };
 
@@ -146,7 +145,7 @@ class def_stmt : public stmt
 {
     public:
     identifier ident;
-    std::shared_ptr<expr> value;
+    expr value;
     virtual std::string dump(int) override;
 };
 
@@ -183,7 +182,7 @@ class ret_stmt : public stmt
 {
 public:
     // Should be replaced by expr, when I get to those
-    std::shared_ptr<expr> val;
+    expr val;
     virtual std::string dump(int) override;
 };
 

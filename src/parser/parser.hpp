@@ -34,9 +34,9 @@ private:
     dtypename get_dtypename(std::string);
     dtypemod get_dtypemod(std::string);
 
-    // Check if it's a datatype, and if so returns true
-    // If the option is true, it will return to the first token, so it can be parsed
-    // If it's false it will stay at the last token(useful is inside another is_xxx func)
+    bool is_operand(bool);
+
+    bool is_identifier(bool);
     bool is_datatype(bool);
 
     bool is_params(bool);
@@ -47,7 +47,7 @@ private:
 
     bool is_func_decl(bool); // (func) (data_types) (identifier) (params)
     bool is_func_def(bool); // (func_decl) (compound_statement)
-    bool is_func_call(); // (identifier) ( arguments )
+    bool is_func_call(bool); // (identifier) ( arguments )
 
     identifier get_identifier();
 
@@ -55,10 +55,9 @@ private:
     num_literal get_num_lit();
     std::shared_ptr<literal_node> get_literal();
 
-    mathop get_math_op();
-    mathexpr get_math_expr();
-    staticexpr get_static_expr();
-    std::shared_ptr<expr> get_expr();
+    subexpr get_subexpr(int,int);
+    operand get_operand();
+    expr get_expr();
 
     dtype get_datatype();
     decl_stmt get_decl_stmt();
