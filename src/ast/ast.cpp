@@ -229,6 +229,12 @@ std::string exprop::dump(int depth)
     result = indent(depth);
     result += "expr_operator (";
     switch(this->type){
+        case '(':
+        result += "lparen";
+        break;
+        case ')':
+        result += "rparen";
+        break;
         case '+':
         result += "add";
         break;

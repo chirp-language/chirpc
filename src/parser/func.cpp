@@ -163,13 +163,54 @@ arguments parser::get_arguments()
 {
     arguments node;
     expect(tkn_type::lparen);
-    
-    while (!match(tkn_type::rparen) && !match(tkn_type::eof) && this->ok)
+
+    int depth = 1;
+
+    std::vector<operand> range;
+
+    // Get's the range for each expression
+    // This doesn't work very well, could be improved
+    while(depth > 0 && this->ok)
     {
-        match(tkn_type::comma);
-        node.body.push_back(get_expr());
+        if(match(tkn_type::lparen)){
+            depth++;
+        }
+        if(match(tkn_type::rparen)){
+            depth--;
+        }
+        if(depth >= 1)
+        {
+            if(match(tkn_type::comma))
+            {
+                if(depth == 1)
+                {
+                    node.body.push_back(get_expr(range));
+                    range.clear();
+                }
+                else
+                {
+                    helper e;
+                    e.l = peekb().loc;
+                    e.msg = "Invalid argument separation";
+                    e.type = helper_type::location_err;
+                    this->helpers.push_back(e);
+                    this->ok = false;
+                }
+            }
+            else
+            {
+                range.push_back(get_operand());
+            }
+        }
     }
-    
+
+    if(!this->ok){return node;}
+
+    if(range.size() > 0)
+    {
+        node.body.push_back(get_expr(range));
+    }
+
     return node;
 }
 

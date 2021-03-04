@@ -162,7 +162,7 @@ std::string codegen::emit_operand(operand node)
     }
     else if(node.type == optype::call)
     {
-        return "/*calls aren't being generated*/";
+        return emit_fcall( *static_cast<func_call_stmt*>(node.node.get()) );
     }
     else if(node.type == optype::subexpr)
     {

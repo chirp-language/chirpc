@@ -57,6 +57,7 @@ private:
 
     subexpr get_subexpr(std::vector<operand>);
     operand get_operand();
+    expr get_expr(std::vector<operand>);
     expr get_expr();
 
     dtype get_datatype();

@@ -72,6 +72,10 @@ std::string codegen::emit_stmt(std::shared_ptr<stmt> s)
         case stmt_type::compound:
         result += emit_compound(*static_cast<compound_stmt*>(s.get()));
         break;
+        case stmt_type::fcall:
+        result += emit_fcall(*static_cast<func_call_stmt*>(s.get()));
+        result += ";\n"; // Because this is kindof an expression stuff
+        break;
         case stmt_type::decl:
         result += emit_decl(*static_cast<decl_stmt*>(s.get()));
         break;

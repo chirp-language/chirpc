@@ -9,8 +9,6 @@
 // This is probably already an existing algorithm, I just improvised something lol
 #include "parser.hpp"
 
-#include <iostream>
-
 bool parser::is_operand(bool reset)
 {
     bool result = false;
@@ -57,7 +55,6 @@ subexpr parser::get_subexpr(std::vector<operand> range)
         {
             has_op = true;
             exprop op = *static_cast<exprop*>(operand.node.get());
-            std::cout<<op.type<<std::endl;
             if(op.type == '(' || op.type == ')'){
                 if(op_rank < 0){
                     op_rank = 0;
@@ -103,12 +100,10 @@ subexpr parser::get_subexpr(std::vector<operand> range)
     else
     {
         // Left Side
-        std::cout<<"Left"<<std::endl;
         std::vector<operand> lrange;
         for(int i = 0; i < op_index; i++)
         {
             lrange.push_back(range.at(i));
-            std::cout<<range.at(i).dump(0);
         }
 
         if(lrange.size() == 1)
@@ -124,12 +119,10 @@ subexpr parser::get_subexpr(std::vector<operand> range)
         }
 
         // Right side
-        std::cout<<"Right"<<std::endl;
         std::vector<operand> rrange;
         for(int i = op_index + 1; i < range.size(); i++)
         {
             rrange.push_back(range.at(i));
-            std::cout<<range.at(i).dump(0);
         }
 
         if(rrange.size() == 1)
@@ -211,7 +204,6 @@ operand parser::get_operand()
             helper e;
             e.l = peek().loc;
             e.msg = "Invalid operand";
-            std::cout<<"Not an operand"<<std::endl;
             e.type = helper_type::location_err;
             this->ok = false;
             this->helpers.push_back(e);
@@ -220,6 +212,35 @@ operand parser::get_operand()
         result.node = std::make_shared<exprop>(op);
     }
     return result;
+}
+
+expr parser::get_expr(std::vector<operand> range)
+{
+    expr node;
+
+    if(range.size() == 0)
+    {
+        helper e;
+        e.l = peek().loc;
+        e.msg = "Cannot create expression with no range"; 
+        e.type = helper_type::line_err;
+        this->ok = false;
+        this->helpers.push_back(e);
+        return node;
+    }
+    else if (range.size() == 1)
+    {
+        node.root = range.at(0);
+    }
+    else
+    {
+        operand o;
+        o.type = optype::subexpr;
+        o.node = std::make_shared<subexpr>(get_subexpr(range));
+        node.root = o;
+    }
+
+    return node;
 }
 
 expr parser::get_expr()
@@ -265,11 +286,6 @@ expr parser::get_expr()
         {
             range.push_back(tmp);
         }
-    }
-
-    std::cout<<"==--- Expression Range Dump ---=="<<std::endl;
-    for(operand o : range){
-        std::cout<<o.dump(0)<<std::endl;
     }
 
     if(range.size() == 0){

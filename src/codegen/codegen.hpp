@@ -23,6 +23,9 @@ class codegen
     std::string emit_datatype(dtype);
     std::string emit_literal(std::shared_ptr<literal_node>);
 
+    std::string emit_args(arguments);
+    std::string emit_fcall(func_call_stmt);
+
     std::string emit_subexpr(subexpr);
     std::string emit_operand(operand);
     std::string emit_expr(expr);
