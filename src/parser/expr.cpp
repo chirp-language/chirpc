@@ -164,52 +164,79 @@ operand parser::get_operand()
     else
     {
         std::string v = peek().value;
-        result.type = optype::op;
-        exprop op;
-        if(v == "("){
-            op.type = '(';
+        if(v == "(")
+        {
+            // Parenthesis are special, as they aren't considered as operations, but as sub_expressions
+            // So you gotta get the range of it
+            result.type = optype::subexpr;
+
             expect(tkn_type::lparen);
+            int depth = 1;
+
+            std::vector<operand> range;
+
+            while(depth > 0 && this->ok)
+            {
+                if(match(tkn_type::lparen)){
+                    depth++;
+                }
+                if(match(tkn_type::rparen)){
+                    depth--;
+                }
+                if(depth == 0) {break;} // hacky
+                if(is_operand(true)){
+                    range.push_back(get_operand());
+                }
+            }
+
+            if(range.size() == 1){
+                result = range.at(0);
+            }
+            else if(range.size() > 0){
+                result.node = std::make_shared<subexpr>(get_subexpr(range));
+            }
         }
-        else if(v == ")"){
-            op.type = ')';
-            expect(tkn_type::rparen);
+        else
+        {
+            result.type = optype::op;
+            exprop op;
+            if(v == "*"){
+                op.type = '*';
+                expect(tkn_type::math_op);
+            }
+            else if(v == "/"){
+                op.type = '/';
+                expect(tkn_type::math_op);
+            }
+            else if(v == "+"){
+                op.type = '+';
+                expect(tkn_type::math_op);
+            }
+            else if(v == "-"){
+                op.type = '-';
+                expect(tkn_type::math_op);
+            }
+            else if(v == "deref"){
+                expect(tkn_type::deref_op);
+            }
+            else if(v == "ref"){
+                expect(tkn_type::ref_op);
+            }
+            else if(v == "as"){
+                expect(tkn_type::as_op);
+            }
+            else{
+                result.type = optype::invalid;
+                helper e;
+                e.l = peek().loc;
+                e.msg = "Invalid operand";
+                e.type = helper_type::location_err;
+                this->ok = false;
+                this->helpers.push_back(e);
+                return result;
+            }
+            result.node = std::make_shared<exprop>(op);
         }
-        else if(v == "*"){
-            op.type = '*';
-            expect(tkn_type::math_op);
-        }
-        else if(v == "/"){
-            op.type = '/';
-            expect(tkn_type::math_op);
-        }
-        else if(v == "+"){
-            op.type = '+';
-            expect(tkn_type::math_op);
-        }
-        else if(v == "-"){
-            op.type = '-';
-            expect(tkn_type::math_op);
-        }
-        else if(v == "deref"){
-            expect(tkn_type::deref_op);
-        }
-        else if(v == "ref"){
-            expect(tkn_type::ref_op);
-        }
-        else if(v == "as"){
-            expect(tkn_type::as_op);
-        }
-        else{
-            result.type = optype::invalid;
-            helper e;
-            e.l = peek().loc;
-            e.msg = "Invalid operand";
-            e.type = helper_type::location_err;
-            this->ok = false;
-            this->helpers.push_back(e);
-            return result;
-        }
-        result.node = std::make_shared<exprop>(op);
     }
     return result;
 }
