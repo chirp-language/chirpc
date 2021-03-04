@@ -1,6 +1,6 @@
 #include "codegen.hpp"
 
-std::string codegen::emit_decl(decl_stmt& node)
+std::string codegen::emit_decl(decl_stmt node)
 {
     std::string result;
     if(!m_tracker->register_var(node.ident.namespaces,node.ident.name))
@@ -21,7 +21,7 @@ std::string codegen::emit_decl(decl_stmt& node)
     return result;
 }
 
-std::string codegen::emit_def(def_stmt& node)
+std::string codegen::emit_def(def_stmt node)
 {
     std::string result;
     if(!m_tracker->check_var(node.ident.namespaces,node.ident.name))
@@ -42,7 +42,7 @@ std::string codegen::emit_def(def_stmt& node)
     return result;
 }
 
-std::string codegen::emit_decldef(decldef_stmt& node)
+std::string codegen::emit_decldef(decldef_stmt node)
 {
     std::string result;
     result += emit_datatype(node.decl.data_type);
@@ -55,7 +55,7 @@ std::string codegen::emit_decldef(decldef_stmt& node)
 }
 
 
-std::string codegen::emit_ret(ret_stmt& node)
+std::string codegen::emit_ret(ret_stmt node)
 {
     std::string result;
     result += "return ";
@@ -88,7 +88,7 @@ std::string codegen::emit_stmt(std::shared_ptr<stmt> s)
     return result;
 }
 
-std::string codegen::emit_compound(compound_stmt& cstmt)
+std::string codegen::emit_compound(compound_stmt cstmt)
 {
     std::string result;
     result += "{\n";

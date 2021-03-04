@@ -1,6 +1,6 @@
 #include "codegen.hpp"
 
-std::string codegen::emit_entry(entry_stmt& e)
+std::string codegen::emit_entry(entry_stmt e)
 {
     std::string result;
     if(m_tracker->request_entry())

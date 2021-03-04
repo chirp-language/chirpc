@@ -2,7 +2,7 @@
 
 #include "../ast/types.hpp"
 
-std::string codegen::emit_ident(identifier& ident)
+std::string codegen::emit_ident(identifier ident)
 {
     std::string result;
 
@@ -14,7 +14,7 @@ std::string codegen::emit_ident(identifier& ident)
 }
 
 // This is not finished
-std::string codegen::emit_datatype(dtype& d)
+std::string codegen::emit_datatype(dtype d)
 {
     // Doesn't do function pointery things
     std::string result;
@@ -71,7 +71,7 @@ std::string codegen::emit_datatype(dtype& d)
     return result;
 }
 
-std::string codegen::emit_literal(std::shared_ptr<literal_node>& node)
+std::string codegen::emit_literal(std::shared_ptr<literal_node> node)
 {
     std::string result;
     if(node.get()->ltype == littype::num)
@@ -102,7 +102,83 @@ std::string codegen::emit_literal(std::shared_ptr<literal_node>& node)
     return result;
 }
 
+std::string codegen::emit_subexpr(subexpr node)
+{
+    std::string result;
+
+    result += "(";
+    result += emit_operand(node.left);
+    result += ") ";
+
+    if(node.op.type == 'd')
+    {
+        result += "\n#derefs don't work yet\n";
+    }
+    else if(node.op.type == 'r')
+    {
+        result += "\n#refs don't work yet\n";
+    }
+    else if(node.op.type == 'a')
+    {
+        result += "\n#error casts don't work yet\n";
+    }
+    else
+    {
+        result += node.op.type;
+    }
+
+    result += " (";
+    result += emit_operand(node.right);
+    result += ")";
+
+    return result;
+}
+
+std::string codegen::emit_operand(operand node)
+{
+    if(node.type == optype::lit)
+    {
+        if(static_cast<literal_node*>(node.node.get())->ltype == littype::txt)
+        {
+            return emit_literal(std::make_shared<txt_literal>(
+                *static_cast<txt_literal*>(node.node.get())
+                ));
+        }
+        else if(static_cast<literal_node*>(node.node.get())->ltype == littype::num)
+        {
+            return emit_literal(std::make_shared<num_literal>(
+                *static_cast<num_literal*>(node.node.get())
+                ));
+        }
+        else
+        {
+            // just panic idk
+            this->errored = true;
+        }
+    }
+    else if(node.type == optype::ident)
+    {
+        return emit_ident( *static_cast<identifier*>(node.node.get()) );
+    }
+    else if(node.type == optype::call)
+    {
+        return "/*calls aren't being generated*/";
+    }
+    else if(node.type == optype::subexpr)
+    {
+        return emit_subexpr(*static_cast<subexpr*>(node.node.get()));
+    }
+    else if(node.type == optype::op || node.type == optype::invalid)
+    {
+        // error
+        this->errored = true;
+        return "\n#error Bad operand, This error message is temporary";
+    }
+
+    return "\n#error what\n";
+}
+
 std::string codegen::emit_expr(expr node)
 {
-    return "/*An expr should be here*/";
+    return emit_operand(node.root);
 }
