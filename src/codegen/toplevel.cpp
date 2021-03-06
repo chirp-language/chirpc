@@ -1,9 +1,9 @@
 #include "codegen.hpp"
 
-std::string codegen::emit_entry(entry_stmt e)
+std::string codegen::emit_entry(entry_stmt& e)
 {
     std::string result;
-    if(m_tracker->request_entry())
+    if (m_tracker->request_entry())
     {
         result += "// Reminder this doesn't check for an existing int main().\n";
         result += "int main()";

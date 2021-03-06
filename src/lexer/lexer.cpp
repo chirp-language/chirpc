@@ -26,23 +26,22 @@ bool is_number(std::string txt)
 
 bool is_float(std::string txt)
 {
-    if(txt.size() > 3)
+    if (txt.size() > 3)
     {
-        if(isdigit(txt.at(0)) &&  txt.at(1) == '.' && txt.at(txt.size()-1) == 'f'){
+        if (isdigit(txt.at(0)) && txt.at(1) == '.' && txt.at(txt.size() - 1) == 'f')
+        {
             return true;
         }
     }
-    else
-    {
-        return false;
-    }
+
+    return false;
 }
 
 bool ishex(char c)
 {
-    if(
-        isdigit(c)||c=='a'||c=='b'||c=='c'||c=='d'||c=='e'||c=='f'
-    ){
+    if (
+        isdigit(c) || c == 'a' || c == 'b' || c == 'c' || c == 'd' || c == 'e' || c == 'f')
+    {
         return true;
     }
     return false;
@@ -50,16 +49,15 @@ bool ishex(char c)
 
 bool is_addr(std::string txt)
 {
-    if(txt.size() > 3)
+    if (txt.size() > 3)
     {
-        if( txt.at(0) == '0' && txt.at(1) && ishex(txt.at(txt.size()-1)) ){
+        if (txt.at(0) == '0' && txt.at(1) && ishex(txt.at(txt.size() - 1)))
+        {
             return true;
         }
     }
-    else
-    {
-        return false;
-    }
+
+    return false;
 }
 
 std::vector<token> lexe(std::vector<location> src, std::vector<std::string> content)
@@ -70,7 +68,7 @@ std::vector<token> lexe(std::vector<location> src, std::vector<std::string> cont
     {
         token t;
         t.loc = loc;
-        // String Views are a conspirancy 
+        // String Views are a conspiracy
         for (int i = loc.start; i <= loc.end; i++)
         {
             t.value += content.at(loc.line).at(i);
@@ -116,18 +114,18 @@ std::vector<token> lexe(std::vector<location> src, std::vector<std::string> cont
         {
             t.type = tkn_type::kw_extern;
         }
-        else if(
-            t.value == "int" || t.value == "char" ||
+        else if (
+            t.value == "int"   || t.value == "char"   ||
             t.value == "float" || t.value == "double" ||
-            t.value == "byte" || t.value == "bool" || 
-            t.value == "none"
-        ){
+            t.value == "byte"  || t.value == "bool"   ||
+            t.value == "none")
+        {
             t.type = tkn_type::datatype;
         }
-        else if(
-            t.value == "ptr" || t.value == "signed" ||
-            t.value == "unsigned"||t.value=="const"
-        ){
+        else if (
+            t.value == "ptr"      || t.value == "signed" ||
+            t.value == "unsigned" || t.value == "const")
+        {
             t.type = tkn_type::datamod;
         }
         // Symbols
@@ -148,23 +146,22 @@ std::vector<token> lexe(std::vector<location> src, std::vector<std::string> cont
             t.type = tkn_type::assign_op;
         }
         else if (
-            t.value == "+" || t.value == "-" || t.value == "-" || t.value == "*" || t.value == "/")
+            t.value == "+" || t.value == "-" || 
+            t.value == "-" || t.value == "*" || 
+            t.value == "/" )
         {
             t.type = tkn_type::math_op;
         }
-        else if(
-            t.value == "ref"
-        ){
+        else if (t.value == "ref")
+        {
             t.type = tkn_type::ref_op;
         }
-        else if(
-            t.value == "deref"
-        ){
+        else if (t.value == "deref")
+        {
             t.type = tkn_type::deref_op;
         }
-        else if(
-            t.value == "as"
-        ){
+        else if (t.value == "as")
+        {
             t.type = tkn_type::as_op;
         }
         else if (t.value == "(")
@@ -199,9 +196,10 @@ std::vector<token> lexe(std::vector<location> src, std::vector<std::string> cont
         else
         {
             if (
-                t.value.at(0) == '"' || t.value.at(0) == '\'' || is_number(t.value) || is_float(t.value) ||
-                t.value == "true" || t.value == "false" || is_addr(t.value)
-            ){
+                t.value.at(0) == '"' || t.value.at(0) == '\'' || 
+                is_number(t.value)   || is_float(t.value)     ||
+                t.value == "true"    || t.value == "false"    || is_addr(t.value) )
+            {
                 t.type = tkn_type::literal;
             }
             else

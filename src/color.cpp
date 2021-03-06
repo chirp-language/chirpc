@@ -5,7 +5,8 @@ std::string write_color(std::string txt, color c){
     // Doesn't care if it's on a VT100 terminal or not
     // will do coloring anyway.
     std::string result = "\033[1;"; // Defaults with bold
-    switch(c){
+    switch(c)
+    {
         case color::red:
         result += "31m";
         break;

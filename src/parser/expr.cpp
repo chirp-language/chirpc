@@ -13,21 +13,20 @@ bool parser::is_operand(bool reset)
 {
     bool result = false;
     int op = this->cursor;
-    if(
-        is_func_call(false)||
-        is_identifier(false)||
-        match(tkn_type::literal)||
-        match(tkn_type::math_op)||
-        match(tkn_type::deref_op)||
-        match(tkn_type::ref_op)||
-        match(tkn_type::as_op)||
-        match(tkn_type::lparen)||
-        match(tkn_type::rparen)
-        )
+    if (
+        is_func_call(false)         ||
+        is_identifier(false)        ||
+        match(tkn_type::literal)    ||
+        match(tkn_type::math_op)    ||
+        match(tkn_type::deref_op)   ||
+        match(tkn_type::ref_op)     ||
+        match(tkn_type::as_op)      ||
+        match(tkn_type::lparen)     ||
+        match(tkn_type::rparen))
     {
         result = true;
     }
-    if(reset)
+    if (reset)
     {
         this->cursor = op;
     }
@@ -46,50 +45,59 @@ subexpr parser::get_subexpr(std::vector<operand> range)
     int op_rank = -1; // bad name kinda
     char op_char;
     bool has_op = false;
-    
-    for(int i=range.size()-1;i>0;i--)
+
+    for (int i = range.size() - 1; i > 0; i--)
     {
-        operand& operand = range.at(i);
-        
-        if(operand.type == optype::op)
+        operand &operand = range.at(i);
+
+        if (operand.type == optype::op)
         {
             has_op = true;
             exprop op = *static_cast<exprop*>(operand.node.get());
-            if(op.type == '(' || op.type == ')'){
-                if(op_rank < 0){
+            if (op.type == '(' || op.type == ')')
+            {
+                if (op_rank < 0)
+                {
                     op_rank = 0;
                     op_char = op.type;
                     op_index = i;
                 }
             }
-            else if(op.type == 'a' || op.type == 'd' || op.type == 'r'){
-                if(op_rank < 1){
+            else if (op.type == 'a' || op.type == 'd' || op.type == 'r')
+            {
+                if (op_rank < 1)
+                {
                     op_rank = 1;
                     op_char = op.type;
                     op_index = i;
                 }
             }
-            else if(op.type == '*' || op.type == '/'){
-                if(op_rank < 2){
+            else if (op.type == '*' || op.type == '/')
+            {
+                if (op_rank < 2)
+                {
                     op_rank = 2;
                     op_char = op.type;
                     op_index = i;
                 }
             }
-            else if(op.type == '+' || op.type == '-'){
-                if(op_rank < 3){
+            else if (op.type == '+' || op.type == '-')
+            {
+                if (op_rank < 3)
+                {
                     op_rank = 3;
                     op_char = op.type;
                     op_index = i;
                 }
             }
-            else{
+            else
+            {
                 this->ok = false;
             }
         }
     }
 
-    if(!has_op)
+    if (!has_op)
     {
         helper e;
         e.msg = "(W.I.P) Expression with mutliple terms and no operator";
@@ -101,12 +109,12 @@ subexpr parser::get_subexpr(std::vector<operand> range)
     {
         // Left Side
         std::vector<operand> lrange;
-        for(int i = 0; i < op_index; i++)
+        for (int i = 0; i < op_index; i++)
         {
             lrange.push_back(range.at(i));
         }
 
-        if(lrange.size() == 1)
+        if (lrange.size() == 1)
         {
             node.left = lrange.at(0);
         }
@@ -120,12 +128,12 @@ subexpr parser::get_subexpr(std::vector<operand> range)
 
         // Right side
         std::vector<operand> rrange;
-        for(int i = op_index + 1; i < range.size(); i++)
+        for (int i = op_index + 1; i < range.size(); i++)
         {
             rrange.push_back(range.at(i));
         }
 
-        if(rrange.size() == 1)
+        if (rrange.size() == 1)
         {
             node.right = rrange.at(0);
         }
@@ -145,18 +153,20 @@ subexpr parser::get_subexpr(std::vector<operand> range)
 
 operand parser::get_operand()
 {
+    using namespace std::string_literals;
     operand result;
-    if(is_func_call(true))
+
+    if (is_func_call(true))
     {
         result.type = optype::call;
         result.node = std::make_shared<func_call_stmt>(get_fcall());
     }
-    else if(is_identifier(true))
+    else if (is_identifier(true))
     {
         result.type = optype::ident;
         result.node = std::make_shared<identifier>(get_identifier());
     }
-    else if(peek().type == tkn_type::literal)
+    else if (peek().type == tkn_type::literal)
     {
         result.type = optype::lit;
         result.node = get_literal();
@@ -164,7 +174,7 @@ operand parser::get_operand()
     else
     {
         std::string v = peek().value;
-        if(v == "(")
+        if (v == "(")
         {
             // Parenthesis are special, as they aren't considered as operations, but as sub_expressions
             // So you gotta get the range of it
@@ -175,24 +185,32 @@ operand parser::get_operand()
 
             std::vector<operand> range;
 
-            while(depth > 0 && this->ok)
+            while (depth > 0 && this->ok)
             {
-                if(match(tkn_type::lparen)){
+                if (match(tkn_type::lparen))
+                {
                     depth++;
                 }
-                if(match(tkn_type::rparen)){
+                if (match(tkn_type::rparen))
+                {
                     depth--;
                 }
-                if(depth == 0) {break;} // hacky
-                if(is_operand(true)){
+                if (depth == 0)
+                {
+                    break;
+                } // hacky
+                if (is_operand(true))
+                {
                     range.push_back(get_operand());
                 }
             }
 
-            if(range.size() == 1){
+            if (range.size() == 1)
+            {
                 result = range.at(0);
             }
-            else if(range.size() > 0){
+            else if (range.size() > 0)
+            {
                 result.node = std::make_shared<subexpr>(get_subexpr(range));
             }
         }
@@ -200,32 +218,40 @@ operand parser::get_operand()
         {
             result.type = optype::op;
             exprop op;
-            if(v == "*"){
+            if (v == "*")
+            {
                 op.type = '*';
                 expect(tkn_type::math_op);
             }
-            else if(v == "/"){
+            else if (v == "/")
+            {
                 op.type = '/';
                 expect(tkn_type::math_op);
             }
-            else if(v == "+"){
+            else if (v == "+")
+            {
                 op.type = '+';
                 expect(tkn_type::math_op);
             }
-            else if(v == "-"){
+            else if (v == "-")
+            {
                 op.type = '-';
                 expect(tkn_type::math_op);
             }
-            else if(v == "deref"){
+            else if (v == "deref")
+            {
                 expect(tkn_type::deref_op);
             }
-            else if(v == "ref"){
+            else if (v == "ref")
+            {
                 expect(tkn_type::ref_op);
             }
-            else if(v == "as"){
+            else if (v == "as")
+            {
                 expect(tkn_type::as_op);
             }
-            else{
+            else
+            {
                 result.type = optype::invalid;
                 helper e;
                 e.l = peek().loc;
@@ -245,11 +271,11 @@ expr parser::get_expr(std::vector<operand> range)
 {
     expr node;
 
-    if(range.size() == 0)
+    if (range.size() == 0)
     {
         helper e;
         e.l = peek().loc;
-        e.msg = "Cannot create expression with no range"; 
+        e.msg = "Cannot create expression with no range";
         e.type = helper_type::line_err;
         this->ok = false;
         this->helpers.push_back(e);
@@ -273,7 +299,7 @@ expr parser::get_expr(std::vector<operand> range)
 expr parser::get_expr()
 {
     expr node;
-    if(!is_operand(true))
+    if (!is_operand(true))
     {
         helper e;
         e.l = peek().loc;
@@ -291,15 +317,16 @@ expr parser::get_expr()
     int s = this->cursor;
     int e = -1;
     // Paren depth
-    while(is_operand(false));
+    while (is_operand(false));
 
     e = this->cursor;
     this->cursor = s;
 
-    while(this->cursor < e)
+    while (this->cursor < e)
     {
         operand tmp = get_operand();
-        if(tmp.type == optype::invalid){
+        if (tmp.type == optype::invalid)
+        {
             // Does an error twice now I guess
             helper e;
             e.l = peek().loc;
@@ -315,7 +342,8 @@ expr parser::get_expr()
         }
     }
 
-    if(range.size() == 0){
+    if (range.size() == 0)
+    {
         helper e;
         e.l = peek().loc;
         e.msg = "Cannot have empty expression";
@@ -323,10 +351,12 @@ expr parser::get_expr()
         this->ok = false;
         this->helpers.push_back(e);
     }
-    else if(range.size() == 1){
+    else if (range.size() == 1)
+    {
         node.root = range.at(0);
     }
-    else{
+    else
+    {
         operand o;
         o.type = optype::subexpr;
         o.node = std::make_shared<subexpr>(get_subexpr(range));

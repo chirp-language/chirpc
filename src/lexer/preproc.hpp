@@ -6,4 +6,4 @@
 #include <string>
 
 // Takes in the file content 
-std::vector<location> preprocess(std::string ,std::vector<std::string>);
+std::vector<location> preprocess(std::string, std::vector<std::string>);

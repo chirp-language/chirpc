@@ -28,5 +28,5 @@ public:
 
     // Writes the helper, in a human readable way
     // Possible Improvement: Add an option to create a "machine-readable" error prompt
-    std::string write_helper(std::vector<std::string>,cmd&);
+    std::string write_helper(std::vector<std::string>, cmd&);
 };

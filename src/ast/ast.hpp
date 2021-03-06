@@ -118,12 +118,9 @@ public:
 
 enum class stmt_type
 {
-    decl,def,decldef,
-    compound,
-    entry,
-    import,
-    ret,
-    fdef,fdecl,fcall
+    decl, def, decldef,
+    compound, entry, import, 
+    ret, fdef, fdecl, fcall
 };
 
 class stmt : public ast_node
@@ -200,11 +197,12 @@ public:
 class extern_stmt : public stmt
 {
     public:
-    // Too lazy to make an enum
-    // 0 - None
-    // 1 - Function
-    // 2 - Variable
-    unsigned char type;
+    enum class stmt_type
+    {
+        None,
+        Function,
+        Variable
+    }type;
     txt_literal real_name;
     std::shared_ptr<stmt> stmt;
     virtual std::string dump(int) override;

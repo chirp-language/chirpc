@@ -22,7 +22,8 @@ std::vector<location> disjoint(std::vector<std::string> content)
                 while (i < line.size() && line.at(i) != '"')
                 {
                     // Skips escape characters
-                    if(line.at(i)=='\\'){
+                    if (line.at(i) == '\\')
+                    {
                         i++;
                     }
                     i++;
@@ -41,7 +42,8 @@ std::vector<location> disjoint(std::vector<std::string> content)
                 while (i < line.size() && line.at(i) != '\'')
                 {
                     // Skips escape characters
-                    if(line.at(i)=='\\'){
+                    if (line.at(i) == '\\')
+                    {
                         i++;
                     }
                     i++;
@@ -57,8 +59,10 @@ std::vector<location> disjoint(std::vector<std::string> content)
                 loc.line = l;
                 while (i < line.size() && isalnum(line.at(i)) != 0)
                 {
-                    if(i < line.size() - 2){
-                        if(line.at(i+1) == '.' && isdigit(line.at(i+2))){
+                    if (i < line.size() - 2)
+                    {
+                        if (line.at(i + 1) == '.' && isdigit(line.at(i + 2)))
+                        {
                             i += 2;
                         }
                     }
@@ -126,6 +130,7 @@ std::vector<location> preprocess(std::string fname, std::vector<std::string> con
     target_platform = platform::UNKOWN;
 #endif
 
+    using namespace std::string_literals;
     std::vector<location> src = disjoint(content);
     std::vector<location> result;
 
@@ -156,7 +161,7 @@ std::vector<location> preprocess(std::string fname, std::vector<std::string> con
                     cmd += content.at(src.at(i + 1).line).at(n);
                 }
 
-                if (cmd == "platform")
+                if (cmd == "platform"s)
                 {
                     // Doesn't check  if on same line tho
                     if (i + 3 < src.size())
@@ -169,23 +174,23 @@ std::vector<location> preprocess(std::string fname, std::vector<std::string> con
                         }
                         i += 3;
                         platform p;
-                        if (pval == "windows")
+                        if (pval == "windows"s)
                         {
                             p = platform::WINDOWS;
                         }
-                        else if (pval == "linux")
+                        else if (pval == "linux"s)
                         {
                             p = platform::LINUX;
                         }
-                        else if (pval == "bsd")
+                        else if (pval == "bsd"s)
                         {
                             p = platform::BSD;
                         }
-                        else if (pval == "apple" || pval == "osx" || pval == "mac")
+                        else if (pval == "apple"s || pval == "osx"s || pval == "mac"s)
                         {
                             p = platform::OSX;
                         }
-                        else if (pval == "unix")
+                        else if (pval == "unix"s)
                         {
                             p = platform::UNIX;
                         }
@@ -206,7 +211,7 @@ std::vector<location> preprocess(std::string fname, std::vector<std::string> con
                         }
                     }
                 }
-                else if (cmd == "end")
+                else if (cmd == "end"s)
                 {
                     // It's normal behaviour now
                     //std::cout<<"PREPROCESSOR WARN: Uncatched end at ("<<src.at(i+1).line<<":"<<src.at(i+1).start<<")"<<std::endl;
@@ -214,7 +219,8 @@ std::vector<location> preprocess(std::string fname, std::vector<std::string> con
                 }
                 else
                 {
-                    std::cout << "PREPROCESSOR WARN: Unknown at (" << src.at(i + 1).line << ":" << src.at(i + 1).start << ")\n";
+                    std::cout << "PREPROCESSOR WARN: Unknown at (" << 
+                    src.at(i + 1).line << ":" << src.at(i + 1).start << ")\n";
                     i++;
                 }
             }

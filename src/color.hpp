@@ -6,11 +6,12 @@ This should be overhaul, rn this is very hacky.
 
 #include <iostream>
 
-enum class color{
+enum class color
+{
     red,
     blue,
     green,
     yellow,
 };
 
-std::string write_color(std::string,color);
+std::string write_color(std::string, color);

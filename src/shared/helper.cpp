@@ -6,36 +6,37 @@ inline std::string get_spacing(int l)
 {
     std::string og = "    | ";
     std::string line = std::to_string(l);
-    for(int i = 0; i < og.size(); i++){
-        if(i < line.size()){
+
+    for (int i = 0; i < og.size(); i++)
+    {
+        if (i < line.size())
             og.at(i) = line.at(i);
-        }
     }
     return og;
 }
 
 bool is_important(std::string& line)
 {
-    for(char c : line){
-        if(!isspace(c)){
+    for(char c : line)
+    {
+        if(!isspace(c))
             return true;
-        }
     }
     return false;
 }
 
-std::string helper::write_helper(std::vector<std::string> content,cmd& options)
+std::string helper::write_helper(std::vector<std::string> content, cmd& options)
 {
     std::string result;
     
     if (
         type == helper_type::global_warning || 
         type == helper_type::line_warning || 
-        type == helper_type::location_warning )
-    {
-        if(options.has_color)
+        type == helper_type::location_warning 
+    ) {
+        if (options.has_color)
         {
-            result = write_color("[WARNING]",color::yellow);
+            result = write_color("[WARNING]", color::yellow);
         }
         else
         {
@@ -49,9 +50,9 @@ std::string helper::write_helper(std::vector<std::string> content,cmd& options)
         type == helper_type::line_err || 
         type == helper_type::location_err )
     {
-        if(options.has_color)
+        if (options.has_color)
         {
-            result = write_color("[ERROR]",color::red);
+            result = write_color("[ERROR]", color::red);
         }
         else
         {
@@ -78,18 +79,18 @@ std::string helper::write_helper(std::vector<std::string> content,cmd& options)
         
         result += "\n";
         
-        if (l.line - 1 >= 0 && is_important(content.at(l.line+1)))
+        if (l.line - 1 >= 0 && is_important(content.at(l.line + 1)))
         {
             //result += "    | ";
-            result += get_spacing(l.line-1);
+            result += get_spacing(l.line - 1);
             result += content.at(l.line - 1);
             result += "\n    | \n";
         }
 
         result += std::to_string(l.line);
-        if(options.has_color)
+        if (options.has_color)
         {
-            result += write_color(" --> ",color::yellow);
+            result += write_color(" --> ", color::yellow);
         }
         else
         {
@@ -102,6 +103,7 @@ std::string helper::write_helper(std::vector<std::string> content,cmd& options)
         {
             std::string identation;
             result += "    | ";
+
             for (int i = 0; i < l.start; i++)
             {
                 identation += " ";
@@ -110,10 +112,12 @@ std::string helper::write_helper(std::vector<std::string> content,cmd& options)
             {
                 identation += "^";
             }
-            if(options.has_color){
-                result += write_color(identation,color::red);
+            if (options.has_color)
+            {
+                result += write_color(identation, color::red);
             }
-            else{
+            else
+            {
                 result += identation;
             }
             result += "\n";
@@ -122,10 +126,10 @@ std::string helper::write_helper(std::vector<std::string> content,cmd& options)
         {
             result += "    |\n";
         }
-        if (l.line + 1 < content.size() && is_important(content.at(l.line+1)))
+        if (l.line + 1 < content.size() && is_important(content.at(l.line + 1)))
         {
             //result += "    | ";
-            result += get_spacing(l.line+1);
+            result += get_spacing(l.line + 1);
             result += content.at(l.line + 1);
             result += "\n";
         }

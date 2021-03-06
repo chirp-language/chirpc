@@ -6,9 +6,9 @@ void tracker::init()
     this->entry_set = false;
 }
 
-bool tracker::register_var(std::vector<std::string> nspace,std::string name)
+bool tracker::register_var(std::vector<std::string> nspace, std::string name)
 {
-    if(!this->check_var(nspace,name))
+    if (!this->check_var(nspace, name))
     {
         tracked_var v;
         v.namespaces = nspace;
@@ -20,16 +20,16 @@ bool tracker::register_var(std::vector<std::string> nspace,std::string name)
     return false;
 }
 
-// Linear Search, inneficient. 
+// Linear Search, inefficient.
 bool tracker::check_var(std::vector<std::string> nspace, std::string name)
 {
     bool result = false;
     bool found = false;
-    for(tracked_var var : this->vars)
+    for (auto& var : this->vars)
     {
-        if(var.ident == name)
+        if (var.ident == name)
         {
-            if(!found)
+            if (!found)
             {
                 result = true;
                 found = true;
@@ -43,15 +43,15 @@ bool tracker::check_var(std::vector<std::string> nspace, std::string name)
     return result;
 }
 
-// This function is incredibly inneficient
+// This function is incredibly inefficient
 void tracker::scope_up()
 {
     this->depth--;
 
     std::vector<tracked_var> nvec; // new vector
-    for(tracked_var& var : this->vars)
+    for (auto& var : this->vars)
     {
-        if(var.depth <= this->depth)
+        if (var.depth <= this->depth)
         {
             nvec.push_back(var);
         }
@@ -66,7 +66,7 @@ void tracker::scope_down()
 
 bool tracker::request_entry()
 {
-    if(this->entry_set)
+    if (this->entry_set)
     {
         return false;
     }

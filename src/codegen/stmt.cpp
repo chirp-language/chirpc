@@ -1,9 +1,10 @@
 #include "codegen.hpp"
 
-std::string codegen::emit_decl(decl_stmt node)
+std::string codegen::emit_decl(decl_stmt& node)
 {
     std::string result;
-    if(!m_tracker->register_var(node.ident.namespaces,node.ident.name))
+    
+    if (!m_tracker->register_var(node.ident.namespaces, node.ident.name))
     {
         result = "// declaration error here\n";
         helper e;
@@ -14,6 +15,7 @@ std::string codegen::emit_decl(decl_stmt node)
         this->errored = true;
         return result;
     }
+    
     result += emit_datatype(node.data_type);
     result += " ";
     result += emit_ident(node.ident);
@@ -21,10 +23,11 @@ std::string codegen::emit_decl(decl_stmt node)
     return result;
 }
 
-std::string codegen::emit_def(def_stmt node)
+std::string codegen::emit_def(def_stmt& node)
 {
     std::string result;
-    if(!m_tracker->check_var(node.ident.namespaces,node.ident.name))
+    
+    if (!m_tracker->check_var(node.ident.namespaces,node.ident.name))
     {
         this->errored = true;
         result += "// error here\n";
@@ -35,6 +38,7 @@ std::string codegen::emit_def(def_stmt node)
         this->helpers.push_back(e);
         return result;
     }
+    
     result += emit_ident(node.ident);
     result += " = ";
     result += emit_expr(node.value);
@@ -42,7 +46,7 @@ std::string codegen::emit_def(def_stmt node)
     return result;
 }
 
-std::string codegen::emit_decldef(decldef_stmt node)
+std::string codegen::emit_decldef(decldef_stmt& node)
 {
     std::string result;
     result += emit_datatype(node.decl.data_type);
@@ -55,7 +59,7 @@ std::string codegen::emit_decldef(decldef_stmt node)
 }
 
 
-std::string codegen::emit_ret(ret_stmt node)
+std::string codegen::emit_ret(ret_stmt& node)
 {
     std::string result;
     result += "return ";
@@ -67,7 +71,7 @@ std::string codegen::emit_ret(ret_stmt node)
 std::string codegen::emit_stmt(std::shared_ptr<stmt> s)
 {
     std::string result;
-    switch(s->type)
+    switch (s->type)
     {
         case stmt_type::compound:
         result += emit_compound(*static_cast<compound_stmt*>(s.get()));
@@ -92,15 +96,17 @@ std::string codegen::emit_stmt(std::shared_ptr<stmt> s)
     return result;
 }
 
-std::string codegen::emit_compound(compound_stmt cstmt)
+std::string codegen::emit_compound(compound_stmt& cstmt)
 {
     std::string result;
     result += "{\n";
     this->m_tracker->scope_down();
-    for(std::shared_ptr<stmt> s : cstmt.body)
+    
+    for (auto& s : cstmt.body)
     {
         result += emit_stmt(s);
     }
+    
     this->m_tracker->scope_up();
     result += "}\n";
     return result;

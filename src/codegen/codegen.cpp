@@ -8,7 +8,7 @@ void codegen::gen()
     this->gen_toplevel();
 }
 
-void codegen::set_tree(ast t,std::string f)
+void codegen::set_tree(ast t, std::string f)
 {
     this->m_tree = t;
     this->filename = f;

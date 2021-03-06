@@ -13,24 +13,35 @@ bool frontend::find_compiler()
     this->has_gcc = false;
     this->has_clang = false;
     
-    // This is uterly terrible
-    if(system("which gcc > /dev/null 2>&1") == 0)
+    // This is utterly terrible
+    if (system("which gcc > /dev/null 2>&1") == 0)
     {
         this->has_gcc = true;
-    }
-    if(system("which clang > /dev/null 2>&1") == 0)
-    {
-        this->has_clang = true;
-    }
-
-    if(this->has_gcc || this->has_clang)
-    {
         return true;
     }
-    else{
-        return false;
+    else if (system("which clang > /dev/null 2>&1") == 0)
+    {
+        this->has_clang = true;
+        return true;
     }
+
+    return false;
     #else
+    this->has_gcc = false;
+    this->has_clang = false;
+    
+    // This is utterly terrible
+    if (system("where.exe gcc > nul") == 0)
+    {
+        this->has_gcc = true;
+        return true;
+    }
+    else if (system("where.exe clang > nul") == 0)
+    {
+        this->has_clang = true;
+        return true;
+    }
+        
     return false;
     #endif 
 }
