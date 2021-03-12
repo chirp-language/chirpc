@@ -141,6 +141,22 @@ std::vector<token> lexe(std::vector<location> src, std::vector<std::string> cont
         {
             t.type = tkn_type::comma;
         }
+        else if(t.value.size() == 2 && t.value.at(t.value.size() - 1) == '=')
+        {
+            char c = t.value.at(0);
+            if(c=='<'||c=='>'||c=='!'||c=='=')
+            {
+                t.type = tkn_type::cmp_op;
+            }
+            else if(c=='+'||c=='-'||c=='*'||c=='/')
+            {
+                t.type = tkn_type::assign_op;
+            }
+            else
+            {
+                t.type = tkn_type::unknown;
+            }
+        }
         else if (t.value == "=")
         {
             t.type = tkn_type::assign_op;

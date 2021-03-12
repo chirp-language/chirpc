@@ -90,6 +90,12 @@ std::vector<location> disjoint(std::vector<std::string> content)
                 location loc;
                 loc.start = i;
                 loc.line = l;
+                
+                if(i + 1 < line.size() && line.at(i+1) == '=')
+                {
+                    i++;
+                }
+
                 loc.end = i;
                 result.push_back(loc);
             }

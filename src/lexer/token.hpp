@@ -24,6 +24,7 @@ enum class tkn_type
     colon, // :
     comma, // ,
     assign_op, // =
+    cmp_op, // > < <= >= !=
     math_op, // + - * /
     ref_op,deref_op,as_op, // Should probably all be the same token
     lparen,rparen, // ( )
