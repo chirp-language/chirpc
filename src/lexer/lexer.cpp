@@ -94,6 +94,14 @@ std::vector<token> lexe(std::vector<location> src, std::vector<std::string> cont
         {
             t.type = tkn_type::kw_else;
         }
+        else if(t.value == "and")
+        {
+            t.type = tkn_type::kw_and;
+        }
+        else if(t.value == "or")
+        {
+            t.type = tkn_type::kw_or;
+        }
         else if (t.value == "func")
         {
             t.type = tkn_type::kw_func;

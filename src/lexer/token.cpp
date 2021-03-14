@@ -13,6 +13,8 @@ std::string token::util_dump(){
         tknstr(tkn_type::kw_export , kw_export )
         tknstr(tkn_type::kw_if     , kw_if     )
         tknstr(tkn_type::kw_else   , kw_else   )
+        tknstr(tkn_type::kw_and    , kw_and    )
+        tknstr(tkn_type::kw_or     , kw_or     )
         tknstr(tkn_type::kw_func   , kw_func   )
         tknstr(tkn_type::kw_while  , kw_while  )
         tknstr(tkn_type::kw_for    , kw_for    )

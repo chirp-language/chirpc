@@ -9,9 +9,10 @@ enum class tkn_type
     kw_entry, // entry
     kw_import,kw_export, // import export
     kw_if,kw_else, // if else
+    kw_and, kw_or,
     kw_func, // func
     kw_while,kw_for, // while for
-    kw_ret,
+    kw_ret, // ret
     kw_extern,
 
     // Tokens with multiple keywords 
