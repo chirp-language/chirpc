@@ -15,7 +15,7 @@ bool parser::is_operand(bool reset)
     int op = this->cursor;
     if (
         is_func_call(false)         ||
-        is_identifier(false)        ||
+        is_lvalue(false)            ||
         match(tkn_type::literal)    ||
         match(tkn_type::math_op)    ||
         match(tkn_type::deref_op)   ||

@@ -17,6 +17,18 @@ public:
 
 // === LITERALS & SIMILAR??! ===
 
+
+// Left-Side stuff
+
+// Left Side Operand type
+
+enum class loptype
+{
+    access, // Array Accessor []
+    ident,
+    lunop, // left unary operator
+};
+
 class identifier : public ast_node
 {
 public:
@@ -24,6 +36,20 @@ public:
     // {"a","b","c"}.. Further in vector => More nested
     std::vector<std::string> namespaces;
     std::string name;
+    virtual std::string dump(int) override;
+};
+
+class loperand : public ast_node
+{
+    public:
+    std::shared_ptr<ast_node> node;
+    loptype type;
+    virtual std::string dump(int) override;
+};
+
+class lvalue : public ast_node
+{
+    public:
     virtual std::string dump(int) override;
 };
 
@@ -65,6 +91,7 @@ enum class optype
 {
     lit,
     ident,
+    lval,
     call,
     subexpr,
     op, // just used during parsing

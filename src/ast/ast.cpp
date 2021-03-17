@@ -172,6 +172,23 @@ std::string identifier::dump(int depth)
     return result;
 }
 
+std::string loperand::dump(int depth)
+{
+    std::string result;
+    result += indent(depth);
+    result += "left_operand:\n";
+    return result;
+}
+
+std::string lvalue::dump(int depth)
+{
+    std::string result;
+    result = indent(depth);
+    result += "lvalue:\n";
+    // don't really care actually
+    return result;
+}
+
 std::string literal_node::dump(int depth)
 {
     std::string result;

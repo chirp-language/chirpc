@@ -37,6 +37,8 @@ private:
     bool is_operand(bool);
 
     bool is_identifier(bool);
+    bool is_lop(bool); // left operand
+    bool is_lvalue(bool);
     bool is_datatype(bool);
 
     bool is_params(bool);
@@ -50,6 +52,7 @@ private:
     bool is_func_call(bool); // (identifier) ( arguments )
 
     identifier get_identifier();
+    lvalue get_lvalue();
 
     txt_literal get_txt_lit();
     num_literal get_num_lit();

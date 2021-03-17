@@ -4,50 +4,6 @@
 #include <new>
 #include <iostream>
 
-bool parser::is_identifier(bool reset)
-{
-    bool result = false;
-    int op = this->cursor;
-
-    do
-    {
-        if (match(tkn_type::identifer))
-        {
-            result = true;
-        }
-        else
-        {
-            result = false;
-        }
-    } while (match(tkn_type::comma));
-
-    if (reset)
-    {
-        this->cursor = op;
-    }
-
-    return result;
-}
-
-identifier parser::get_identifier()
-{
-    identifier node;
-    while (match(tkn_type::identifer))
-    {
-        token ns = peekb();
-        if (match(tkn_type::period))
-        {
-            node.namespaces.push_back(ns.value);
-        }
-        else
-        {
-            node.name = ns.value;
-            break;
-        }
-    }
-    return node;
-}
-
 txt_literal parser::get_txt_lit()
 {
     txt_literal node;
