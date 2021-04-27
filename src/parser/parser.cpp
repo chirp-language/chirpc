@@ -1,17 +1,17 @@
 #include "parser.hpp"
 
-void parser::load_tokens(std::string fn, std::vector<token> t)
+void parser::load_tokens(std::string fn, std::vector<token>&& t)
 {
     this->filename = fn;
-    this->tkns = t;
+    this->tkns = std::move(t);
 }
 
-std::vector<helper> parser::get_helpers()
+std::vector<diagnostic> const& parser::get_diagnostics()
 {
-    return this->helpers;
+    return this->diagnostics;
 }
 
-ast parser::get_ast()
+ast_root& parser::get_ast()
 {
     return this->tree;
 }
@@ -21,52 +21,60 @@ void parser::parse()
     this->ok = true;
     //this->tree.root.children.push_back(this->get_stmt());
     // Only gets the top-level stuff
-    while(!match(tkn_type::eof) && this->ok)
+    while(this->ok and !match(tkn_type::eof))
     {
-        tkn_type t = this->peek().type;
-
-        if(t == tkn_type::kw_entry)
+        switch (peek().type)
         {
+        case tkn_type::kw_entry:
+        {
+            skip();
             this->tree.entry = get_entry();
             this->tree.has_entry = true;
+            break;
         }
-        else if(t == tkn_type::kw_import)
+        case tkn_type::kw_import:
         {
+            skip();
             this->tree.imports.push_back(get_import());
+            break;
         }
-        else if(t == tkn_type::kw_extern)
+        case tkn_type::kw_extern:
         {
+            skip();
             this->tree.externs.push_back(get_extern());
+            break;
         }
-        else if(t == tkn_type::kw_func)
+        case tkn_type::kw_func:
         {
-            if(is_func_def(true))
+            if(is_func_def())
             {
                 this->tree.fdefs.push_back(get_func_def());
             }
-            else if(is_func_decl(true))
+            else if(is_func_decl())
             {
                 this->tree.fdecls.push_back(get_func_decl());
             }
             else
             {
                 // Is either a var or an error
-                helper e;
-                e.l = peek().loc;
-                e.msg = "I am a lazy person";
-                e.type = helper_type::location_err;
-                this->helpers.push_back(e);
+                diagnostic e;
+                e.l = loc_peek();
+                e.msg = "I am no longer a lazy person";
+                e.type = diagnostic_type::location_err;
+                this->diagnostics.push_back(std::move(e));
                 this->ok = false;
             }
+            break;
         }
-        else
+        default:
         {
             this->ok = false;
-            helper e;
-            e.type = helper_type::location_err;
-            e.l = this->peek().loc;
+            diagnostic e;
+            e.type = diagnostic_type::location_err;
+            e.l = loc_peek();
             e.msg = "Invalid top-level statement";
-            this->helpers.push_back(e);
+            this->diagnostics.push_back(std::move(e));
+        }
         }
     }
 }
@@ -87,14 +95,26 @@ bool parser::match(tkn_type v)
     return false;
 }
 
+bool parser::probe(tkn_type v)
+{
+    // Probably good enough to stop like 99% of bad behaviour
+    if (!this->ok)
+    {
+        return false;
+    }
+
+    return this->peek().type == v;
+}
+
 bool parser::expect(tkn_type v)
 {
     if (!match(v))
     {
-        helper e;
+        diagnostic e;
         if (cursor >= this->tkns.size())
         {
-            e.type = helper_type::line_err;
+            e.type = diagnostic_type::line_err;
+            e.l = loc_eof();
             // If line err, doesn't care about start or end, just line
             location l;
             l.filename = this->filename;
@@ -103,17 +123,16 @@ bool parser::expect(tkn_type v)
         }
         else
         {
-            e.l = tkns.at(this->cursor).loc;
-            e.l.filename = this->filename;
-            e.type = helper_type::location_err;
+            e.l = loc_peek();
+            e.type = diagnostic_type::location_err;
             e.msg = "Unexpected token";
         }
-        this->helpers.push_back(e);
+        this->diagnostics.push_back(std::move(e));
     }
     return true;
 }
 
-token parser::peekb()
+token const& parser::peekb()
 {
     if (cursor > 0)
     {
@@ -121,13 +140,11 @@ token parser::peekb()
     }
     else
     {
-        token t;
-        t.type = tkn_type::eof;
-        return t;
+        return this->tkns.back();
     }
 }
 
-token parser::peek()
+token const& parser::peek()
 {
     if (cursor >= 0 && cursor < this->tkns.size())
     {
@@ -135,13 +152,12 @@ token parser::peek()
     }
     else
     {
-        token t;
-        t.type = tkn_type::eof;
-        return t;
+        // Assume last token is eof (which it should!)
+        return this->tkns.back();
     }
 }
 
-token parser::peekf()
+token const& parser::peekf()
 {
     if (cursor + 1 < this->tkns.size())
     {
@@ -149,8 +165,14 @@ token parser::peekf()
     }
     else
     {
-        token t;
-        t.type = tkn_type::eof;
-        return t;
+        return this->tkns.back();
     }
+}
+
+location const& parser::get_loc(token_location loc)
+{
+    static location const s_invalid("<invalid>");
+    if (loc.is_valid())
+        return this->tkns.at(loc.loc).loc;
+    return s_invalid;
 }

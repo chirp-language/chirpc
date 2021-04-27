@@ -10,11 +10,7 @@
 std::string indent(int x)
 {
     std::string result;
-    for (int i = 0; i < x; i++)
-    {
-        //result += "\t";
-        result += "   ";
-    }
+    result.resize(x * 3, ' ');
     return result;
 }
 
@@ -76,7 +72,7 @@ std::string dump_dtmod(dtypemod m)
 // === AST UTIL DUMPS ===
 // Doesn't dump in any particular format(yet)
 
-std::string ast::dump()
+std::string ast_root::dump()
 {
     std::string result;
     result += "Top Level:\n";
@@ -87,9 +83,9 @@ std::string ast::dump()
     }
     else
     {
-        for (import_stmt import : this->imports)
+        for (auto& import : this->imports)
         {
-            result += import.dump(0);
+            result += import->dump(0);
         }
     }
 
@@ -99,33 +95,33 @@ std::string ast::dump()
     }
     else
     {
-        for (extern_stmt ext : this->externs)
+        for (auto& ext : this->externs)
         {
-            result += ext.dump(1);
+            result += ext->dump(1);
         }
     }
 
-    if (this->fdecls.size() == 0)
+    if (this->fdecls.empty())
     {
         result += "-- No function declarations on top-level --\n";
     }
     else
     {
-        for (func_decl_stmt node : this->fdecls)
+        for (auto& node : this->fdecls)
         {
-            result += node.dump(1);
+            result += node->dump(1);
         }
     }
 
-    if (this->fdefs.size() == 0)
+    if (this->fdefs.empty())
     {
         result += "-- No function definitions on top-level --\n";
     }
     else
     {
-        for (func_def_stmt node : this->fdefs)
+        for (auto& node : this->fdefs)
         {
-            result += node.dump(1);
+            result += node->dump(1);
         }
     }
 
@@ -140,7 +136,7 @@ std::string ast::dump()
     return result;
 }
 
-std::string ast_node::dump(int depth)
+/*std::string ast_node::dump(int depth)
 {
     std::string result;
     result += indent(depth);
@@ -150,7 +146,7 @@ std::string ast_node::dump(int depth)
     //    result += child->dump(depth + 1);
     //}
     return result;
-}
+}*/
 
 std::string identifier::dump(int depth)
 {
@@ -163,7 +159,7 @@ std::string identifier::dump(int depth)
         result += wot;
         if (i != this->namespaces.size() - 1)
         {
-            result += ",";
+            result += ".";
         }
     }
     result += "> ";
@@ -180,20 +176,11 @@ std::string loperand::dump(int depth)
     return result;
 }
 
-std::string lvalue::dump(int depth)
-{
-    std::string result;
-    result = indent(depth);
-    result += "lvalue:\n";
-    // don't really care actually
-    return result;
-}
-
 std::string literal_node::dump(int depth)
 {
     std::string result;
     result += indent(depth);
-    result += "default_literal";
+    result += "none_literal";
     return result;
 }
 
@@ -202,7 +189,7 @@ std::string txt_literal::dump(int depth)
     std::string result;
     result += indent(depth);
     result += "text_literal ";
-    if (this->single_char)
+    if (this->is_character)
     {
         result += "(char) ";
     }
@@ -226,28 +213,27 @@ std::string num_literal::dump(int depth)
     return result;
 }
 
-std::string subexpr::dump(int depth)
+std::string binop::dump(int depth)
 {
     std::string result;
     result += indent(depth);
-    result += "subexpr ";
-    result += op.dump(0);
+    result += "binop ";
+    result += exprop_id(op);
     //result += ");\n";
     result += indent(depth + 1);
     result += "left:\n";
-    result += left.dump(depth + 1);
+    result += left->dump(depth + 1);
     result += indent(depth + 1);
     result += "right:\n";
-    result += right.dump(depth + 1);
+    result += right->dump(depth + 1);
     return result;
 }
 
-std::string exprop::dump(int depth)
+std::string exprop_id(exprop op)
 {
     std::string result;
-    result = indent(depth);
-    result += "expr_operator (";
-    switch (this->type)
+    result = "(";
+    switch (static_cast<char>(op))
     {
     case '(':
         result += "lparen";
@@ -281,53 +267,14 @@ std::string exprop::dump(int depth)
     return result;
 }
 
-std::string operand::dump(int depth)
-{
-    std::string result;
-    result = indent(depth);
-    result += "operand:\n";
-    switch (this->type)
-    {
-    case optype::lit:
-        result += static_cast<literal_node *>(this->node.get())->dump(depth + 1);
-        break;
-    case optype::ident:
-        result += static_cast<identifier *>(this->node.get())->dump(depth + 1);
-        break;
-    case optype::call:
-        result += static_cast<func_call_stmt *>(this->node.get())->dump(depth + 1);
-        break;
-    case optype::subexpr:
-        result += static_cast<subexpr *>(this->node.get())->dump(depth + 1);
-        break;
-    case optype::op:
-        result += static_cast<exprop *>(this->node.get())->dump(depth + 1);
-        break;
-    case optype::invalid:
-        result += indent(depth + 1);
-        result += "(INVALID EXPR)\n";
-        break;
-    }
-    return result;
-}
-
-std::string expr::dump(int depth)
-{
-    std::string result;
-    result += indent(depth);
-    result += "expression;\n";
-    result += this->root.dump(depth + 1);
-    return result;
-}
-
 std::string arguments::dump(int depth)
 {
     std::string result;
     result += indent(depth);
     result += "arguments:\n";
-    for (auto n : body)
+    for (auto& n : body)
     {
-        result += n.dump(depth + 1);
+        result += n->dump(depth + 1);
     }
     return result;
 }
@@ -337,10 +284,10 @@ std::string parameters::dump(int depth)
     std::string result;
     result += indent(depth);
     result += "parameters:\n";
-    for (decl_stmt param : this->body)
+    for (auto& param : this->body)
     {
         //    result += indent(depth+1);
-        result += param.dump(depth + 1);
+        result += param->dump(depth + 1);
         //    result += "\n";
     }
     return result;
@@ -354,17 +301,17 @@ std::string stmt::dump(int depth)
     return result;
 }
 
-std::string dtype::dump(int depth)
+std::string exprtype::dump(int depth) const
 {
     std::string result;
     result += indent(depth);
     result += "data_type:\n";
     result += indent(depth + 1);
     result += "typename: ";
-    result += dump_dtname(this->tname);
+    result += dump_dtname(basetp);
     result += ";\n";
     result += indent(depth + 1);
-    if (this->tmods.size() == 0)
+    if (exttp.empty())
     {
         result += "(no type modifiers)\n";
     }
@@ -372,7 +319,7 @@ std::string dtype::dump(int depth)
     {
         result += "type modifiers:\n";
         // I really gave up on naming thing well there
-        for (char x : this->tmods)
+        for (std::byte x : exttp)
         {
             dtypemod w = static_cast<dtypemod>(x);
             result += indent(depth + 2);
@@ -383,23 +330,15 @@ std::string dtype::dump(int depth)
     return result;
 }
 
-std::string decldef_stmt::dump(int depth)
-{
-    std::string result;
-    result = indent(depth);
-    result += "declaration&definition:\n";
-    result += this->decl.dump(depth + 1);
-    result += this->def.dump(depth + 1);
-    return result;
-}
-
 std::string decl_stmt::dump(int depth)
 {
     std::string result;
     result += indent(depth);
     result += "decl_statement:\n";
     result += this->data_type.dump(depth + 1);
-    result += this->ident.dump(depth + 1);
+    result += this->ident->dump(depth + 1);
+    if (this->init)
+        result += this->init->dump(depth + 1);
     return result;
 }
 
@@ -408,8 +347,8 @@ std::string def_stmt::dump(int depth)
     std::string result;
     result += indent(depth);
     result += "def_statement:\n";
-    result += this->ident.dump(depth + 1);
-    result += this->value.dump(depth + 1);
+    result += this->ident->dump(depth + 1);
+    result += this->value->dump(depth + 1);
     return result;
 }
 
@@ -450,7 +389,7 @@ std::string ret_stmt::dump(int depth)
     std::string result;
     result += indent(depth);
     result += "ret_statement:\n";
-    result += this->val.dump(depth + 1);
+    result += this->val->dump(depth + 1);
     return result;
 }
 
@@ -493,9 +432,9 @@ std::string func_def_stmt::dump(int depth)
     result += indent(depth);
     result += "function_definition:\n";
     result += data_type.dump(depth + 1);
-    result += ident.dump(depth + 1);
+    result += ident->dump(depth + 1);
     result += params.dump(depth + 1);
-    result += body.dump(depth + 1);
+    result += body->dump(depth + 1);
     return result;
 }
 
@@ -505,17 +444,17 @@ std::string func_decl_stmt::dump(int depth)
     result += indent(depth);
     result += "function_declaration:\n";
     result += data_type.dump(depth + 1);
-    result += ident.dump(depth + 1);
+    result += ident->dump(depth + 1);
     result += params.dump(depth + 1);
     return result;
 }
 
-std::string func_call_stmt::dump(int depth)
+std::string func_call::dump(int depth)
 {
     std::string result;
     result += indent(depth);
     result += "function_call:\n";
-    result += this->ident.dump(depth + 1);
+    result += this->callee->dump(depth + 1);
     result += this->args.dump(depth + 1);
     return result;
 }

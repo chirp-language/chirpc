@@ -33,13 +33,16 @@ dtypename parser::get_dtypename(std::string txt)
         return dtypename::_none;
     }
 
+    #ifndef NDEBUG
     // If this manages to reach here, then uhhh it's not supposed to happen
     this->ok = false;
-    helper e;
-    e.type = helper_type::global_err;
+    diagnostic e;
+    e.type = diagnostic_type::global_err;
     e.msg = "Couldn't get typename from '" + txt + "', location unknown";
-    this->helpers.push_back(e);
+    this->diagnostics.push_back(e);
+    #else
     __builtin_unreachable();
+    #endif
 }
 
 dtypemod parser::get_dtypemod(std::string txt)
@@ -69,96 +72,51 @@ dtypemod parser::get_dtypemod(std::string txt)
     }
 
     this->ok = false;
-    helper e;
-    e.type = helper_type::global_err;
+    diagnostic e;
+    e.type = diagnostic_type::global_err;
     e.msg = "Couldn't get type modifier from '" + txt + "', location unknown";
-    this->helpers.push_back(e);
+    this->diagnostics.push_back(e);
     return mod;
 }
 
-bool parser::is_datatype(bool reset)
+bool parser::is_datatype()
+{
+    return probe(tkn_type::datamod) || probe(tkn_type::datatype);
+}
+
+bool parser::is_var_decl()
 {
     bool result = false;
-    int op = this->cursor;
-
-    while (match(tkn_type::datamod) || match(tkn_type::datatype))
-        result = true;
-
-    // This has been removed, because data types aren't only in variable declarations
-    /*if(result == true)
+    if (is_datatype() && peekf().type == tkn_type::colon)
     {
-        if(match(tkn_type::colon))
-        {
+        cursor += 2;
+        if (probe(tkn_type::identifer))
             result = true;
-        }
-        else
-        {
-            result = false;
-        }
-    }*/
-    if (reset)
-        this->cursor = op;
-
+        cursor -= 2;
+    }
     return result;
 }
 
-bool parser::is_var_decl(bool reset)
+bool parser::is_var_def()
 {
-    bool result = false;
-    int op = this->cursor;
-    if (is_datatype(false) && match(tkn_type::colon))
-    {
-        if (match(tkn_type::identifer))
-            result = true;
-    }
-    if (reset)
-    {
-        this->cursor = op;
-    }
-
-    return result;
-}
-
-bool parser::is_var_def(bool reset)
-{
-    bool result = false;
-    int op = this->cursor;
     // Doesn't care about cast (yet)
-    if (match(tkn_type::identifer) && match(tkn_type::assign_op))
-    {
-        result = true;
-    }
-    if (reset)
-    {
-        this->cursor = op;
-    }
-
-    return result;
+    return probe(tkn_type::identifer) && peekf().type == tkn_type::assign_op;
 }
 
 bool parser::is_var_decldef()
 {
-    bool result = false;
-    int op = this->cursor;
-    if (is_var_decl(false))
-    {
-        this->cursor--;
-
-        if (is_var_def(false))
-            result = true;
-    }
-    this->cursor = op;
-    return result;
+    // Continuation of a decl
+    return probe(tkn_type::assign_op);
 }
 
-dtype parser::get_datatype()
+exprtype parser::get_datatype()
 {
-    dtype node;
+    exprtype type;
     bool has_candidate = false;
     //  Mods before the typename
     while (match(tkn_type::datamod))
     {
-        node.tmods.push_back(static_cast<char>(get_dtypemod(peekb().value)));
+        type.exttp.push_back(static_cast<std::byte>(get_dtypemod(peekb().value)));
 
         if (static_cast<dtypemod>(get_dtypemod(peekb().value)) == dtypemod::_ptr)
             has_candidate = true;
@@ -168,62 +126,62 @@ dtype parser::get_datatype()
     if (!match(tkn_type::datatype))
     {
         if (has_candidate)
-            node.tname = dtypename::_none;
+            type.basetp = dtypename::_none;
     }
     else
     {
-        node.tname = get_dtypename(this->peekb().value);
+        type.basetp = get_dtypename(this->peekb().value);
     }
     if (!this->ok)
     {
-        return node;
+        return type;
     }
     // Mods after the typename
     while (match(tkn_type::datamod))
     {
-        node.tmods.push_back(static_cast<char>(get_dtypemod(peekb().value)));
+        type.exttp.push_back(static_cast<std::byte>(get_dtypemod(peekb().value)));
     }
     // expect(tkn_type::colon);
-    return node;
+    return type;
 }
 
-decl_stmt parser::get_decl_stmt()
+std::shared_ptr<decl_stmt> parser::get_decl_stmt()
 {
-    decl_stmt node;
-    node.line = peek().loc.line;
-    node.type = stmt_type::decl;
-    node.data_type = get_datatype();
+    auto node = std::make_shared<decl_stmt>();
+    node->loc = loc_peek();
+    node->type = stmt_type::decl;
+    node->data_type = get_datatype();
     expect(tkn_type::colon);
-    node.ident = get_identifier();
+    node->ident = get_identifier();
+    node->loc.end = loc_peekb();
     return node;
 }
 
-def_stmt parser::get_def_stmt()
+std::shared_ptr<def_stmt> parser::get_def_stmt()
 {
-    def_stmt node;
-    node.line = peek().loc.line;
-    node.type = stmt_type::def;
-    node.ident = get_identifier();
+    auto node = std::make_shared<def_stmt>();
+    node->loc = loc_peek();
+    node->type = stmt_type::def;
+    node->ident = get_identifier();
     expect(tkn_type::assign_op);
 
     if (!this->ok)
         return node;
 
-    node.value = get_expr();
+    node->value = get_expr(false);
+    node->loc.end = loc_peekb();
     return node;
 }
 
-decldef_stmt parser::get_decldef_stmt()
+std::shared_ptr<decl_def_stmt> parser::get_decldef_stmt(std::shared_ptr<decl_stmt> decl)
 {
-    decldef_stmt node;
-    node.line = peek().loc.line;
-    node.type = stmt_type::decldef;
-    node.decl = get_decl_stmt();
-
-    if (!this->ok)
-        return node;
+    auto node = std::make_shared<decl_def_stmt>();
+    node->type = stmt_type::decldef;
+    node->decl = std::move(decl);
 
     this->cursor--; // Go back to the identifier
-    node.def = get_def_stmt();
+    node->def = get_def_stmt();
+    if (this->ok)
+        node->loc = location_range(node->decl->loc.begin, node->def->loc.end);
     return node;
 }

@@ -1,21 +1,16 @@
 #include "helper.hpp"
 #include "../color.hpp"
 #include <iostream>
+#include <charconv>
 
-inline std::string get_spacing(int l)
+static inline std::string get_spacing(int l)
 {
     std::string og = "    | ";
-    std::string line = std::to_string(l);
-
-    for (int i = 0; i < og.size(); i++)
-    {
-        if (i < line.size())
-            og.at(i) = line.at(i);
-    }
+    std::to_chars(og.data(), og.data() + og.size(), l);
     return og;
 }
 
-bool is_important(std::string& line)
+static bool is_important(std::string const& line)
 {
     for(char c : line)
     {
@@ -25,14 +20,14 @@ bool is_important(std::string& line)
     return false;
 }
 
-std::string helper::write_helper(std::vector<std::string> content, cmd& options)
+std::string diagnostic::show_output(std::vector<std::string> const& content, cmd& options)
 {
     std::string result;
     
     if (
-        type == helper_type::global_warning || 
-        type == helper_type::line_warning || 
-        type == helper_type::location_warning 
+        type == diagnostic_type::global_warning || 
+        type == diagnostic_type::line_warning || 
+        type == diagnostic_type::location_warning 
     ) {
         if (options.has_color)
         {
@@ -46,9 +41,9 @@ std::string helper::write_helper(std::vector<std::string> content, cmd& options)
         result += this->msg;
     }
     else if (
-        type == helper_type::global_err || 
-        type == helper_type::line_err || 
-        type == helper_type::location_err )
+        type == diagnostic_type::global_err || 
+        type == diagnostic_type::line_err || 
+        type == diagnostic_type::location_err )
     {
         if (options.has_color)
         {
@@ -64,14 +59,14 @@ std::string helper::write_helper(std::vector<std::string> content, cmd& options)
     
     result += "\n";
     
-    if (type != helper_type::global_warning && type != helper_type::global_err)
+    if (type != diagnostic_type::global_warning && type != diagnostic_type::global_err)
     {
         result += "At ";
         result += l.filename;
         result += ":";
         result += std::to_string(l.line);
         
-        if (type == helper_type::location_warning || type == helper_type::location_err)
+        if (type == diagnostic_type::location_warning || type == diagnostic_type::location_err)
         {
             result += ":";
             result += std::to_string(l.start);
@@ -99,7 +94,7 @@ std::string helper::write_helper(std::vector<std::string> content, cmd& options)
         result += content.at(l.line);
         result += "\n";
 
-        if (type == helper_type::location_warning || type == helper_type::location_err)
+        if (type == diagnostic_type::location_warning || type == diagnostic_type::location_err)
         {
             std::string identation;
             result += "    | ";

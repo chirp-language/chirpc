@@ -27,7 +27,7 @@ enum class tkn_type
     assign_op, // =
     cmp_op, // > < <= >= !=
     math_op, // + - * /
-    ref_op,deref_op,as_op, // Should probably all be the same token
+    ref_op,deref_op,as_op, // Should probably all be the same token (or all different)
     lparen,rparen, // ( )
     lbrace,rbrace, // { } 
     lbracket,rbracket, // [ ]
@@ -52,4 +52,25 @@ class token
 
     // Utility Function
     std::string util_dump();
+};
+
+// Stolen from clang
+struct token_location
+{
+    ssize_t loc;
+
+    explicit constexpr token_location() noexcept : loc(-1) {}
+    explicit constexpr token_location(ssize_t l) noexcept : loc(l) {}
+
+    bool is_valid() const noexcept { return loc >= 0; }
+};
+
+struct location_range
+{
+    token_location begin, end;
+
+    explicit constexpr location_range() noexcept {}
+    constexpr location_range(token_location loc) noexcept : begin(loc), end(loc) {}
+    constexpr location_range(token_location b, token_location e) noexcept
+        : begin(b), end(e) {}
 };

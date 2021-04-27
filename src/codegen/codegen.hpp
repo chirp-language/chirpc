@@ -10,14 +10,14 @@ class codegen
     public:
     void gen();
      
-    void set_tree(ast, std::string);
+    void set_tree(ast_root*, std::string);
     void set_tracker(tracker*);
     
     // The name is pretty bad ngl
     std::string get_result();
 
     bool errored = false;
-    std::vector<helper> helpers;
+    std::vector<diagnostic> diagnostics;
     private:
     std::string emit_ident(identifier&);
     std::string emit_datatype(dtype&);
@@ -42,7 +42,7 @@ class codegen
     std::string emit_entry(entry_stmt&);
     void gen_toplevel();
 
-    ast m_tree;
+    ast_root* m_tree;
     tracker* m_tracker;
     std::string result;
     std::string filename;

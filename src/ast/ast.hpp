@@ -1,8 +1,11 @@
+/// \file Abstract Spaghetti Noodles code representation
+
 #pragma once
 /*
 All possible AST nodes are defined here
 */
 #include "types.hpp"
+#include "../lexer/token.hpp"
 #include <string>
 #include <vector>
 #include <memory>
@@ -11,12 +14,92 @@ All possible AST nodes are defined here
 class ast_node
 {
 public:
-    virtual std::string dump(int);
+    virtual std::string dump(int) = 0;
     //std::vector<std::shared_ptr<ast_node>> children;
+
+    location_range loc;
 };
 
 // === LITERALS & SIMILAR??! ===
 
+// === Expression Stuff ===
+// I am spoon brain so I just like, improvised expression parsing..
+// Cuz pfff what is Shunting-yard ???! All I know is Bink's-Yard amirite
+
+// Operand type
+enum class optype
+{
+    lit,
+    ident,
+    call,
+    op,
+    invalid
+};
+
+enum class opcat
+{
+    unset = 1, // unknown/unassigned type
+    lval = 2, // lvalue, i.e. has location
+    pval = 4, // pvalue, i.e. a loose value (not tied to any object)
+};
+
+struct exprtype
+{
+    dtypename basetp;
+    opcat cattp;
+    std::vector<std::byte> exttp; // Enums are cast to/from a byte bc why not
+
+    std::string dump(int depth) const;
+};
+
+class expr : public ast_node
+{
+    public:
+    exprtype type;
+    optype kind;
+
+    expr(optype kind)
+        : type{}, kind(kind) {}
+};
+
+// Expression handle (shorthand)
+using exprh = std::shared_ptr<expr>;
+
+
+// Operator
+enum class exprop : short {
+    none = 0,
+    as = -1,
+    deref = -2,
+    ref = -3,
+    call = -4,
+};
+
+std::string exprop_id(exprop op);
+
+class binop : public expr
+{
+    public:
+    exprop op;
+    token_location op_loc;
+    exprh left;
+    exprh right;
+    virtual std::string dump(int) override;
+
+    binop(exprop op, exprh l, exprh r)
+        : expr(optype::op), op(op), left(std::move(l)), right(std::move(r)) {}
+};
+
+class func_call : public expr
+{
+public:
+    exprh callee;
+    arguments args;
+    virtual std::string dump(int) override;
+
+    func_call(exprh callee, arguments args)
+        : expr(optype::call), callee(std::move(callee)), args(std::move(args)) {}
+};
 
 // Left-Side stuff
 
@@ -29,7 +112,7 @@ enum class loptype
     lunop, // left unary operator
 };
 
-class identifier : public ast_node
+class identifier : public expr
 {
 public:
     // The namespace vector for a.b.c.foo() would be like:
@@ -39,17 +122,11 @@ public:
     virtual std::string dump(int) override;
 };
 
-class loperand : public ast_node
+class loperand : public expr
 {
     public:
     std::shared_ptr<ast_node> node;
     loptype type;
-    virtual std::string dump(int) override;
-};
-
-class lvalue : public ast_node
-{
-    public:
     virtual std::string dump(int) override;
 };
 
@@ -59,7 +136,7 @@ enum class littype
     num
 };
 
-class literal_node : public ast_node
+class literal_node : public expr
 {
 public:
     littype ltype;
@@ -70,7 +147,7 @@ class txt_literal : public literal_node
 {
 public:
     virtual std::string dump(int) override;
-    bool single_char;
+    bool is_character; // Single character/packed character constant
     std::string value;
 };
 
@@ -78,57 +155,7 @@ public:
 class num_literal : public literal_node
 {
 public:
-    std::string value;
-    virtual std::string dump(int) override;
-};
-
-// === Expression Stuff ===
-// I am spoon brain so I just like, improvised expression parsing..
-// Cuz pfff what is Shunting-yard ???! All I know is Bink's-Yard amirite
-
-// Operand type
-enum class optype
-{
-    lit,
-    ident,
-    lval,
-    call,
-    subexpr,
-    op, // just used during parsing
-    invalid
-};
-
-
-// Operator
-class exprop : public ast_node
-{
-    public:
-    char type;
-    //bool binary;
-    virtual std::string dump(int) override;
-};
-
-class operand : public ast_node
-{
-    public:
-    optype type;
-    std::shared_ptr<ast_node> node;
-    virtual std::string dump(int) override;
-};
-
-class subexpr : public ast_node
-{
-    public:
-    exprop op;
-    operand left;
-    operand right;
-    virtual std::string dump(int) override;
-};
-
-class expr : public ast_node
-{
-    public:
-    operand root;
+    std::string value; // bruh
     virtual std::string dump(int) override;
 };
 
@@ -137,7 +164,7 @@ class expr : public ast_node
 class arguments : public ast_node
 {
 public:
-    std::vector<expr> body;
+    std::vector<exprh> body;
     virtual std::string dump(int) override;
 };
 
@@ -146,8 +173,8 @@ public:
 enum class stmt_type
 {
     decl, def, decldef,
-    compound, entry, import, 
-    ret, fdef, fdecl, fcall
+    compound, entry, import,
+    ret, fdef, fdecl, expr
 };
 
 class stmt : public ast_node
@@ -155,54 +182,49 @@ class stmt : public ast_node
 public:
     // There's a bunch of them so gotta make another enum smh
     stmt_type type;
-    // It's kindof a location-ish
-    int line;
     virtual std::string dump(int) override;
 };
 
-class dtype : public ast_node
-{
-    public:
-    dtypename tname;
-    std::vector<char> tmods; // Enums are cast to/from a char
-    virtual std::string dump(int) override;
-};
+// Statement handle (shorthand)
+using stmth = std::shared_ptr<stmt>;
 
 class decl_stmt : public stmt
 {
     public:
-    dtype data_type;
-    identifier ident;
+    exprtype data_type;
+    std::shared_ptr<identifier> ident;
+    exprh init; // Empty if not availible
     virtual std::string dump(int) override;
 };
 
 class def_stmt : public stmt
 {
     public:
-    identifier ident;
-    expr value;
+    std::shared_ptr<identifier> ident;
+    exprh value;
     virtual std::string dump(int) override;
 };
 
-class decldef_stmt : public stmt
+// Combines a declaration with a definition
+class decl_def_stmt : public stmt
 {
     public:
-    decl_stmt decl;
-    def_stmt def;
-    virtual std::string dump(int override);
+    std::shared_ptr<decl_stmt> decl;
+    std::shared_ptr<def_stmt> def;
+    virtual std::string dump(int) override;
 };
 
 class compound_stmt : public stmt
 {
 public:
-    std::vector<std::shared_ptr<stmt>> body;
+    std::vector<stmth> body;
     virtual std::string dump(int) override;
 };
 
 class entry_stmt : public stmt
 {
 public:
-    std::shared_ptr<stmt> code;
+    stmth code;
     virtual std::string dump(int) override;
 };
 
@@ -217,7 +239,7 @@ class ret_stmt : public stmt
 {
 public:
     // Should be replaced by expr, when I get to those
-    expr val;
+    exprh val;
     virtual std::string dump(int) override;
 };
 
@@ -229,16 +251,16 @@ class extern_stmt : public stmt
         None,
         Function,
         Variable
-    }type;
+    } type;
     txt_literal real_name;
-    std::shared_ptr<stmt> stmt;
+    stmth stmt;
     virtual std::string dump(int) override;
 };
 
 class parameters : public ast_node
 {
     public:
-    std::vector<decl_stmt> body;
+    std::vector<std::shared_ptr<decl_stmt>> body;
     virtual std::string dump(int) override;
 };
 
@@ -246,8 +268,8 @@ class parameters : public ast_node
 class func_decl_stmt : public stmt
 {
     public:
-    dtype data_type;
-    identifier ident;
+    exprtype data_type;
+    std::shared_ptr<identifier> ident;
     parameters params;
     virtual std::string dump(int) override;
 };
@@ -256,29 +278,28 @@ class func_decl_stmt : public stmt
 class func_def_stmt : public stmt
 {
     public:
-    dtype data_type;
-    identifier ident;
+    exprtype data_type;
+    std::shared_ptr<identifier> ident;
     parameters params;
-    compound_stmt body;
+    std::shared_ptr<compound_stmt> body;
     virtual std::string dump(int) override;
 };
 
-class func_call_stmt : public stmt
+class expr_stmt : public stmt
 {
-public:
-    identifier ident;
-    arguments args;
+    public:
+    exprh node;
     virtual std::string dump(int) override;
 };
 
-class ast
+class ast_root
 {
 public:
     // Vectors are in order
-    std::vector<import_stmt> imports;
-    std::vector<extern_stmt> externs;
-    std::vector<func_decl_stmt> fdecls;
-    std::vector<func_def_stmt> fdefs;
+    std::vector<std::shared_ptr<import_stmt>> imports;
+    std::vector<std::shared_ptr<extern_stmt>> externs;
+    std::vector<std::shared_ptr<func_decl_stmt>> fdecls;
+    std::vector<std::shared_ptr<func_def_stmt>> fdefs;
     bool has_entry = false;
     entry_stmt entry;
     std::string dump();

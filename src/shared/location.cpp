@@ -1,20 +1,13 @@
 #include "location.hpp"
 
 location::location()
-{
-    this->filename = "unknown";
-    this->start = 0;
-    this->line = 0;
-    this->end = 0;
-}
+    : filename("<unknown>")
+{}
 
 location::location(std::string f)
-{
-    this->filename = f;
-}
+    : filename(std::move(f))
+{}
 
 location::location(int line, std::string file)
-{
-    this->filename = file;
-    this->line = line;
-}
+    : filename(std::move(file)), line(line)
+{}

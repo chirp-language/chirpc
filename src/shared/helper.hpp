@@ -1,7 +1,6 @@
-/*
-"helper"(couldn't find a better name really), basically this is either a warning or an error
-and this represents some place in the with some message linked to it
-*/
+/// \file Compiler diagnostics, basically this is either a warning or an error
+/// and this represents some place in the with some message linked to it.
+
 #pragma once
 
 #include "location.hpp"
@@ -9,7 +8,7 @@ and this represents some place in the with some message linked to it
 #include <vector>
 #include <string>
 
-enum class helper_type 
+enum class diagnostic_type 
 {
     global_warning,
     global_err,
@@ -19,14 +18,20 @@ enum class helper_type
     location_err
 };
 
-class helper
+class diagnostic
 {
 public:
-    helper_type type;
-    location l;
+    diagnostic_type type;
+    location_range l;
     std::string msg;
+
+    diagnostic() = default;
+    diagnostic(diagnostic const&) = delete;
+    diagnostic(diagnostic &&) = default;
+    diagnostic& operator=(diagnostic const&) = delete;
+    diagnostic& operator=(diagnostic &&) = default;
 
     // Writes the helper, in a human readable way
     // Possible Improvement: Add an option to create a "machine-readable" error prompt
-    std::string write_helper(std::vector<std::string>, cmd&);
+    std::string show_output(std::vector<std::string> const& source, cmd& options);
 };

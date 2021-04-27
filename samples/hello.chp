@@ -1,0 +1,6 @@
+entry
+{
+	int: x = 5
+    int ptr: px = ref x
+    deref x = 4
+}

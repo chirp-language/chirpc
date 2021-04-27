@@ -9,10 +9,10 @@ void frontend::make_tmp_folder()
 
 bool frontend::find_compiler()
 {
-    #if defined(__unix__) || defined(__APPLE_CC__)
     this->has_gcc = false;
     this->has_clang = false;
-    
+
+    #if defined(__unix__) || defined(__APPLE_CC__)
     // This is utterly terrible
     if (system("which gcc > /dev/null 2>&1") == 0)
     {
@@ -24,12 +24,7 @@ bool frontend::find_compiler()
         this->has_clang = true;
         return true;
     }
-
-    return false;
-    #else
-    this->has_gcc = false;
-    this->has_clang = false;
-    
+    #elif defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
     // This is utterly terrible
     if (system("where.exe gcc > nul") == 0)
     {
@@ -41,9 +36,9 @@ bool frontend::find_compiler()
         this->has_clang = true;
         return true;
     }
-        
+    #endif
+
     return false;
-    #endif 
 }
 
 void frontend::write_out(std::string fname, std::string content)

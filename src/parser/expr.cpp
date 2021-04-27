@@ -1,368 +1,141 @@
 // This whole file is dedicated for parsing expressions
-// Bink's Sketchy Expression Parsing "Algorithm"®
-// 1 - When parsing an expression, get the range of the expression,
-// and turn all the components of the expressions into operands
-// 2 - Go at the last operand of the expression, and go reverse, to find
-// the operator with lowest precedence
-// 3 - Split the range in two halfs, and do the same thing for these
-// (also check if there's even an operator, otherwise just end there)
-// This is probably already an existing algorithm, I just improvised something lol
+// DeKrain's Improved Expression Parsing "Algorithm"® a.k.a. Operator-precedence parser
 #include "parser.hpp"
 
-bool parser::is_operand(bool reset)
+bool parser::is_operand()
 {
-    bool result = false;
-    int op = this->cursor;
-    if (
-        is_func_call(false)         ||
-        is_lvalue(false)            ||
-        match(tkn_type::literal)    ||
-        match(tkn_type::math_op)    ||
-        match(tkn_type::deref_op)   ||
-        match(tkn_type::ref_op)     ||
-        match(tkn_type::as_op)      ||
-        match(tkn_type::lparen)     ||
-        match(tkn_type::rparen))
-    {
-        result = true;
-    }
-    if (reset)
-    {
-        this->cursor = op;
-    }
-    return result;
+    return (
+        is_func_call()         ||
+        is_lvalue()            ||
+        probe(tkn_type::literal)    ||
+        probe(tkn_type::math_op)    ||
+        probe(tkn_type::deref_op)   ||
+        probe(tkn_type::ref_op)     ||
+        probe(tkn_type::as_op)      ||
+        probe(tkn_type::lparen)     ||
+        probe(tkn_type::rparen));
 }
 
-subexpr parser::get_subexpr(std::vector<operand> range)
+enum class precedence_class {
+    group,
+    fcall,
+    ref,
+    prod,
+    sum,
+    comma,
+};
+
+static int get_operator_precedence(exprop op)
 {
-    subexpr node;
-
-    // ()   0
-    // as, deref, ref   1
-    // * /   2
-    // + -   3
-    int op_index;
-    int op_rank = -1; // bad name kinda
-    char op_char;
-    bool has_op = false;
-
-    for (int i = range.size() - 1; i > 0; i--)
-    {
-        operand &operand = range.at(i);
-
-        if (operand.type == optype::op)
-        {
-            has_op = true;
-            exprop op = *static_cast<exprop*>(operand.node.get());
-            if (op.type == '(' || op.type == ')')
-            {
-                if (op_rank < 0)
-                {
-                    op_rank = 0;
-                    op_char = op.type;
-                    op_index = i;
-                }
-            }
-            else if (op.type == 'a' || op.type == 'd' || op.type == 'r')
-            {
-                if (op_rank < 1)
-                {
-                    op_rank = 1;
-                    op_char = op.type;
-                    op_index = i;
-                }
-            }
-            else if (op.type == '*' || op.type == '/')
-            {
-                if (op_rank < 2)
-                {
-                    op_rank = 2;
-                    op_char = op.type;
-                    op_index = i;
-                }
-            }
-            else if (op.type == '+' || op.type == '-')
-            {
-                if (op_rank < 3)
-                {
-                    op_rank = 3;
-                    op_char = op.type;
-                    op_index = i;
-                }
-            }
-            else
-            {
-                this->ok = false;
-            }
-        }
+    // TODO: Use map
+    switch (op) {
+        case exprop::call:
+            return static_cast<int>(precedence_class::fcall);
+        case exprop::as:
+        case exprop::deref:
+        case exprop::ref:
+            return static_cast<int>(precedence_class::ref);
+        case static_cast<exprop>('*'):
+        case static_cast<exprop>('/'):
+            return static_cast<int>(precedence_class::prod);
+        case static_cast<exprop>('+'):
+        case static_cast<exprop>('-'):
+            return static_cast<int>(precedence_class::sum);
     }
-
-    if (!has_op)
-    {
-        helper e;
-        e.msg = "(W.I.P) Expression with mutliple terms and no operator";
-        e.type = helper_type::global_err;
-        this->ok = false;
-        this->helpers.push_back(e);
-    }
-    else
-    {
-        // Left Side
-        std::vector<operand> lrange;
-        for (int i = 0; i < op_index; i++)
-        {
-            lrange.push_back(range.at(i));
-        }
-
-        if (lrange.size() == 1)
-        {
-            node.left = lrange.at(0);
-        }
-        else
-        {
-            operand o;
-            o.type = optype::subexpr;
-            o.node = std::make_shared<subexpr>(get_subexpr(lrange));
-            node.left = o;
-        }
-
-        // Right side
-        std::vector<operand> rrange;
-        for (int i = op_index + 1; i < range.size(); i++)
-        {
-            rrange.push_back(range.at(i));
-        }
-
-        if (rrange.size() == 1)
-        {
-            node.right = rrange.at(0);
-        }
-        else
-        {
-            operand o;
-            o.type = optype::subexpr;
-            o.node = std::make_shared<subexpr>(get_subexpr(rrange));
-            node.right = o;
-        }
-
-        node.op = *static_cast<exprop*>(range.at(op_index).node.get());
-    }
-
-    return node;
+    return -1;
 }
 
-operand parser::get_operand()
+static exprop get_operator_type(token const& t)
+{
+    switch (t.type)
+    {
+        case tkn_type::math_op:
+            return static_cast<exprop>(t.value.front());
+        case tkn_type::as_op:
+            return exprop::as;
+        case tkn_type::deref_op:
+            return exprop::deref;
+        case tkn_type::ref_op:
+            return exprop::ref;
+        case tkn_type::lparen:
+            return exprop::call;
+        case tkn_type::cmp_op:
+            // TODO
+        case tkn_type::assign_op:
+            // TODO
+        case tkn_type::comma:
+            // TODO: Comma expression OR list element
+        case tkn_type::period:
+            // TODO: Member access ig
+        default:
+            return exprop::none;
+    }
+}
+
+exprh parser::get_subexpr_op(exprh lhs, int max_prec)
+{
+    exprop optype;
+
+    while ((optype = get_operator_type(peek())) != exprop::none)
+    {
+        auto lop = loc_peek();
+        skip();
+        int pr = get_operator_precedence(optype);
+        if (pr > max_prec)
+            return lhs;
+        if (optype == exprop::call) {
+            // Parse arguments and combine
+            lhs = get_fcall(std::move(lhs));
+            continue;
+        }
+        exprh rhs = get_primary_expr();
+        while (get_operator_precedence(get_operator_type(peek())) < pr) {
+            rhs = get_subexpr_op(std::move(lhs), max_prec - 1);
+        }
+        auto lbeg = lhs->loc.begin;
+        auto lend = rhs->loc.end;
+        lhs = std::make_shared<binop>(optype, std::move(lhs), std::move(rhs));
+        lhs->loc = location_range(lbeg, lend);
+        static_cast<binop&>(*lhs).op_loc = lop;
+    }
+}
+
+exprh parser::get_primary_expr()
 {
     using namespace std::string_literals;
-    operand result;
 
-    if (is_func_call(true))
+    if (is_identifier())
     {
-        result.type = optype::call;
-        result.node = std::make_shared<func_call_stmt>(get_fcall());
+        return get_identifier();
     }
-    else if (is_identifier(true))
+    else if (probe(tkn_type::literal))
     {
-        result.type = optype::ident;
-        result.node = std::make_shared<identifier>(get_identifier());
+        return get_literal();
     }
-    else if (peek().type == tkn_type::literal)
+    else if (probe(tkn_type::lparen))
     {
-        result.type = optype::lit;
-        result.node = get_literal();
+        // Parenthesis are special, as they aren't considered as operations, but as sub_expressions
+        // Because of this, the location of the parenthesis is not stored in the tree
+        skip();
+        exprh result = get_expr(true);
+        expect(tkn_type::rparen);
+        return result;
     }
     else
     {
-        std::string v = peek().value;
-        if (v == "(")
-        {
-            // Parenthesis are special, as they aren't considered as operations, but as sub_expressions
-            // So you gotta get the range of it
-            result.type = optype::subexpr;
-
-            expect(tkn_type::lparen);
-            int depth = 1;
-
-            std::vector<operand> range;
-
-            while (depth > 0 && this->ok)
-            {
-                if (match(tkn_type::lparen))
-                {
-                    depth++;
-                }
-                if (match(tkn_type::rparen))
-                {
-                    depth--;
-                }
-                if (depth == 0)
-                {
-                    break;
-                } // hacky
-                if (is_operand(true))
-                {
-                    range.push_back(get_operand());
-                }
-            }
-
-            if (range.size() == 1)
-            {
-                result = range.at(0);
-            }
-            else if (range.size() > 0)
-            {
-                result.node = std::make_shared<subexpr>(get_subexpr(range));
-            }
-        }
-        else
-        {
-            result.type = optype::op;
-            exprop op;
-            if (v == "*")
-            {
-                op.type = '*';
-                expect(tkn_type::math_op);
-            }
-            else if (v == "/")
-            {
-                op.type = '/';
-                expect(tkn_type::math_op);
-            }
-            else if (v == "+")
-            {
-                op.type = '+';
-                expect(tkn_type::math_op);
-            }
-            else if (v == "-")
-            {
-                op.type = '-';
-                expect(tkn_type::math_op);
-            }
-            else if (v == "deref")
-            {
-                expect(tkn_type::deref_op);
-            }
-            else if (v == "ref")
-            {
-                expect(tkn_type::ref_op);
-            }
-            else if (v == "as")
-            {
-                expect(tkn_type::as_op);
-            }
-            else
-            {
-                result.type = optype::invalid;
-                helper e;
-                e.l = peek().loc;
-                e.msg = "Invalid operand";
-                e.type = helper_type::location_err;
-                this->ok = false;
-                this->helpers.push_back(e);
-                return result;
-            }
-            result.node = std::make_shared<exprop>(op);
-        }
+        diagnostic e;
+        e.l = loc_peek();
+        e.msg = "Invalid operand";
+        e.type = diagnostic_type::location_err;
+        this->ok = false;
+        this->diagnostics.push_back(e);
+        return nullptr;
     }
-    return result;
 }
 
-expr parser::get_expr(std::vector<operand> range)
+exprh parser::get_expr(bool comma_allowed)
 {
-    expr node;
-
-    if (range.size() == 0)
-    {
-        helper e;
-        e.l = peek().loc;
-        e.msg = "Cannot create expression with no range";
-        e.type = helper_type::line_err;
-        this->ok = false;
-        this->helpers.push_back(e);
-        return node;
-    }
-    else if (range.size() == 1)
-    {
-        node.root = range.at(0);
-    }
-    else
-    {
-        operand o;
-        o.type = optype::subexpr;
-        o.node = std::make_shared<subexpr>(get_subexpr(range));
-        node.root = o;
-    }
-
-    return node;
-}
-
-expr parser::get_expr()
-{
-    expr node;
-    if (!is_operand(true))
-    {
-        helper e;
-        e.l = peek().loc;
-        e.msg = "Invalid expression";
-        e.type = helper_type::location_err;
-        this->helpers.push_back(e);
-        this->ok = false;
-        return node;
-    }
-
-    // Get's the expression's range
-    std::vector<operand> range;
-    int op = this->cursor;
-    this->cursor = op;
-    int s = this->cursor;
-    int e = -1;
-    // Paren depth
-    while (is_operand(false));
-
-    e = this->cursor;
-    this->cursor = s;
-
-    while (this->cursor < e)
-    {
-        operand tmp = get_operand();
-        if (tmp.type == optype::invalid)
-        {
-            // Does an error twice now I guess
-            helper e;
-            e.l = peek().loc;
-            e.msg = "Expression parsing failed";
-            e.type = helper_type::line_err;
-            this->helpers.push_back(e);
-            this->ok = false;
-            return node;
-        }
-        else
-        {
-            range.push_back(tmp);
-        }
-    }
-
-    if (range.size() == 0)
-    {
-        helper e;
-        e.l = peek().loc;
-        e.msg = "Cannot have empty expression";
-        e.type = helper_type::line_err;
-        this->ok = false;
-        this->helpers.push_back(e);
-    }
-    else if (range.size() == 1)
-    {
-        node.root = range.at(0);
-    }
-    else
-    {
-        operand o;
-        o.type = optype::subexpr;
-        o.node = std::make_shared<subexpr>(get_subexpr(range));
-        node.root = o;
-    }
-
-    int c = 123;
-    return node;
+    if (exprh lhs = get_primary_expr())
+        return get_subexpr_op(std::move(lhs), comma_allowed ? static_cast<int>(precedence_class::comma) : static_cast<int>(precedence_class::comma) - 1);
+    return nullptr;
 }

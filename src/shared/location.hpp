@@ -17,7 +17,7 @@ public:
     // so it doesn't have to be stored in a full string, which is inneficient.
     std::string filename;
 
-    int start; // Location of the first character
-    int line; // Line where the first character is located
-    int end; // Location of the last character
+    int start = 0; // Location of the first character
+    int line = 0; // Line where the first character is located
+    int end = 0; // Location of the last character
 };

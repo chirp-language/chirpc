@@ -1,76 +1,65 @@
 #include "parser.hpp"
 
-bool parser::is_params(bool reset)
+bool parser::is_params()
 {
     bool result = false;
     int op = this->cursor;
 
     if (match(tkn_type::lparen))
     {
-        while (is_var_decl(false) && match(tkn_type::comma));
+        while (is_var_decl() && match(tkn_type::comma));
         
-        if (match(tkn_type::rparen))
+        if (probe(tkn_type::rparen))
         {
             result = true;
         }
     }
-
-    if (reset)
-    {
-        this->cursor = op;
-    }
+    cursor = op;
     return result;
 }
 
-bool parser::is_func_decl(bool reset)
+bool parser::is_func_decl()
 {
     bool result = false;
     int op = this->cursor;
 
     if (match(tkn_type::kw_func))
     {
-        if (is_datatype(false) && is_identifier(false))
+        if (is_datatype() && is_identifier())
         {
-            if (is_params(false))
+            if (is_params())
             {
-                result = true;
+                return true;
             }
         }
     }
-    if (reset)
-    {
-        this->cursor = op;
-    }
 
-    return result;
+    return false;
 }
 
-bool parser::is_func_def(bool reset)
+bool parser::is_func_def()
 {
     bool result = false;
     int op = this->cursor;
 
-    if (is_func_decl(false))
+    if (is_func_decl())
     {
-        if (match(tkn_type::lbrace))
+        if (probe(tkn_type::lbrace))
         {
-            result = true;
+            return true;
         }
     }
-    if (reset)
-    {
-        this->cursor = op;
-    }
 
-    return result;
+    return false;
 }
 
-bool parser::is_func_call(bool reset)
+bool parser::is_func_call()
 {
+    // TODO: Needs rework | form: <expr> ( <arg_list>? )
     bool result = false;
     int og = this->cursor;
 
-    if (is_identifier(false))
+    if (is_identifier())
     {
         if (match(tkn_type::lparen))
         {
@@ -94,14 +83,10 @@ bool parser::is_func_call(bool reset)
         else
         {
             result = false;
-            this->cursor = og;
         }
     }
-    if (reset)
-    {
-        this->cursor = og;
-    }
-    
+    this->cursor = og;
+
     return result;
 }
 
@@ -119,63 +104,65 @@ parameters parser::get_parameters()
     return node;
 }
 
-func_decl_stmt parser::get_func_decl()
+std::shared_ptr<func_decl_stmt> parser::get_func_decl()
 {
-    func_decl_stmt node;
+    auto node = std::make_shared<func_decl_stmt>();
 
     // Inherited stuff
-    node.type = stmt_type::fdecl;
-    node.line = peek().loc.line;
+    node->type = stmt_type::fdecl;
+    node->loc = loc_peek();
 
     expect(tkn_type::kw_func);
     if (!this->ok)
     {
         return node;
     }
-    node.data_type = get_datatype();
+    node->data_type = get_datatype();
     if (!this->ok)
     {
         return node;
     }
-    node.ident = get_identifier();
+    node->ident = get_identifier();
     if (!this->ok)
     {
         return node;
     }
-    node.params = get_parameters();
+    node->params = get_parameters();
+    node->loc.end = loc_peekb();
 
     return node;
 }
 
-func_def_stmt parser::get_func_def()
+std::shared_ptr<func_def_stmt> parser::get_func_def()
 {
-    func_def_stmt node;
+    auto node = std::make_shared<func_def_stmt>();
 
     // Inherited stuff
-    node.type = stmt_type::fdef;
-    node.line = peek().loc.line;
+    node->type = stmt_type::fdef;
+    node->loc = loc_peek();
 
     expect(tkn_type::kw_func);
     if (!this->ok)
     {
         return node;
     }
-    node.data_type = get_datatype();
+    node->data_type = get_datatype();
     if (!this->ok)
     {
         return node;
     }
-    node.ident = get_identifier();
+    node->ident = get_identifier();
     if (!this->ok)
     {
         return node;
     }
-    node.params = get_parameters();
+    node->params = get_parameters();
     if (!this->ok)
     {
         return node;
     }
-    node.body = get_compound_stmt();
+    node->body = get_compound_stmt();
+    node->loc.end = loc_peekb();
 
     return node;
 }
@@ -183,68 +170,52 @@ func_def_stmt parser::get_func_def()
 arguments parser::get_arguments()
 {
     arguments node;
-    expect(tkn_type::lparen);
-
-    int depth = 1;
-
-    std::vector<operand> range;
+    node.loc = loc_peekb();
 
     // Get's the range for each expression
     // This doesn't work very well, could be improved
-    while (depth > 0 && this->ok)
+    if (!match(tkn_type::rparen))
     {
-        if (match(tkn_type::lparen))
-        {
-            depth++;
-        }
-        if (match(tkn_type::rparen))
-        {
-            depth--;
-        }
-        if (depth >= 1)
+        while (this->ok)
         {
             if (match(tkn_type::comma))
             {
-                if (depth == 1)
-                {
-                    node.body.push_back(get_expr(range));
-                    range.clear();
-                }
-                else
-                {
-                    helper e;
-                    e.l = peekb().loc;
-                    e.msg = "Invalid argument separation";
-                    e.type = helper_type::location_err;
-                    this->helpers.push_back(e);
-                    this->ok = false;
-                }
+                // QoL thing
+                diagnostic e;
+                e.l = loc_peekb();
+                e.msg = "Missing an argument before comma";
+                e.type = diagnostic_type::location_err;
+                this->diagnostics.push_back(e);
+                this->ok = false;
+                while (match(tkn_type::comma))
+                    ;
             }
+            exprh e = get_expr(false);
+            if (match(tkn_type::comma))
+                continue;
+            else if (match(tkn_type::rparen))
+                break;
             else
             {
-                range.push_back(get_operand());
+                diagnostic e;
+                e.l = loc_peekb();
+                e.msg = "Expected ')' or ','";
+                e.type = diagnostic_type::location_err;
+                this->diagnostics.push_back(e);
+                this->ok = false;
+                break;
             }
         }
     }
 
-    if (!this->ok)
-    {
-        return node;
-    }
-
-    if (range.size() > 0)
-    {
-        node.body.push_back(get_expr(range));
-    }
+    node.loc.end = loc_peekb();
 
     return node;
 }
 
-func_call_stmt parser::get_fcall()
+std::shared_ptr<func_call> parser::get_fcall(exprh callee)
 {
-    func_call_stmt node;
-    node.type = stmt_type::fcall;
-    node.ident = get_identifier();
-    node.args = get_arguments();
-    return node;
+    auto lbeg = callee->loc.begin;
+    auto node = std::make_shared<func_call>(std::move(callee), get_arguments());
+    node->loc = location_range(lbeg, loc_peekb());
 }

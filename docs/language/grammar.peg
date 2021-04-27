@@ -1,0 +1,17 @@
+# Declarations
+program := top_declaration* ;
+top_declaration := entry_decl / import_decl / extern_decl / function_decldef ;
+entry_decl := "entry" stmt ;
+import_decl := "import" T_string ;
+extern_decl := "extern" T_string ( function_decl / var_decl ) ;
+function_decl := "func" type params_decl ;
+params_decl := "(" var_decl* ")" ;
+function_decldef := function_decl (compund_stmt)? ;
+
+# Statements
+simple_stmt :=
+	("ret" expr) /
+	var_decldef /
+	expr ;
+
+stmt := compund_stmt / simple_stmt ; # TODO: Conditionals
