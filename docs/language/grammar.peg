@@ -5,13 +5,30 @@ entry_decl := "entry" stmt ;
 import_decl := "import" T_string ;
 extern_decl := "extern" T_string ( function_decl / var_decl ) ;
 function_decl := "func" type params_decl ;
-params_decl := "(" var_decl* ")" ;
+params_decl := "(" var_decl ("," var_decl)* ")" ;
 function_decldef := function_decl (compund_stmt)? ;
 
 # Statements
+stmt := compund_stmt / simple_stmt ; # TODO: Conditionals
+
+compund_stmt := "{" stmt* "}" ;
+
 simple_stmt :=
-	("ret" expr) /
+	("ret" expr ";") /
 	var_decldef /
 	expr ;
 
-stmt := compund_stmt / simple_stmt ; # TODO: Conditionals
+var_decldef := var_decl / var_def ;
+
+var_decl := typename ":" identifier ("=" expr) ;
+var_def := identifier "=" expr ;
+
+# Expressions
+expr := expr_primary ((T_expr_op expr_primary) / ("(" arguments ")"))* ;
+arguments := ( expr ("," expr)* )? ;
+expr_primary := identifier / T_string / T_number / ("(" expr ")") ;
+identifier := ( T_identifier "." )* T_identifier ;
+
+# Types
+typename := (T_datamod* T_basetype T_datamod*) /
+	((!T_datamod:"ptr" T_datamod) T_datamod:"ptr" T_datamod*) ;
