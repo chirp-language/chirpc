@@ -14,8 +14,20 @@ public:
     void parse();
 
     void load_tokens(std::string, std::vector<token>&&);
-    std::vector<diagnostic> const& get_diagnostics();
-    ast_root& get_ast();
+    std::vector<diagnostic> const& get_diagnostics() const
+    {
+        return diagnostics;
+    }
+    ast_root& get_ast()
+    {
+        return tree;
+    }
+    std::vector<token> const& get_tokens() const
+    {
+        return tkns;
+    }
+
+    location const& get_loc(token_location loc) const;
 
 private:
     size_t cursor = 0;
@@ -48,8 +60,6 @@ private:
         // Returns the location of the last token, which should be EOF
         return token_location(tkns.size() - 1);
     }
-
-    location const& get_loc(token_location loc);
 
     token const& peekb(); // Peek Back
     token const& peek(); // Peek now
@@ -92,7 +102,6 @@ private:
     exprtype get_datatype();
     std::shared_ptr<decl_stmt> get_decl_stmt();
     std::shared_ptr<def_stmt> get_def_stmt();
-    std::shared_ptr<decl_def_stmt> get_decldef_stmt(std::shared_ptr<decl_stmt> decl);
 
     parameters get_parameters();
     std::shared_ptr<func_decl_stmt> get_func_decl();

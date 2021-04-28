@@ -233,35 +233,35 @@ std::string exprop_id(exprop op)
 {
     std::string result;
     result = "(";
-    switch (static_cast<char>(op))
+    switch (op)
     {
-    case '(':
-        result += "lparen";
-        break;
-    case ')':
-        result += "rparen";
-        break;
-    case '+':
+    case static_cast<exprop>('+'):
         result += "add";
         break;
-    case '-':
+    case static_cast<exprop>('-'):
         result += "sub";
         break;
-    case '/':
+    case static_cast<exprop>('/'):
         result += "div";
         break;
-    case '*':
+    case static_cast<exprop>('*'):
         result += "mult";
         break;
-    case 'd':
+    case exprop::deref:
         result += "deref";
         break;
-    case 'r':
+    case exprop::ref:
         result += "ref";
         break;
-    case 'a':
+    case exprop::as:
         result += "as";
         break;
+    case exprop::call:
+        result += "call";
+        break;
+    case exprop::none:
+    default:
+        result += "invalid";
     }
     result += ");\n";
     return result;
@@ -401,26 +401,26 @@ std::string extern_stmt::dump(int depth)
     
     switch (this->type)
     {
-        case extern_stmt::stmt_type::None:
+        case extern_stmt::decl_type::None:
             result += "None";
             break;
-        case extern_stmt::stmt_type::Function:
+        case extern_stmt::decl_type::Function:
             result += "Function";
             break;
-        case extern_stmt::stmt_type::Variable:
+        case extern_stmt::decl_type::Variable:
             result += "Variable";
             break;
     }
     
     result += "): \n";
 
-    if (this->type == extern_stmt::stmt_type::Function)
+    if (this->type == extern_stmt::decl_type::Function)
     {
-        result += static_cast<func_decl_stmt*>(this->stmt.get())->dump(depth + 1);
+        result += static_cast<func_decl_stmt*>(this->decl.get())->dump(depth + 1);
     }
-    else if (this->type == extern_stmt::stmt_type::Variable)
+    else if (this->type == extern_stmt::decl_type::Variable)
     {
-        result += static_cast<decl_stmt*>(this->stmt.get())->dump(depth + 1);
+        result += static_cast<decl_stmt*>(this->decl.get())->dump(depth + 1);
     }
 
     return result;
@@ -456,5 +456,14 @@ std::string func_call::dump(int depth)
     result += "function_call:\n";
     result += this->callee->dump(depth + 1);
     result += this->args.dump(depth + 1);
+    return result;
+}
+
+std::string expr_stmt::dump(int depth)
+{
+    std::string result;
+    result += indent(depth);
+    result += "expr_stmt:\n";
+    result += this->node->dump(depth + 1);
     return result;
 }

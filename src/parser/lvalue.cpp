@@ -15,6 +15,11 @@ bool parser::is_lop()
     );
 }
 
+bool parser::is_lvalue()
+{
+    return is_lop();
+}
+
 std::shared_ptr<identifier> parser::get_identifier()
 {
     auto node = std::make_shared<identifier>();

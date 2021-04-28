@@ -33,7 +33,7 @@ enum class optype
     ident,
     call,
     op,
-    invalid
+    invalid,
 };
 
 enum class opcat
@@ -90,6 +90,13 @@ class binop : public expr
         : expr(optype::op), op(op), left(std::move(l)), right(std::move(r)) {}
 };
 
+class arguments : public ast_node
+{
+public:
+    std::vector<exprh> body;
+    virtual std::string dump(int) override;
+};
+
 class func_call : public expr
 {
 public:
@@ -120,6 +127,8 @@ public:
     std::vector<std::string> namespaces;
     std::string name;
     virtual std::string dump(int) override;
+
+    identifier() : expr(optype::ident) {}
 };
 
 class loperand : public expr
@@ -133,7 +142,7 @@ class loperand : public expr
 enum class littype
 {
     txt,
-    num
+    num,
 };
 
 class literal_node : public expr
@@ -141,6 +150,8 @@ class literal_node : public expr
 public:
     littype ltype;
     virtual std::string dump(int) override;
+
+    literal_node(littype t) : expr(optype::lit), ltype(t) {}
 };
 
 class txt_literal : public literal_node
@@ -149,6 +160,8 @@ public:
     virtual std::string dump(int) override;
     bool is_character; // Single character/packed character constant
     std::string value;
+
+    txt_literal() : literal_node(littype::txt) {}
 };
 
 // Should be replaced by a different literal for each types
@@ -157,24 +170,18 @@ class num_literal : public literal_node
 public:
     std::string value; // bruh
     virtual std::string dump(int) override;
-};
 
-// === Stuff that likes has literals in it but not a statement ish
-
-class arguments : public ast_node
-{
-public:
-    std::vector<exprh> body;
-    virtual std::string dump(int) override;
+    num_literal() : literal_node(littype::num) {}
 };
 
 // === STATEMENTS ===
 
 enum class stmt_type
 {
-    decl, def, decldef,
+    decl, def,
     compound, entry, import,
-    ret, fdef, fdecl, expr
+    ret, fdef, fdecl, expr,
+    external,
 };
 
 class stmt : public ast_node
@@ -183,6 +190,9 @@ public:
     // There's a bunch of them so gotta make another enum smh
     stmt_type type;
     virtual std::string dump(int) override;
+
+    stmt(stmt_type type)
+        : type(type) {}
 };
 
 // Statement handle (shorthand)
@@ -195,6 +205,8 @@ class decl_stmt : public stmt
     std::shared_ptr<identifier> ident;
     exprh init; // Empty if not availible
     virtual std::string dump(int) override;
+
+    decl_stmt() : stmt(stmt_type::decl) {}
 };
 
 class def_stmt : public stmt
@@ -203,15 +215,8 @@ class def_stmt : public stmt
     std::shared_ptr<identifier> ident;
     exprh value;
     virtual std::string dump(int) override;
-};
 
-// Combines a declaration with a definition
-class decl_def_stmt : public stmt
-{
-    public:
-    std::shared_ptr<decl_stmt> decl;
-    std::shared_ptr<def_stmt> def;
-    virtual std::string dump(int) override;
+    def_stmt() : stmt(stmt_type::def) {}
 };
 
 class compound_stmt : public stmt
@@ -219,6 +224,8 @@ class compound_stmt : public stmt
 public:
     std::vector<stmth> body;
     virtual std::string dump(int) override;
+
+    compound_stmt() : stmt(stmt_type::compound) {}
 };
 
 class entry_stmt : public stmt
@@ -226,6 +233,8 @@ class entry_stmt : public stmt
 public:
     stmth code;
     virtual std::string dump(int) override;
+
+    entry_stmt() : stmt(stmt_type::entry) {}
 };
 
 class import_stmt : public stmt
@@ -233,6 +242,8 @@ class import_stmt : public stmt
 public:
     txt_literal filename;
     virtual std::string dump(int) override;
+
+    import_stmt() : stmt(stmt_type::import) {}
 };
 
 class ret_stmt : public stmt
@@ -241,20 +252,25 @@ public:
     // Should be replaced by expr, when I get to those
     exprh val;
     virtual std::string dump(int) override;
+
+    ret_stmt() : stmt(stmt_type::ret) {}
 };
 
 class extern_stmt : public stmt
 {
     public:
-    enum class stmt_type
+    enum class decl_type
     {
         None,
         Function,
         Variable
     } type;
     txt_literal real_name;
-    stmth stmt;
+    stmth decl;
     virtual std::string dump(int) override;
+
+    extern_stmt()
+        : stmt(stmt_type::external), type(decl_type::None) {}
 };
 
 class parameters : public ast_node
@@ -272,6 +288,8 @@ class func_decl_stmt : public stmt
     std::shared_ptr<identifier> ident;
     parameters params;
     virtual std::string dump(int) override;
+
+    func_decl_stmt() : stmt(stmt_type::fdecl) {}
 };
 
 // A function definition but with code
@@ -283,6 +301,8 @@ class func_def_stmt : public stmt
     parameters params;
     std::shared_ptr<compound_stmt> body;
     virtual std::string dump(int) override;
+
+    func_def_stmt() : stmt(stmt_type::fdef) {}
 };
 
 class expr_stmt : public stmt
@@ -290,6 +310,9 @@ class expr_stmt : public stmt
     public:
     exprh node;
     virtual std::string dump(int) override;
+
+    expr_stmt(exprh expr)
+        : stmt(stmt_type::expr), node(std::move(expr)) {}
 };
 
 class ast_root

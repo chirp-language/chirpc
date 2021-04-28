@@ -6,16 +6,6 @@ void parser::load_tokens(std::string fn, std::vector<token>&& t)
     this->tkns = std::move(t);
 }
 
-std::vector<diagnostic> const& parser::get_diagnostics()
-{
-    return this->diagnostics;
-}
-
-ast_root& parser::get_ast()
-{
-    return this->tree;
-}
-
 void parser::parse()
 {
     this->ok = true;
@@ -169,7 +159,7 @@ token const& parser::peekf()
     }
 }
 
-location const& parser::get_loc(token_location loc)
+location const& parser::get_loc(token_location loc) const
 {
     static location const s_invalid("<invalid>");
     if (loc.is_valid())

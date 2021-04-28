@@ -39,7 +39,8 @@ dtypename parser::get_dtypename(std::string txt)
     diagnostic e;
     e.type = diagnostic_type::global_err;
     e.msg = "Couldn't get typename from '" + txt + "', location unknown";
-    this->diagnostics.push_back(e);
+    this->diagnostics.push_back(std::move(e));
+    return dtypename::_none;
     #else
     __builtin_unreachable();
     #endif
@@ -75,7 +76,7 @@ dtypemod parser::get_dtypemod(std::string txt)
     diagnostic e;
     e.type = diagnostic_type::global_err;
     e.msg = "Couldn't get type modifier from '" + txt + "', location unknown";
-    this->diagnostics.push_back(e);
+    this->diagnostics.push_back(std::move(e));
     return mod;
 }
 
@@ -149,10 +150,11 @@ std::shared_ptr<decl_stmt> parser::get_decl_stmt()
 {
     auto node = std::make_shared<decl_stmt>();
     node->loc = loc_peek();
-    node->type = stmt_type::decl;
     node->data_type = get_datatype();
     expect(tkn_type::colon);
     node->ident = get_identifier();
+    if (match(tkn_type::assign_op))
+        node->init = get_expr(false);
     node->loc.end = loc_peekb();
     return node;
 }
@@ -161,7 +163,6 @@ std::shared_ptr<def_stmt> parser::get_def_stmt()
 {
     auto node = std::make_shared<def_stmt>();
     node->loc = loc_peek();
-    node->type = stmt_type::def;
     node->ident = get_identifier();
     expect(tkn_type::assign_op);
 
@@ -170,18 +171,5 @@ std::shared_ptr<def_stmt> parser::get_def_stmt()
 
     node->value = get_expr(false);
     node->loc.end = loc_peekb();
-    return node;
-}
-
-std::shared_ptr<decl_def_stmt> parser::get_decldef_stmt(std::shared_ptr<decl_stmt> decl)
-{
-    auto node = std::make_shared<decl_def_stmt>();
-    node->type = stmt_type::decldef;
-    node->decl = std::move(decl);
-
-    this->cursor--; // Go back to the identifier
-    node->def = get_def_stmt();
-    if (this->ok)
-        node->loc = location_range(node->decl->loc.begin, node->def->loc.end);
     return node;
 }

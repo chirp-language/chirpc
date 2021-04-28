@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "location.hpp"
+#include "../lexer/token.hpp"
 #include "../cmd.hpp"
 #include <vector>
 #include <string>
@@ -33,5 +33,5 @@ public:
 
     // Writes the helper, in a human readable way
     // Possible Improvement: Add an option to create a "machine-readable" error prompt
-    std::string show_output(std::vector<std::string> const& source, cmd& options);
+    std::string show_output(class parser const& par, std::vector<std::string> const& source, cmd& options) const;
 };

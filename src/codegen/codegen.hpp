@@ -20,19 +20,17 @@ class codegen
     std::vector<diagnostic> diagnostics;
     private:
     std::string emit_ident(identifier&);
-    std::string emit_datatype(dtype&);
-    std::string emit_literal(std::shared_ptr<literal_node>);
+    std::string emit_datatype(exprtype&);
+    std::string emit_literal(literal_node&);
 
     std::string emit_args(arguments&);
-    std::string emit_fcall(func_call_stmt&);
+    std::string emit_fcall(func_call&);
 
-    std::string emit_subexpr(subexpr&);
-    std::string emit_operand(operand&);
+    std::string emit_op(binop&);
     std::string emit_expr(expr&);
 
     std::string emit_decl(decl_stmt&);
     std::string emit_def(def_stmt&);
-    std::string emit_decldef(decldef_stmt&);
 
     std::string emit_ret(ret_stmt&);
 

@@ -39,7 +39,7 @@ int main(int argc, char** argv)
 
     // Lets do the reading here cuz why the f not
     // Also kinda like very inefficient
-    std::fstream f(options.filename);
+    std::ifstream f(options.filename);
 
     if (!f)
     {
@@ -75,14 +75,13 @@ int main(int argc, char** argv)
     parser p;
     p.load_tokens(options.filename, std::move(tkns));
     p.parse();
-    std::vector<diagnostic> phelpers = p.get_diagnostics();
     bool ok = true;
 
-    for (diagnostic &h : phelpers)
+    for (auto const& h : p.get_diagnostics())
     {
         // Always copying the file content is like
         // really really really bad & inneficient
-        std::cout << h.show_output(content, options) << '\n';
+        std::cout << h.show_output(p, content, options) << '\n';
 
         if (
             h.type == diagnostic_type::global_err ||
@@ -140,9 +139,9 @@ int main(int argc, char** argv)
 
     if (generator.errored)
     {
-        for (diagnostic& h : generator.diagnostics)
+        for (auto const& h : generator.diagnostics)
         {
-            std::cout << h.show_output(content, options) << '\n';
+            std::cout << h.show_output(p, content, options) << '\n';
         }
     }
 

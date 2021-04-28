@@ -109,7 +109,6 @@ std::shared_ptr<func_decl_stmt> parser::get_func_decl()
     auto node = std::make_shared<func_decl_stmt>();
 
     // Inherited stuff
-    node->type = stmt_type::fdecl;
     node->loc = loc_peek();
 
     expect(tkn_type::kw_func);
@@ -138,7 +137,6 @@ std::shared_ptr<func_def_stmt> parser::get_func_def()
     auto node = std::make_shared<func_def_stmt>();
 
     // Inherited stuff
-    node->type = stmt_type::fdef;
     node->loc = loc_peek();
 
     expect(tkn_type::kw_func);
@@ -185,7 +183,7 @@ arguments parser::get_arguments()
                 e.l = loc_peekb();
                 e.msg = "Missing an argument before comma";
                 e.type = diagnostic_type::location_err;
-                this->diagnostics.push_back(e);
+                this->diagnostics.push_back(std::move(e));
                 this->ok = false;
                 while (match(tkn_type::comma))
                     ;
@@ -201,7 +199,7 @@ arguments parser::get_arguments()
                 e.l = loc_peekb();
                 e.msg = "Expected ')' or ','";
                 e.type = diagnostic_type::location_err;
-                this->diagnostics.push_back(e);
+                this->diagnostics.push_back(std::move(e));
                 this->ok = false;
                 break;
             }
@@ -218,4 +216,5 @@ std::shared_ptr<func_call> parser::get_fcall(exprh callee)
     auto lbeg = callee->loc.begin;
     auto node = std::make_shared<func_call>(std::move(callee), get_arguments());
     node->loc = location_range(lbeg, loc_peekb());
+    return node;
 }

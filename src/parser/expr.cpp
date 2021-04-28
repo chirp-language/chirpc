@@ -6,7 +6,7 @@ bool parser::is_operand()
 {
     return (
         is_func_call()         ||
-        is_lvalue()            ||
+        is_identifier()            ||
         probe(tkn_type::literal)    ||
         probe(tkn_type::math_op)    ||
         probe(tkn_type::deref_op)   ||
@@ -50,7 +50,7 @@ static exprop get_operator_type(token const& t)
     switch (t.type)
     {
         case tkn_type::math_op:
-            return static_cast<exprop>(t.value.front());
+            return static_cast<exprop>(static_cast<unsigned char>(t.value.front()));
         case tkn_type::as_op:
             return exprop::as;
         case tkn_type::deref_op:
@@ -98,6 +98,7 @@ exprh parser::get_subexpr_op(exprh lhs, int max_prec)
         lhs->loc = location_range(lbeg, lend);
         static_cast<binop&>(*lhs).op_loc = lop;
     }
+    return lhs;
 }
 
 exprh parser::get_primary_expr()
@@ -128,7 +129,7 @@ exprh parser::get_primary_expr()
         e.msg = "Invalid operand";
         e.type = diagnostic_type::location_err;
         this->ok = false;
-        this->diagnostics.push_back(e);
+        this->diagnostics.push_back(std::move(e));
         return nullptr;
     }
 }

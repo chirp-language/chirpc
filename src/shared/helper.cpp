@@ -1,5 +1,6 @@
 #include "helper.hpp"
 #include "../color.hpp"
+#include "../parser/parser.hpp"
 #include <iostream>
 #include <charconv>
 
@@ -20,9 +21,10 @@ static bool is_important(std::string const& line)
     return false;
 }
 
-std::string diagnostic::show_output(std::vector<std::string> const& content, cmd& options)
+std::string diagnostic::show_output(parser const& par, std::vector<std::string> const& content, cmd& options) const
 {
     std::string result;
+    location const& tloc = par.get_loc(l.begin);
     
     if (
         type == diagnostic_type::global_warning || 
@@ -61,28 +63,25 @@ std::string diagnostic::show_output(std::vector<std::string> const& content, cmd
     
     if (type != diagnostic_type::global_warning && type != diagnostic_type::global_err)
     {
-        result += "At ";
-        result += l.filename;
+        result += "In <";
+        result += tloc.filename;
         result += ":";
-        result += std::to_string(l.line);
-        
-        if (type == diagnostic_type::location_warning || type == diagnostic_type::location_err)
-        {
-            result += ":";
-            result += std::to_string(l.start);
-        }
+        result += std::to_string(tloc.line);
+        result += ":";
+        result += std::to_string(tloc.start);
+        result += ">";
         
         result += "\n";
         
-        if (l.line - 1 >= 0 && is_important(content.at(l.line + 1)))
+        if (tloc.line - 1 >= 0 && is_important(content.at(tloc.line + 1)))
         {
             //result += "    | ";
-            result += get_spacing(l.line - 1);
-            result += content.at(l.line - 1);
+            result += get_spacing(tloc.line - 1);
+            result += content.at(tloc.line - 1);
             result += "\n    | \n";
         }
 
-        result += std::to_string(l.line);
+        result += std::to_string(tloc.line);
         if (options.has_color)
         {
             result += write_color(" --> ", color::yellow);
@@ -91,7 +90,7 @@ std::string diagnostic::show_output(std::vector<std::string> const& content, cmd
         {
             result += " --> ";
         }
-        result += content.at(l.line);
+        result += content.at(tloc.line);
         result += "\n";
 
         if (type == diagnostic_type::location_warning || type == diagnostic_type::location_err)
@@ -99,11 +98,11 @@ std::string diagnostic::show_output(std::vector<std::string> const& content, cmd
             std::string identation;
             result += "    | ";
 
-            for (int i = 0; i < l.start; i++)
+            for (int i = 0; i < tloc.start; i++)
             {
                 identation += " ";
             }
-            for (int i = 0; i <= l.end - l.start; i++)
+            for (int i = 0; i <= tloc.end - tloc.start; i++)
             {
                 identation += "^";
             }
@@ -121,11 +120,11 @@ std::string diagnostic::show_output(std::vector<std::string> const& content, cmd
         {
             result += "    |\n";
         }
-        if (l.line + 1 < content.size() && is_important(content.at(l.line + 1)))
+        if (tloc.line + 1 < content.size() && is_important(content.at(tloc.line + 1)))
         {
             //result += "    | ";
-            result += get_spacing(l.line + 1);
-            result += content.at(l.line + 1);
+            result += get_spacing(tloc.line + 1);
+            result += content.at(tloc.line + 1);
             result += "\n";
         }
     }

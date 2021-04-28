@@ -1,6 +1,9 @@
 entry
 {
 	int: x = 5
-    int ptr: px = ref x
-    deref x = 4
+    #int ptr: px = ref x
+    #deref x = 4
+    int: a = 123
+    char: b = 'b'
+    char ptr: c = "chirp" # C-Style string
 }
