@@ -1,4 +1,4 @@
-#include "helper.hpp"
+#include "diagnostic.hpp"
 #include "../color.hpp"
 #include "../parser/parser.hpp"
 #include <iostream>
