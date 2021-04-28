@@ -1,7 +1,7 @@
 #pragma once
 #include "tracker.hpp"
 #include "../ast/ast.hpp"
-#include "../shared/helper.hpp"
+#include "../shared/diagnostic.hpp"
 #include <string>
 #include <vector>
 

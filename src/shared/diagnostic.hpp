@@ -31,7 +31,7 @@ public:
     diagnostic& operator=(diagnostic const&) = delete;
     diagnostic& operator=(diagnostic &&) = default;
 
-    // Writes the helper, in a human readable way
+    // Writes the diagnostic, in a human readable way
     // Possible Improvement: Add an option to create a "machine-readable" error prompt
     std::string show_output(class parser const& par, std::vector<std::string> const& source, cmd& options) const;
 };

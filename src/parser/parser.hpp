@@ -2,7 +2,7 @@
 Parses tokens into an AST
 */
 #pragma once
-#include "../shared/helper.hpp"
+#include "../shared/diagnostic.hpp"
 #include "../lexer/token.hpp"
 #include "../ast/ast.hpp"
 #include <vector>
