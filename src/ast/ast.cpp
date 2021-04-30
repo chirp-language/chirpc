@@ -231,7 +231,9 @@ std::string binop::dump(int depth, [[maybe_unused]]location_provider const& prov
     result += prov.print_loc(loc);
     result += " ";
     result += exprop_id(op);
-    //result += ");\n";
+    result += " ";
+    result += prov.print_loc(op_loc);
+    result += "\n";
     result += indent(depth + 1);
     result += "left:\n";
     result += left->dump(depth + 1, prov);
@@ -275,7 +277,7 @@ std::string exprop_id(exprop op)
     default:
         result += "invalid";
     }
-    result += ");\n";
+    result += ")";
     return result;
 }
 

@@ -89,8 +89,9 @@ exprh parser::get_subexpr_op(exprh lhs, int max_prec)
             continue;
         }
         exprh rhs = get_primary_expr();
-        while (get_operator_precedence(get_operator_type(peek())) < pr) {
-            rhs = get_subexpr_op(std::move(lhs), max_prec - 1);
+        exprop tmpop;
+        while (tmpop = get_operator_type(peek()), tmpop != exprop::none and get_operator_precedence(tmpop) < pr) {
+            rhs = get_subexpr_op(std::move(rhs), max_prec - 1);
         }
         auto lbeg = lhs->loc.begin;
         auto lend = rhs->loc.end;
