@@ -99,7 +99,7 @@ int main(int argc, char** argv)
             std::cout << "--------------------" << '\n';
         }
 
-        std::cout << p.get_ast().dump() << '\n';
+        std::cout << p.get_ast().dump(0, p) << '\n';
     }
 
     if (!ok)

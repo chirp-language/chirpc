@@ -43,12 +43,18 @@ std::string token::util_dump(){
     }
     result += "   '";
     result += this->value;
-    result += "' Loc<";
-    result += loc.filename;
-    result += ":";
-    result += std::to_string(loc.start);
-    result += ":";
-    result += std::to_string(loc.line);
+	result += "' <";
+	result += loc.filename;
+	result += ":";
+	if (loc.line == -1)
+		result += "invalid";
+	else
+		result += std::to_string(loc.line+1);
+	result += ":";
+	if (loc.start == -1)
+		result += "invalid";
+	else
+		result += std::to_string(loc.start+1);
     result += ">";
     return result;
 }

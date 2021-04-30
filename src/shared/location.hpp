@@ -17,7 +17,34 @@ public:
     // so it doesn't have to be stored in a full string, which is inneficient.
     std::string filename;
 
-    int start = 0; // Location of the first character
-    int line = 0; // Line where the first character is located
-    int end = 0; // Location of the last character
+    int start = -1; // Location of the first character
+    int line = -1; // Line where the first character is located
+    int len = 0; // Length of the token
+};
+
+// Stolen from clang
+struct token_location
+{
+    ssize_t loc;
+
+    explicit constexpr token_location() noexcept : loc(-1) {}
+    explicit constexpr token_location(ssize_t l) noexcept : loc(l) {}
+
+    bool is_valid() const noexcept { return loc >= 0; }
+
+    constexpr bool operator==(token_location o) const noexcept
+    { return loc == o.loc; }
+
+    constexpr bool operator!=(token_location o) const noexcept
+    { return loc != o.loc; }
+};
+
+struct location_range
+{
+    token_location begin, end;
+
+    explicit constexpr location_range() noexcept {}
+    constexpr location_range(token_location loc) noexcept : begin(loc), end(loc) {}
+    constexpr location_range(token_location b, token_location e) noexcept
+        : begin(b), end(e) {}
 };

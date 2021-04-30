@@ -118,6 +118,7 @@ bool parser::expect(tkn_type v)
             e.msg = "Unexpected token";
         }
         this->diagnostics.push_back(std::move(e));
+        return false;
     }
     return true;
 }

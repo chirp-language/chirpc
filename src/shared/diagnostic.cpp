@@ -1,6 +1,6 @@
 #include "diagnostic.hpp"
 #include "../color.hpp"
-#include "../parser/parser.hpp"
+#include "location_provider.hpp"
 #include <iostream>
 #include <charconv>
 
@@ -21,10 +21,10 @@ static bool is_important(std::string const& line)
     return false;
 }
 
-std::string diagnostic::show_output(parser const& par, std::vector<std::string> const& content, cmd& options) const
+std::string diagnostic::show_output(location_provider const& prov, std::vector<std::string> const& content, cmd& options) const
 {
     std::string result;
-    location const& tloc = par.get_loc(l.begin);
+    location const& tloc = prov.get_loc(l.begin);
     
     if (
         type == diagnostic_type::global_warning || 
@@ -63,14 +63,9 @@ std::string diagnostic::show_output(parser const& par, std::vector<std::string> 
     
     if (type != diagnostic_type::global_warning && type != diagnostic_type::global_err)
     {
-        result += "In <";
-        result += tloc.filename;
-        result += ":";
-        result += std::to_string(tloc.line);
-        result += ":";
-        result += std::to_string(tloc.start);
-        result += ">";
-        
+        result += "In ";
+        result += prov.print_loc(l);
+
         result += "\n";
         
         if (tloc.line - 1 >= 0 && is_important(content.at(tloc.line + 1)))
@@ -102,7 +97,7 @@ std::string diagnostic::show_output(parser const& par, std::vector<std::string> 
             {
                 identation += " ";
             }
-            for (int i = 0; i <= tloc.end - tloc.start; i++)
+            for (int i = 0; i < tloc.len; i++)
             {
                 identation += "^";
             }

@@ -5,7 +5,7 @@
 All possible AST nodes are defined here
 */
 #include "types.hpp"
-#include "../lexer/token.hpp"
+#include "../shared/location_provider.hpp"
 #include <string>
 #include <vector>
 #include <memory>
@@ -14,7 +14,7 @@ All possible AST nodes are defined here
 class ast_node
 {
 public:
-    virtual std::string dump(int) = 0;
+    virtual std::string dump(int, location_provider const&) const = 0;
     //std::vector<std::shared_ptr<ast_node>> children;
 
     location_range loc;
@@ -49,7 +49,7 @@ struct exprtype
     opcat cattp;
     std::vector<std::byte> exttp; // Enums are cast to/from a byte bc why not
 
-    std::string dump(int depth) const;
+    std::string dump(int depth, location_provider const&) const;
 };
 
 class expr : public ast_node
@@ -84,7 +84,7 @@ class binop : public expr
     token_location op_loc;
     exprh left;
     exprh right;
-    virtual std::string dump(int) override;
+    std::string dump(int depth, location_provider const&) const override;
 
     binop(exprop op, exprh l, exprh r)
         : expr(optype::op), op(op), left(std::move(l)), right(std::move(r)) {}
@@ -94,7 +94,7 @@ class arguments : public ast_node
 {
 public:
     std::vector<exprh> body;
-    virtual std::string dump(int) override;
+    std::string dump(int depth, location_provider const&) const override;
 };
 
 class func_call : public expr
@@ -102,7 +102,7 @@ class func_call : public expr
 public:
     exprh callee;
     arguments args;
-    virtual std::string dump(int) override;
+    std::string dump(int depth, location_provider const&) const override;
 
     func_call(exprh callee, arguments args)
         : expr(optype::call), callee(std::move(callee)), args(std::move(args)) {}
@@ -126,7 +126,7 @@ public:
     // {"a","b","c"}.. Further in vector => More nested
     std::vector<std::string> namespaces;
     std::string name;
-    virtual std::string dump(int) override;
+    std::string dump(int depth, location_provider const&) const override;
 
     identifier() : expr(optype::ident) {}
 };
@@ -136,7 +136,7 @@ class loperand : public expr
     public:
     std::shared_ptr<ast_node> node;
     loptype type;
-    virtual std::string dump(int) override;
+    std::string dump(int depth, location_provider const&) const override;
 };
 
 enum class littype
@@ -149,7 +149,7 @@ class literal_node : public expr
 {
 public:
     littype ltype;
-    virtual std::string dump(int) override;
+    std::string dump(int depth, location_provider const&) const override;
 
     literal_node(littype t) : expr(optype::lit), ltype(t) {}
 };
@@ -157,7 +157,7 @@ public:
 class txt_literal : public literal_node
 {
 public:
-    virtual std::string dump(int) override;
+    std::string dump(int depth, location_provider const&) const override;
     bool is_character; // Single character/packed character constant
     std::string value;
 
@@ -169,7 +169,7 @@ class num_literal : public literal_node
 {
 public:
     std::string value; // bruh
-    virtual std::string dump(int) override;
+    std::string dump(int depth, location_provider const&) const override;
 
     num_literal() : literal_node(littype::num) {}
 };
@@ -189,7 +189,7 @@ class stmt : public ast_node
 public:
     // There's a bunch of them so gotta make another enum smh
     stmt_type type;
-    virtual std::string dump(int) override;
+    std::string dump(int depth, location_provider const&) const override;
 
     stmt(stmt_type type)
         : type(type) {}
@@ -204,7 +204,7 @@ class decl_stmt : public stmt
     exprtype data_type;
     std::shared_ptr<identifier> ident;
     exprh init; // Empty if not availible
-    virtual std::string dump(int) override;
+    std::string dump(int depth, location_provider const&) const override;
 
     decl_stmt() : stmt(stmt_type::decl) {}
 };
@@ -214,7 +214,7 @@ class def_stmt : public stmt
     public:
     std::shared_ptr<identifier> ident;
     exprh value;
-    virtual std::string dump(int) override;
+    std::string dump(int depth, location_provider const&) const override;
 
     def_stmt() : stmt(stmt_type::def) {}
 };
@@ -223,7 +223,7 @@ class compound_stmt : public stmt
 {
 public:
     std::vector<stmth> body;
-    virtual std::string dump(int) override;
+    std::string dump(int depth, location_provider const&) const override;
 
     compound_stmt() : stmt(stmt_type::compound) {}
 };
@@ -232,7 +232,7 @@ class entry_stmt : public stmt
 {
 public:
     stmth code;
-    virtual std::string dump(int) override;
+    std::string dump(int depth, location_provider const&) const override;
 
     entry_stmt() : stmt(stmt_type::entry) {}
 };
@@ -241,7 +241,7 @@ class import_stmt : public stmt
 {
 public:
     txt_literal filename;
-    virtual std::string dump(int) override;
+    std::string dump(int depth, location_provider const&) const override;
 
     import_stmt() : stmt(stmt_type::import) {}
 };
@@ -251,7 +251,7 @@ class ret_stmt : public stmt
 public:
     // Should be replaced by expr, when I get to those
     exprh val;
-    virtual std::string dump(int) override;
+    std::string dump(int depth, location_provider const&) const override;
 
     ret_stmt() : stmt(stmt_type::ret) {}
 };
@@ -267,7 +267,7 @@ class extern_stmt : public stmt
     } type;
     txt_literal real_name;
     stmth decl;
-    virtual std::string dump(int) override;
+    std::string dump(int depth, location_provider const&) const override;
 
     extern_stmt()
         : stmt(stmt_type::external), type(decl_type::None) {}
@@ -277,7 +277,7 @@ class parameters : public ast_node
 {
     public:
     std::vector<std::shared_ptr<decl_stmt>> body;
-    virtual std::string dump(int) override;
+    std::string dump(int depth, location_provider const&) const override;
 };
 
 // Like a function definition but without the code
@@ -287,7 +287,7 @@ class func_decl_stmt : public stmt
     exprtype data_type;
     std::shared_ptr<identifier> ident;
     parameters params;
-    virtual std::string dump(int) override;
+    std::string dump(int depth, location_provider const&) const override;
 
     func_decl_stmt() : stmt(stmt_type::fdecl) {}
 };
@@ -300,7 +300,7 @@ class func_def_stmt : public stmt
     std::shared_ptr<identifier> ident;
     parameters params;
     std::shared_ptr<compound_stmt> body;
-    virtual std::string dump(int) override;
+    std::string dump(int depth, location_provider const&) const override;
 
     func_def_stmt() : stmt(stmt_type::fdef) {}
 };
@@ -309,7 +309,7 @@ class expr_stmt : public stmt
 {
     public:
     exprh node;
-    virtual std::string dump(int) override;
+    std::string dump(int depth, location_provider const&) const override;
 
     expr_stmt(exprh expr)
         : stmt(stmt_type::expr), node(std::move(expr)) {}
@@ -325,5 +325,5 @@ public:
     std::vector<std::shared_ptr<func_def_stmt>> fdefs;
     bool has_entry = false;
     entry_stmt entry;
-    std::string dump();
+    std::string dump(int depth, location_provider const&) const;
 };

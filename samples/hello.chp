@@ -6,4 +6,5 @@ entry
     int: a = 123
     char: b = 'b'
     char ptr: c = "chirp" # C-Style string
+    char ptr: s = "a"
 }

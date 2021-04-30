@@ -87,15 +87,7 @@ bool parser::is_datatype()
 
 bool parser::is_var_decl()
 {
-    bool result = false;
-    if (is_datatype() && peekf().type == tkn_type::colon)
-    {
-        cursor += 2;
-        if (probe(tkn_type::identifer))
-            result = true;
-        cursor -= 2;
-    }
-    return result;
+    return is_datatype();
 }
 
 bool parser::is_var_def()

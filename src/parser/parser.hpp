@@ -3,12 +3,13 @@ Parses tokens into an AST
 */
 #pragma once
 #include "../shared/diagnostic.hpp"
+#include "../shared/location_provider.hpp"
 #include "../lexer/token.hpp"
 #include "../ast/ast.hpp"
 #include <vector>
 
 // (bootleg)Parser  
-class parser
+class parser : public location_provider
 {
 public:
     void parse();
@@ -27,7 +28,7 @@ public:
         return tkns;
     }
 
-    location const& get_loc(token_location loc) const;
+    location const& get_loc(token_location loc) const override;
 
 private:
     size_t cursor = 0;

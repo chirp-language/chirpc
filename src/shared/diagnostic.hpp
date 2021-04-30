@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "../lexer/token.hpp"
+#include "location_provider.hpp"
 #include "../cmd.hpp"
 #include <vector>
 #include <string>
@@ -33,5 +33,5 @@ public:
 
     // Writes the diagnostic, in a human readable way
     // Possible Improvement: Add an option to create a "machine-readable" error prompt
-    std::string show_output(class parser const& par, std::vector<std::string> const& source, cmd& options) const;
+    std::string show_output(location_provider const& prov, std::vector<std::string> const& source, cmd& options) const;
 };
