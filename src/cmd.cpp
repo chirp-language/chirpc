@@ -5,23 +5,25 @@
 
 void cmd::write_help()
 {
-    std::cout << "Usage: chirpc [options] file..\n";
-    std::cout << "\nOptions:\n";
-    std::cout << "--- User Options ---\n";
-    std::cout << "\t--help\tDisplays this help message\n";
-    std::cout << "\t--version\tDisplays the compiler version\n";
-    std::cout << "\t-v\tActivates verbose mode(Experimental)\n";
-    std::cout << "\t-no-coloring\tDisables the coloring in prompts\n";
-    std::cout << "--- Utility Options ---\n";
-    std::cout << "\t-dump-tokens\tDumps the lexer tokens of the source file\n";
-    std::cout << "\t-dump-ast\tDumps the AST in a human readable view\n";
-    std::cout << "\t-keep-tmp\tKeeps the temporary folder, instead of deleting it after compiling.\n";
+    std::cout <<
+        "Usage: chirpc [options] file..\n"
+        "\nOptions:\n"
+        "--- User Options ---\n"
+        "\t--help\tDisplays this help message\n"
+        "\t--version\tDisplays the compiler version\n"
+        "\t-v\tActivates verbose mode(Experimental)\n"
+        "\t-no-coloring\tDisables the coloring in prompts\n"
+        "--- Utility Options ---\n"
+        "\t-dump-tokens\tDumps the lexer tokens of the source file\n"
+        "\t-dump-ast\tDumps the AST in a human readable view\n"
+        "\t-keep-tmp\tKeeps the temporary folder, instead of deleting it after compiling.\n";
 }
 
 void cmd::write_version()
 {
-    std::cout << "chirpc (Unknown) unstable v0\n";
-    std::cout << "This version screen is temporary\n";
+    std::cout <<
+        "chirpc (Unknown) unstable v0\n"
+        "This version screen is temporary\n";
 }
 
 cmd parse_cmd(int argc, char *argv[])

@@ -14,7 +14,7 @@ std::string codegen::emit_ident(identifier& ident)
 }
 
 // This is not finished
-std::string codegen::emit_datatype(dtype& d)
+std::string codegen::emit_datatype(exprtype& d)
 {
     // Doesn't do function pointery things
     std::string result;
@@ -22,7 +22,7 @@ std::string codegen::emit_datatype(dtype& d)
     int ptr_depth = 0;
     bool is_const = false;
 
-    for (char d : d.tmods)
+    for (std::byte d : d.exttp)
     {
         dtypemod mod = static_cast<dtypemod>(d);
         if (mod == dtypemod::_ptr)
@@ -31,6 +31,7 @@ std::string codegen::emit_datatype(dtype& d)
         }
         else if (mod == dtypemod::_const)
         {
+            // FIX THIS !!
             is_const = true;
         }
     }
@@ -40,7 +41,7 @@ std::string codegen::emit_datatype(dtype& d)
         result += "const ";
     }
 
-    switch (d.tname)
+    switch (d.basetp)
     {
         case dtypename::_int:
             result += "int";
@@ -71,18 +72,18 @@ std::string codegen::emit_datatype(dtype& d)
     return result;
 }
 
-std::string codegen::emit_literal(std::shared_ptr<literal_node> node)
+std::string codegen::emit_literal(literal_node& node)
 {
     std::string result;
-    if (node.get()->ltype == littype::num)
+    if (node.ltype == littype::num)
     {
-        num_literal lit = *static_cast<num_literal*>(node.get());
+        num_literal lit = static_cast<num_literal&>(node);
         result = lit.value;
     }
-    else if (node.get()->ltype == littype::txt)
+    else if (node.ltype == littype::txt)
     {
-        txt_literal lit = *static_cast<txt_literal*>(node.get());
-        if (lit.single_char)
+        txt_literal lit = static_cast<txt_literal&>(node);
+        if (lit.is_character)
         {
             result += '\'';
             result += lit.value;
@@ -102,81 +103,48 @@ std::string codegen::emit_literal(std::shared_ptr<literal_node> node)
     return result;
 }
 
-std::string codegen::emit_subexpr(subexpr& node)
+std::string codegen::emit_op(binop& node)
 {
     std::string result;
 
     result += "(";
-    result += emit_operand(node.left);
+    result += emit_expr(*node.left);
     result += ") ";
 
-    if (node.op.type == 'd')
+    if (node.op == exprop::none)
     {
-        result += "\n#derefs don't work yet\n";
+        result += "\n#error invalid operator\n";
     }
-    else if (node.op.type == 'r')
+    if (static_cast<short>(node.op) < 0)
     {
-        result += "\n#refs don't work yet\n";
-    }
-    else if (node.op.type == 'a')
-    {
-        result += "\n#error casts don't work yet\n";
+        result += "\n#error special operators don't work yet\n";
     }
     else
     {
-        result += node.op.type;
+        result += static_cast<unsigned char>(node.op);
     }
 
     result += " (";
-    result += emit_operand(node.right);
+    result += emit_expr(*node.right);
     result += ")";
 
     return result;
 }
 
-std::string codegen::emit_operand(operand& node)
-{
-    if (node.type == optype::lit)
-    {
-        if (static_cast<literal_node*>(node.node.get())->ltype == littype::txt)
-        {
-            return emit_literal(std::make_shared<txt_literal>(
-                *static_cast<txt_literal*>(node.node.get())));
-        }
-        else if (static_cast<literal_node*>(node.node.get())->ltype == littype::num)
-        {
-            return emit_literal(std::make_shared<num_literal>(
-                *static_cast<num_literal*>(node.node.get())));
-        }
-        else
-        {
-            // just panic idk
-            this->errored = true;
-        }
-    }
-    else if (node.type == optype::ident)
-    {
-        return emit_ident(*static_cast<identifier*>(node.node.get()));
-    }
-    else if (node.type == optype::call)
-    {
-        return emit_fcall(*static_cast<func_call_stmt*>(node.node.get()));
-    }
-    else if (node.type == optype::subexpr)
-    {
-        return emit_subexpr(*static_cast<subexpr*>(node.node.get()));
-    }
-    else if (node.type == optype::op || node.type == optype::invalid)
-    {
-        // error
-        this->errored = true;
-        return "\n#error Bad operand, This error message is temporary";
-    }
-
-    return "\n#error what\n";
-}
-
 std::string codegen::emit_expr(expr& node)
 {
-    return emit_operand(node.root);
+    switch (node.kind)
+    {
+        case optype::lit:
+            return emit_literal(static_cast<literal_node&>(node));
+        case optype::ident:
+            return emit_ident(static_cast<identifier&>(node));
+        case optype::call:
+            return emit_fcall(static_cast<func_call&>(node));
+        case optype::op:
+            return emit_op(static_cast<binop&>(node));
+        case optype::invalid:
+        default:
+            return "\n#error Bad operand, This is a bug";
+    }
 }

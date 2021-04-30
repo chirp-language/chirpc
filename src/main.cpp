@@ -12,12 +12,15 @@
 #include <vector>
 #include <string>
 
+cmd* cmd::program_cmd;
+
 // Returns 0 if everything goes normal
 // Returns -1 if bad code
 // Returns -2 if error(i.e. can't open file)
 int main(int argc, char** argv)
 {
     cmd options = parse_cmd(argc, argv);
+    cmd::program_cmd = &options;
 
     if (options.version)
     {
@@ -39,7 +42,7 @@ int main(int argc, char** argv)
 
     // Lets do the reading here cuz why the f not
     // Also kinda like very inefficient
-    std::fstream f(options.filename);
+    std::ifstream f(options.filename);
 
     if (!f)
     {
@@ -56,6 +59,8 @@ int main(int argc, char** argv)
         content.push_back(line);
     }
 
+    f.close();
+
     // Preprocessing & Lexing
     auto proccesed = preprocess(options.filename, content);
     auto tkns = lexe(proccesed, content);
@@ -71,21 +76,20 @@ int main(int argc, char** argv)
     }
     // Parsing
     parser p;
-    p.load_tokens(options.filename, tkns);
+    p.load_tokens(options.filename, std::move(tkns));
     p.parse();
-    std::vector<helper> phelpers = p.get_helpers();
     bool ok = true;
 
-    for (helper &h : phelpers)
+    for (auto const& h : p.get_diagnostics())
     {
         // Always copying the file content is like
         // really really really bad & inneficient
-        std::cout << h.write_helper(content, options) << '\n';
+        std::cout << h.show_output(p, content, options) << '\n';
 
         if (
-            h.type == helper_type::global_err ||
-            h.type == helper_type::line_err ||
-            h.type == helper_type::location_err)
+            h.type == diagnostic_type::global_err ||
+            h.type == diagnostic_type::line_err ||
+            h.type == diagnostic_type::location_err)
         {
             ok = false;
         }
@@ -98,7 +102,7 @@ int main(int argc, char** argv)
             std::cout << "--------------------" << '\n';
         }
 
-        std::cout << p.get_ast().dump() << '\n';
+        std::cout << p.get_ast().dump(0, p) << '\n';
     }
 
     if (!ok)
@@ -132,15 +136,15 @@ int main(int argc, char** argv)
     auto t = std::make_unique<tracker>();
     t->init();
 
-    generator.set_tree(p.get_ast(), options.filename);
+    generator.set_tree(&p.get_ast(), options.filename);
     generator.set_tracker(t.get());
     generator.gen();
 
     if (generator.errored)
     {
-        for (helper& h : generator.helpers)
+        for (auto const& h : generator.diagnostics)
         {
-            std::cout << h.write_helper(content, options) << '\n';
+            std::cout << h.show_output(p, content, options) << '\n';
         }
     }
 

@@ -1,90 +1,42 @@
 #include "parser.hpp"
 
-bool parser::is_identifier(bool reset)
+bool parser::is_identifier()
 {
-    bool result = false;
-    int op = this->cursor;
-
-    do
-    {
-        if (match(tkn_type::identifer))
-        {
-            result = true;
-        }
-        else
-        {
-            result = false;
-        }
-    } while (match(tkn_type::comma));
-
-    if (reset)
-    {
-        this->cursor = op;
-    }
-
-    return result;
+    return probe(tkn_type::identifer);
 }
 
-bool parser::is_lop(bool reset)
+bool parser::is_lop()
 {
-    bool result = false;
-    int op = this->cursor;
-
-    if(
-        is_identifier(false)        ||
-        match(tkn_type::ref_op)     ||
-        match(tkn_type::deref_op)   ||
-        match(tkn_type::as_op)
-    ){
-        result = true;
-    }
-
-    if(reset)
-    {
-        this->cursor = op;
-    }
-    return result;
+    return (
+        is_identifier()             ||
+        probe(tkn_type::ref_op)     ||
+        probe(tkn_type::deref_op)   ||
+        probe(tkn_type::as_op)
+    );
 }
 
-bool parser::is_lvalue(bool reset)
+bool parser::is_lvalue()
 {
-    bool result = false;
-    int op = this->cursor;
-
-    while(is_lop(false)){
-        result = true;
-    }
-
-    if(reset)
-    {
-        this->cursor = op;
-    }
-
-    return result;
+    return is_lop();
 }
 
-identifier parser::get_identifier()
+std::shared_ptr<identifier> parser::get_identifier()
 {
-    identifier node;
+    auto node = std::make_shared<identifier>();
+    node->loc = loc_peek();
     while (match(tkn_type::identifer))
     {
-        token ns = peekb();
+        token const& ns = peekb();
         if (match(tkn_type::period))
         {
-            node.namespaces.push_back(ns.value);
+            node->namespaces.push_back(ns.value);
         }
         else
         {
-            node.name = ns.value;
+            node->name = ns.value;
             break;
         }
     }
-    return node;
-}
-
-lvalue parser::get_lvalue()
-{
-    lvalue node;
-
+    node->loc.end = loc_peekb();
     return node;
 }

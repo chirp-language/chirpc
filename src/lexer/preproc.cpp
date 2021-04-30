@@ -29,7 +29,7 @@ std::vector<location> disjoint(std::vector<std::string> content)
                     i++;
                 }
                 //i--;
-                loc.end = i;
+                loc.len = i - loc.start + 1;
                 result.push_back(loc);
             }
             else if (line.at(i) == '\'')
@@ -49,7 +49,7 @@ std::vector<location> disjoint(std::vector<std::string> content)
                     i++;
                 }
                 //i--;
-                loc.end = i;
+                loc.len = i - loc.start + 1;
                 result.push_back(loc);
             }
             else if (isalnum(line.at(i)) != 0)
@@ -69,7 +69,7 @@ std::vector<location> disjoint(std::vector<std::string> content)
                     i++;
                 }
                 i--;
-                loc.end = i;
+                loc.len = i - loc.start + 1;
                 result.push_back(loc);
             }
             else if (isspace(line.at(i)) != 0)
@@ -82,7 +82,7 @@ std::vector<location> disjoint(std::vector<std::string> content)
                     i++;
                 }
                 i--;
-                loc.end = i;
+                loc.len = i - loc.start + 1;
                 //result.push_back(loc);
             }
             else
@@ -96,7 +96,7 @@ std::vector<location> disjoint(std::vector<std::string> content)
                     i++;
                 }
 
-                loc.end = i;
+                loc.len = i - loc.start + 1;
                 result.push_back(loc);
             }
         }
@@ -142,7 +142,7 @@ std::vector<location> preprocess(std::string fname, std::vector<std::string> con
 
     for (size_t i = 0; i < src.size(); i++)
     {
-        location loc = src.at(i);
+        location& loc = src.at(i);
 
         if (content.at(loc.line).at(loc.start) == '#')
         {
@@ -162,7 +162,7 @@ std::vector<location> preprocess(std::string fname, std::vector<std::string> con
                 (i + 1 < src.size() && src.at(i).line == src.at(i + 1).line))
             {
                 std::string cmd;
-                for (int n = src.at(i + 1).start; n <= src.at(i + 1).end; n++)
+                for (int n = src.at(i + 1).start, end = n + src.at(i + 1).len; n < end; n++)
                 {
                     cmd += content.at(src.at(i + 1).line).at(n);
                 }
@@ -174,7 +174,7 @@ std::vector<location> preprocess(std::string fname, std::vector<std::string> con
                     {
                         location pname = src.at(i + 3); // platform name
                         std::string pval;
-                        for (int n = pname.start; n <= pname.end; n++)
+                        for (int n = pname.start, end = n + pname.len; n < end; n++)
                         {
                             pval += content.at(pname.line).at(n);
                         }
@@ -233,10 +233,13 @@ std::vector<location> preprocess(std::string fname, std::vector<std::string> con
         }
         else
         {
-            src.at(i).filename = fname;
+            loc.filename = fname;
             result.push_back(src.at(i));
         }
     }
+
+    // EOF
+    result.push_back(location(content.size(), fname));
 
     return result;
 }

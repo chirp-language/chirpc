@@ -1,27 +1,23 @@
 #include "color.hpp"
+#include "cmd.hpp"
 
 std::string write_color(std::string txt, color c){
-    #ifdef __linux__
+    if (not cmd::program_cmd->has_color)
+        return txt;
+    #ifdef __unix__
     // Doesn't care if it's on a VT100 terminal or not
     // will do coloring anyway.
-    std::string result = "\033[1;"; // Defaults with bold
-    switch(c)
-    {
-        case color::red:
-        result += "31m";
-        break;
-        case color::blue:
-        result += "34m";
-        break;
-        case color::green:
-        result += "32m";
-        break;
-        case color::yellow:
-        result += "33m";
-        break;
-    }
+    std::string result = "\033[";
+    unsigned int col = static_cast<unsigned int>(c);
+    if ((c & color::bright) != color::blank)
+        result += std::to_string(90 + (col & 7));
+    else
+        result += std::to_string(30 + (col & 7));
+    if ((c & color::bold) != color::blank)
+        result += ";1";
+    result += "m";
     result += txt;
-    result += "\033[0m";
+    result += "\033[m";
     return result;
     #else
     return txt;

@@ -44,7 +44,7 @@ bool tracker::check_var(std::vector<std::string> nspace, std::string name)
 }
 
 // This function is incredibly inefficient
-void tracker::scope_up()
+void tracker::pop_scope()
 {
     this->depth--;
 
@@ -59,7 +59,7 @@ void tracker::scope_up()
     this->vars = nvec;
 }
 
-void tracker::scope_down()
+void tracker::push_scope()
 {
     this->depth++;
 }

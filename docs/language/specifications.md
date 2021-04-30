@@ -118,3 +118,14 @@ Type modifier:
 The `ptr` data modifier can be used alone to specifiy a generic pointer (like `void*` in C)
 
 The `func` data modifier is both used as the keyword to declare/define a function, and as a specifier when creating function pointers.
+
+# Operator precedence
+
+| Symbol | Precedence | Associativity | Notes |
+| --- | --: | :-: | :-- |
+| `()` | 0 | | Technically not an operator, but resets precedence |
+| `f(...)` | 1 | left-to-right | Function call |
+| `as`, `deref`, `ref` | 2 | right-to-left | Unary |
+| `*`, `/` | 3 | left-to-right |
+| `+`, `-` | 4 | left-to-right |
+| `,` | 5 | left-to-right | Not implemented, also required for lists |

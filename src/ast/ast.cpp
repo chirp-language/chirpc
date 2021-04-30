@@ -1,4 +1,5 @@
 #include "ast.hpp"
+#include "../color.hpp"
 
 #include <iostream>
 #include <queue>
@@ -10,11 +11,7 @@
 std::string indent(int x)
 {
     std::string result;
-    for (int i = 0; i < x; i++)
-    {
-        //result += "\t";
-        result += "   ";
-    }
+    result.resize(x * 3, ' ');
     return result;
 }
 
@@ -46,6 +43,7 @@ std::string dump_dtname(dtypename n)
         result = "none";
         break;
     }
+    result = write_color(std::move(result), color::green);
     return result;
 }
 
@@ -76,71 +74,71 @@ std::string dump_dtmod(dtypemod m)
 // === AST UTIL DUMPS ===
 // Doesn't dump in any particular format(yet)
 
-std::string ast::dump()
+std::string ast_root::dump(int depth, [[maybe_unused]]location_provider const& prov) const
 {
     std::string result;
-    result += "Top Level:\n";
+    result += write_color("Top Level:\n", color::blue | color::bright | color::bold);
 
     if (this->imports.size() == 0)
     {
-        result += "-- No imports --\n";
+        result += write_color("-- No imports --\n", color::red | color::blue | color::bright);
     }
     else
     {
-        for (import_stmt import : this->imports)
+        for (auto& import : this->imports)
         {
-            result += import.dump(0);
+            result += import->dump(depth, prov);
         }
     }
 
     if (this->externs.size() == 0)
     {
-        result += "-- No externs --\n";
+        result += write_color("-- No externs --\n", color::red | color::blue | color::bright);
     }
     else
     {
-        for (extern_stmt ext : this->externs)
+        for (auto& ext : this->externs)
         {
-            result += ext.dump(1);
+            result += ext->dump(depth+1, prov);
         }
     }
 
-    if (this->fdecls.size() == 0)
+    if (this->fdecls.empty())
     {
-        result += "-- No function declarations on top-level --\n";
+        result += write_color("-- No function declarations on top-level --\n", color::red | color::blue | color::bright);
     }
     else
     {
-        for (func_decl_stmt node : this->fdecls)
+        for (auto& node : this->fdecls)
         {
-            result += node.dump(1);
+            result += node->dump(depth+1, prov);
         }
     }
 
-    if (this->fdefs.size() == 0)
+    if (this->fdefs.empty())
     {
-        result += "-- No function definitions on top-level --\n";
+        result += write_color("-- No function definitions on top-level --\n", color::red | color::blue | color::bright);
     }
     else
     {
-        for (func_def_stmt node : this->fdefs)
+        for (auto& node : this->fdefs)
         {
-            result += node.dump(1);
+            result += node->dump(depth+1, prov);
         }
     }
 
     if (this->has_entry)
     {
-        result += this->entry.dump(0);
+        result += this->entry.dump(depth, prov);
     }
     else
     {
-        result += "-- No entry --\n";
+        result += write_color("-- No entry --\n", color::red | color::blue | color::bright);
     }
     return result;
 }
 
-std::string ast_node::dump(int depth)
+/*std::string ast_node::dump(int depth)
 {
     std::string result;
     result += indent(depth);
@@ -150,20 +148,22 @@ std::string ast_node::dump(int depth)
     //    result += child->dump(depth + 1);
     //}
     return result;
-}
+}*/
 
-std::string identifier::dump(int depth)
+std::string identifier::dump(int depth, [[maybe_unused]]location_provider const& prov) const
 {
     std::string result;
     result += indent(depth);
-    result += "identifier <";
+    result += write_color("identifier ", color::blue | color::bright);
+    result += prov.print_loc(loc);
+    result += " <";
     int i = 0;
     for (std::string wot : this->namespaces)
     {
         result += wot;
         if (i != this->namespaces.size() - 1)
         {
-            result += ",";
+            result += ".";
         }
     }
     result += "> ";
@@ -172,43 +172,40 @@ std::string identifier::dump(int depth)
     return result;
 }
 
-std::string loperand::dump(int depth)
+std::string loperand::dump(int depth, [[maybe_unused]]location_provider const& prov) const
 {
     std::string result;
     result += indent(depth);
-    result += "left_operand:\n";
+    result += write_color("left_operand:", color::blue);
+    result += prov.print_loc(loc);
+    result += "\n";
     return result;
 }
 
-std::string lvalue::dump(int depth)
-{
-    std::string result;
-    result = indent(depth);
-    result += "lvalue:\n";
-    // don't really care actually
-    return result;
-}
-
-std::string literal_node::dump(int depth)
+std::string literal_node::dump(int depth, [[maybe_unused]]location_provider const& prov) const
 {
     std::string result;
     result += indent(depth);
-    result += "default_literal";
+    result += write_color("none_literal", color::blue);
+    result += prov.print_loc(loc);
+    result += "\n";
     return result;
 }
 
-std::string txt_literal::dump(int depth)
+std::string txt_literal::dump(int depth, [[maybe_unused]]location_provider const& prov) const
 {
     std::string result;
     result += indent(depth);
-    result += "text_literal ";
-    if (this->single_char)
+    result += write_color("text_literal ", color::green);
+    result += prov.print_loc(loc);
+    result += " ";
+    if (this->is_character)
     {
-        result += "(char) ";
+        result += write_color("(char) ", color::green | color::bright);
     }
     else
     {
-        result += "(string) ";
+        result += write_color("(string) ", color::green | color::bright);
     }
     result += "\"";
     result += value;
@@ -216,155 +213,127 @@ std::string txt_literal::dump(int depth)
     return result;
 }
 
-std::string num_literal::dump(int depth)
+std::string num_literal::dump(int depth, [[maybe_unused]]location_provider const& prov) const
 {
     std::string result;
     result += indent(depth);
-    result += "number_literal ";
+    result += write_color("number_literal ", color::green);
+    result += prov.print_loc(loc);
+    result += " ";
     result += value;
     result += ";\n";
     return result;
 }
 
-std::string subexpr::dump(int depth)
+std::string binop::dump(int depth, [[maybe_unused]]location_provider const& prov) const
 {
     std::string result;
     result += indent(depth);
-    result += "subexpr ";
-    result += op.dump(0);
-    //result += ");\n";
+    result += write_color("binop ", color::green);
+    result += prov.print_loc(loc);
+    result += " ";
+    result += exprop_id(op);
+    result += " ";
+    result += prov.print_loc(op_loc);
+    result += "\n";
     result += indent(depth + 1);
     result += "left:\n";
-    result += left.dump(depth + 1);
+    result += left->dump(depth + 1, prov);
     result += indent(depth + 1);
     result += "right:\n";
-    result += right.dump(depth + 1);
+    result += right->dump(depth + 1, prov);
     return result;
 }
 
-std::string exprop::dump(int depth)
+std::string exprop_id(exprop op)
 {
     std::string result;
-    result = indent(depth);
-    result += "expr_operator (";
-    switch (this->type)
+    result = "(";
+    switch (op)
     {
-    case '(':
-        result += "lparen";
-        break;
-    case ')':
-        result += "rparen";
-        break;
-    case '+':
+    case static_cast<exprop>('+'):
         result += "add";
         break;
-    case '-':
+    case static_cast<exprop>('-'):
         result += "sub";
         break;
-    case '/':
+    case static_cast<exprop>('/'):
         result += "div";
         break;
-    case '*':
+    case static_cast<exprop>('*'):
         result += "mult";
         break;
-    case 'd':
+    case exprop::deref:
         result += "deref";
         break;
-    case 'r':
+    case exprop::ref:
         result += "ref";
         break;
-    case 'a':
+    case exprop::as:
         result += "as";
         break;
+    case exprop::call:
+        result += "call";
+        break;
+    case exprop::none:
+    default:
+        result += "invalid";
     }
-    result += ");\n";
+    result += ")";
     return result;
 }
 
-std::string operand::dump(int depth)
+std::string arguments::dump(int depth, [[maybe_unused]]location_provider const& prov) const
 {
     std::string result;
-    result = indent(depth);
-    result += "operand:\n";
-    switch (this->type)
+    result += indent(depth);
+    result += write_color("arguments: ", color::green);
+    result += prov.print_loc(loc);
+    result += "\n";
+    for (auto& n : body)
     {
-    case optype::lit:
-        result += static_cast<literal_node *>(this->node.get())->dump(depth + 1);
-        break;
-    case optype::ident:
-        result += static_cast<identifier *>(this->node.get())->dump(depth + 1);
-        break;
-    case optype::call:
-        result += static_cast<func_call_stmt *>(this->node.get())->dump(depth + 1);
-        break;
-    case optype::subexpr:
-        result += static_cast<subexpr *>(this->node.get())->dump(depth + 1);
-        break;
-    case optype::op:
-        result += static_cast<exprop *>(this->node.get())->dump(depth + 1);
-        break;
-    case optype::invalid:
-        result += indent(depth + 1);
-        result += "(INVALID EXPR)\n";
-        break;
+        result += n->dump(depth + 1, prov);
     }
     return result;
 }
 
-std::string expr::dump(int depth)
+std::string parameters::dump(int depth, [[maybe_unused]]location_provider const& prov) const
 {
     std::string result;
     result += indent(depth);
-    result += "expression;\n";
-    result += this->root.dump(depth + 1);
-    return result;
-}
-
-std::string arguments::dump(int depth)
-{
-    std::string result;
-    result += indent(depth);
-    result += "arguments:\n";
-    for (auto n : body)
-    {
-        result += n.dump(depth + 1);
-    }
-    return result;
-}
-
-std::string parameters::dump(int depth)
-{
-    std::string result;
-    result += indent(depth);
-    result += "parameters:\n";
-    for (decl_stmt param : this->body)
+    result += write_color("parameters: ", color::green);
+    result += prov.print_loc(loc);
+    result += "\n";
+    for (auto& param : this->body)
     {
         //    result += indent(depth+1);
-        result += param.dump(depth + 1);
+        result += param->dump(depth + 1, prov);
         //    result += "\n";
     }
     return result;
 }
 
-std::string stmt::dump(int depth)
+std::string stmt::dump(int depth, [[maybe_unused]]location_provider const& prov) const
 {
     std::string result;
     result += indent(depth);
-    result += "default_statement:\n";
+    result += write_color("null_statement ", color::green);
+    result += prov.print_loc(loc);
+    result += "\n";
     return result;
 }
 
-std::string dtype::dump(int depth)
+std::string exprtype::dump(int depth, [[maybe_unused]]location_provider const& prov) const
 {
     std::string result;
     result += indent(depth);
     result += "data_type:\n";
     result += indent(depth + 1);
     result += "typename: ";
-    result += dump_dtname(this->tname);
+    result += dump_dtname(basetp);
     result += ";\n";
     result += indent(depth + 1);
-    if (this->tmods.size() == 0)
+    if (exttp.empty())
     {
         result += "(no type modifiers)\n";
     }
@@ -372,7 +341,7 @@ std::string dtype::dump(int depth)
     {
         result += "type modifiers:\n";
         // I really gave up on naming thing well there
-        for (char x : this->tmods)
+        for (std::byte x : exttp)
         {
             dtypemod w = static_cast<dtypemod>(x);
             result += indent(depth + 2);
@@ -383,139 +352,162 @@ std::string dtype::dump(int depth)
     return result;
 }
 
-std::string decldef_stmt::dump(int depth)
-{
-    std::string result;
-    result = indent(depth);
-    result += "declaration&definition:\n";
-    result += this->decl.dump(depth + 1);
-    result += this->def.dump(depth + 1);
-    return result;
-}
-
-std::string decl_stmt::dump(int depth)
+std::string decl_stmt::dump(int depth, [[maybe_unused]]location_provider const& prov) const
 {
     std::string result;
     result += indent(depth);
-    result += "decl_statement:\n";
-    result += this->data_type.dump(depth + 1);
-    result += this->ident.dump(depth + 1);
+    result += write_color("decl_statement: ", color::green);
+    result += prov.print_loc(loc);
+    result += "\n";
+    result += this->data_type.dump(depth + 1, prov);
+    result += this->ident->dump(depth + 1, prov);
+    if (this->init)
+        result += this->init->dump(depth + 1, prov);
     return result;
 }
 
-std::string def_stmt::dump(int depth)
+std::string def_stmt::dump(int depth, [[maybe_unused]]location_provider const& prov) const
 {
     std::string result;
     result += indent(depth);
-    result += "def_statement:\n";
-    result += this->ident.dump(depth + 1);
-    result += this->value.dump(depth + 1);
+    result += write_color("def_statement: ", color::green);
+    result += prov.print_loc(loc);
+    result += "\n";
+    result += this->ident->dump(depth + 1, prov);
+    result += this->value->dump(depth + 1, prov);
     return result;
 }
 
-std::string compound_stmt::dump(int depth)
+std::string compound_stmt::dump(int depth, [[maybe_unused]]location_provider const& prov) const
 {
     std::string result;
     result += indent(depth);
-    result += "compound_statement:\n";
+    result += write_color("compound_statement: ", color::green);
+    result += prov.print_loc(loc);
+    result += "\n";
     for (auto& s : this->body)
     {
-        result += s->dump(depth + 1);
+        result += s->dump(depth + 1, prov);
     }
     return result;
 }
 
-std::string entry_stmt::dump(int depth)
+std::string entry_stmt::dump(int depth, [[maybe_unused]]location_provider const& prov) const
 {
     std::string result;
     result += indent(depth);
-    result += "entry_statement ";
+    result += write_color("entry_statement ", color::green);
+    result += prov.print_loc(loc);
+    result += " ";
     result += "(no_args)";
     result += ":\n";
-    result += this->code->dump(depth + 1);
+    result += this->code->dump(depth + 1, prov);
     return result;
 }
 
-std::string import_stmt::dump(int depth)
+std::string import_stmt::dump(int depth, [[maybe_unused]]location_provider const& prov) const
 {
     std::string result;
     result += indent(depth);
-    result += "import_statement:\n";
-    result += this->filename.dump(depth + 1);
+    result += write_color("import_statement:", color::green);
+    result += prov.print_loc(loc);
+    result += "\n";
+    result += this->filename.dump(depth + 1, prov);
     return result;
 }
 
-std::string ret_stmt::dump(int depth)
+std::string ret_stmt::dump(int depth, [[maybe_unused]]location_provider const& prov) const
 {
     std::string result;
     result += indent(depth);
-    result += "ret_statement:\n";
-    result += this->val.dump(depth + 1);
+    result += write_color("ret_statement:", color::green);
+    result += prov.print_loc(loc);
+    result += "\n";
+    result += this->val->dump(depth + 1, prov);
     return result;
 }
 
-std::string extern_stmt::dump(int depth)
+std::string extern_stmt::dump(int depth, [[maybe_unused]]location_provider const& prov) const
 {
     std::string result;
     result += indent(depth);
-    result += "extern (";
+    result += write_color("extern ", color::blue | color::green | color::bright);
+    result += prov.print_loc(loc);
+    result += " (";
     
     switch (this->type)
     {
-        case extern_stmt::stmt_type::None:
-            result += "None";
+        case extern_stmt::decl_type::None:
+            result += write_color("None", color::green);
             break;
-        case extern_stmt::stmt_type::Function:
-            result += "Function";
+        case extern_stmt::decl_type::Function:
+            result += write_color("Function", color::green);
             break;
-        case extern_stmt::stmt_type::Variable:
-            result += "Variable";
+        case extern_stmt::decl_type::Variable:
+            result += write_color("Variable", color::green);
             break;
     }
     
     result += "): \n";
 
-    if (this->type == extern_stmt::stmt_type::Function)
+    if (this->type == extern_stmt::decl_type::Function)
     {
-        result += static_cast<func_decl_stmt*>(this->stmt.get())->dump(depth + 1);
+        result += static_cast<func_decl_stmt*>(this->decl.get())->dump(depth + 1, prov);
     }
-    else if (this->type == extern_stmt::stmt_type::Variable)
+    else if (this->type == extern_stmt::decl_type::Variable)
     {
-        result += static_cast<decl_stmt*>(this->stmt.get())->dump(depth + 1);
+        result += static_cast<decl_stmt*>(this->decl.get())->dump(depth + 1, prov);
     }
 
     return result;
 }
 
-std::string func_def_stmt::dump(int depth)
+std::string func_def_stmt::dump(int depth, [[maybe_unused]]location_provider const& prov) const
 {
     std::string result;
     result += indent(depth);
-    result += "function_definition:\n";
-    result += data_type.dump(depth + 1);
-    result += ident.dump(depth + 1);
-    result += params.dump(depth + 1);
-    result += body.dump(depth + 1);
+    result += write_color("function_definition: ", color::green);
+    result += prov.print_loc(loc);
+    result += "\n";
+    result += data_type.dump(depth + 1, prov);
+    result += ident->dump(depth + 1, prov);
+    result += params.dump(depth + 1, prov);
+    result += body->dump(depth + 1, prov);
     return result;
 }
 
-std::string func_decl_stmt::dump(int depth)
+std::string func_decl_stmt::dump(int depth, [[maybe_unused]]location_provider const& prov) const
 {
     std::string result;
     result += indent(depth);
-    result += "function_declaration:\n";
-    result += data_type.dump(depth + 1);
-    result += ident.dump(depth + 1);
-    result += params.dump(depth + 1);
+    result += write_color("function_declaration: ", color::green);
+    result += prov.print_loc(loc);
+    result += "\n";
+    result += data_type.dump(depth + 1, prov);
+    result += ident->dump(depth + 1, prov);
+    result += params.dump(depth + 1, prov);
     return result;
 }
 
-std::string func_call_stmt::dump(int depth)
+std::string func_call::dump(int depth, [[maybe_unused]]location_provider const& prov) const
 {
     std::string result;
     result += indent(depth);
-    result += "function_call:\n";
-    result += this->ident.dump(depth + 1);
-    result += this->args.dump(depth + 1);
+    result += write_color("function_call: ", color::green);
+    result += prov.print_loc(loc);
+    result += "\n";
+    result += this->callee->dump(depth + 1, prov);
+    result += this->args.dump(depth + 1, prov);
+    return result;
+}
+
+std::string expr_stmt::dump(int depth, [[maybe_unused]]location_provider const& prov) const
+{
+    std::string result;
+    result += indent(depth);
+    result += write_color("expr_stmt: ", color::green);
+    result += prov.print_loc(loc);
+    result += "\n";
+    result += this->node->dump(depth + 1, prov);
     return result;
 }

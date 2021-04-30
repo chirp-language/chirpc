@@ -2,20 +2,33 @@
 Parses tokens into an AST
 */
 #pragma once
-#include "../shared/helper.hpp"
+#include "../shared/diagnostic.hpp"
+#include "../shared/location_provider.hpp"
 #include "../lexer/token.hpp"
 #include "../ast/ast.hpp"
 #include <vector>
 
 // (bootleg)Parser  
-class parser
+class parser : public location_provider
 {
 public:
     void parse();
 
-    void load_tokens(std::string, std::vector<token>);
-    std::vector<helper> get_helpers();
-    ast get_ast();
+    void load_tokens(std::string, std::vector<token>&&);
+    std::vector<diagnostic> const& get_diagnostics() const
+    {
+        return diagnostics;
+    }
+    ast_root& get_ast()
+    {
+        return tree;
+    }
+    std::vector<token> const& get_tokens() const
+    {
+        return tkns;
+    }
+
+    location const& get_loc(token_location loc) const override;
 
 private:
     size_t cursor = 0;
@@ -23,70 +36,93 @@ private:
     // Shared functions
 
     bool match(tkn_type);
+    bool probe(tkn_type); // Like match, but not consuming
     bool expect(tkn_type);
 
-    token peekb(); // Peek Back
-    token peek(); // Peek now
-    token peekf(); // Peek Forward
+    token_location loc_peek()
+    {
+        return token_location(cursor);
+    }
+
+    token_location loc_peekb()
+    {
+        return token_location(cursor - 1);
+    }
+
+    token_location loc_peekf()
+    {
+        if (cursor + 1 >= tkns.size())
+            return token_location();
+        return token_location(cursor + 1);
+    }
+
+    token_location loc_eof()
+    {
+        // Returns the location of the last token, which should be EOF
+        return token_location(tkns.size() - 1);
+    }
+
+    token const& peekb(); // Peek Back
+    token const& peek(); // Peek now
+    token const& peekf(); // Peek Forward
+
+    void skip() { ++cursor; } // Skip one token
 
     // Actual parser stuff
 
     dtypename get_dtypename(std::string);
     dtypemod get_dtypemod(std::string);
 
-    bool is_operand(bool);
+    bool is_operand();
 
-    bool is_identifier(bool);
-    bool is_lop(bool); // left operand
-    bool is_lvalue(bool);
-    bool is_datatype(bool);
+    bool is_identifier();
+    bool is_lop(); // left operand
+    bool is_lvalue();
+    bool is_datatype();
 
-    bool is_params(bool);
+    bool is_params();
 
-    bool is_var_decl(bool); // (data specifiers) (:) (identifier)
-    bool is_var_def(bool);  // (identifier) (=) (value)
+    bool is_var_decl(); // (data specifiers) (:) (identifier)
+    bool is_var_def();  // (identifier) (=) (value)
     bool is_var_decldef(); // (data specifiers) (:) (identifier) (=) (value)
 
-    bool is_func_decl(bool); // (func) (data_types) (identifier) (params)
-    bool is_func_def(bool); // (func_decl) (compound_statement)
-    bool is_func_call(bool); // (identifier) ( arguments )
+    bool is_func_decl(); // (func) (data_types) (identifier) (params)
+    bool is_func_def(); // (func_decl) (compound_statement)
+    bool is_func_call(); // (identifier) ( arguments )
 
-    identifier get_identifier();
-    lvalue get_lvalue();
+    std::shared_ptr<identifier> get_identifier();
 
     txt_literal get_txt_lit();
     num_literal get_num_lit();
     std::shared_ptr<literal_node> get_literal();
 
-    subexpr get_subexpr(std::vector<operand>);
-    operand get_operand();
-    expr get_expr(std::vector<operand>);
-    expr get_expr();
+    exprh get_subexpr_op(exprh lhs, int min_prec);
+    exprh get_primary_expr();
+    exprh get_expr(bool comma_allowed);
 
-    dtype get_datatype();
-    decl_stmt get_decl_stmt();
-    def_stmt get_def_stmt();
-    decldef_stmt get_decldef_stmt();
+    exprtype get_datatype();
+    std::shared_ptr<decl_stmt> get_decl_stmt();
+    std::shared_ptr<def_stmt> get_def_stmt();
 
     parameters get_parameters();
-    func_decl_stmt get_func_decl();
-    func_def_stmt get_func_def();
+    std::shared_ptr<func_decl_stmt> get_func_decl();
+    std::shared_ptr<func_def_stmt> get_func_def();
 
     arguments get_arguments();
-    func_call_stmt get_fcall(); // fcall->function call
+    std::shared_ptr<func_call> get_fcall(exprh callee); // function call
 
     entry_stmt get_entry();
-    import_stmt get_import();
-    ret_stmt get_ret(); // MLG wooo
+    std::shared_ptr<import_stmt> get_import();
+    std::shared_ptr<ret_stmt> get_ret(); // MLG wooo
 
-    extern_stmt get_extern();
+    std::shared_ptr<extern_stmt> get_extern();
 
     std::shared_ptr<stmt> get_stmt();
-    compound_stmt get_compound_stmt();
+    std::shared_ptr<compound_stmt> get_compound_stmt();
 
     bool ok = false;
     std::string filename;
-    ast tree;
-    std::vector<helper> helpers;
+    ast_root tree;
+    std::vector<diagnostic> diagnostics;
     std::vector<token> tkns;
 };

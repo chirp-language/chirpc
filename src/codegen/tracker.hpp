@@ -34,10 +34,10 @@ class tracker
     // Get's out of the current scope
     // and check for variabless that are deeper then
     // current scope, and deletes them.
-    void scope_up();
+    void push_scope();
 
     // Get's deeper in the scope
-    void scope_down();
+    void pop_scope();
 
     // If called and no entry exists, will set the entry_set flag
     // Returns false if an entry existed before

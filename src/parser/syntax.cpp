@@ -7,39 +7,32 @@
 txt_literal parser::get_txt_lit()
 {
     txt_literal node;
-    node.ltype = littype::txt;
-    token t = peek();
+    token const& t = peek();
+    node.loc = loc_peek();
     expect(tkn_type::literal);
     node.value = t.value;
     node.value.erase(0, 1);
     node.value.pop_back();
 
-    if (node.value.size() == 1)
-    {
-        node.single_char = true;
-    }
-    else
-    {
-        node.single_char = false;
-    }
+    node.is_character = node.value.size() == 1;
     return node;
 }
 
 num_literal parser::get_num_lit()
 {
     num_literal node;
-    node.ltype = littype::num;
-    token t = peek();
+    token const& t = peek();
+    node.loc = loc_peek();
     expect(tkn_type::literal);
 
     if (t.value.at(0) == '\'' || t.value.at(0) == '"')
     {
-        helper e;
-        e.l = t.loc;
+        diagnostic e;
+        e.l = node.loc;
         e.msg = "Trying to perform math operation with a string literal";
-        e.type = helper_type::location_err;
+        e.type = diagnostic_type::location_err;
         this->ok = false;
-        this->helpers.push_back(e);
+        this->diagnostics.push_back(std::move(e));
     } 
     // Carries on after that, as it shouldn't break anything, 
     // until the codegen phase, but it throws an error so it won't reach that
@@ -49,139 +42,118 @@ num_literal parser::get_num_lit()
 
 std::shared_ptr<literal_node> parser::get_literal()
 {
-    std::shared_ptr<literal_node> node;
-    std::string val = peek().value;
+    auto const& val = peek().value;
 
     if (val.at(0) == '"' || val.at(0) == '\'')
-    {
-        node = std::make_shared<txt_literal>();
-        *static_cast<txt_literal*>(node.get()) = get_txt_lit();
-    }
+        return std::make_shared<txt_literal>(get_txt_lit());
     // oof, doesn't check for booleans, too bad
     else
-    {
-        node = std::make_shared<num_literal>();
-        ;
-        *static_cast<num_literal*>(node.get()) = get_num_lit();
-    }
-    return node;
+        return std::make_shared<num_literal>(get_num_lit());
+    return nullptr;
 }
 
 entry_stmt parser::get_entry()
 {
     entry_stmt node;
-    node.type = stmt_type::entry;
-    node.line = this->peek().loc.line;
-    expect(tkn_type::kw_entry);
+    node.loc = loc_peekb();
     node.code = get_stmt();
+    node.loc.end = loc_peekb();
     return node;
 }
 
-import_stmt parser::get_import()
+std::shared_ptr<import_stmt> parser::get_import()
 {
-    import_stmt node;
-    node.type = stmt_type::import;
-    node.line = this->peek().loc.line;
-    expect(tkn_type::kw_import);
-    node.filename = get_txt_lit();
+    auto node = std::make_shared<import_stmt>();
+    node->loc = loc_peekb();
+    node->filename = get_txt_lit();
+    node->loc = loc_peekb();
     return node;
 }
 
-ret_stmt parser::get_ret()
+std::shared_ptr<ret_stmt> parser::get_ret()
 {
-    ret_stmt node;
-    node.type = stmt_type::ret;
-    node.line = this->peek().loc.line;
-    expect(tkn_type::kw_ret);
-    node.val = get_expr();
-    //node.val = get_literal();
+    auto node = std::make_shared<ret_stmt>();
+    node->loc = loc_peekb();
+    node->val = get_expr(true);
+    node->loc.end = loc_peekb();
     return node;
 }
 
-extern_stmt parser::get_extern()
+std::shared_ptr<extern_stmt> parser::get_extern()
 {
-    extern_stmt node;
-    expect(tkn_type::kw_extern);
-    node.real_name = get_txt_lit();
-    node.type = extern_stmt::stmt_type::None;
+    auto node = std::make_shared<extern_stmt>();
+    node->loc = loc_peekb();
+    node->real_name = get_txt_lit();
    
-    if (is_func_decl(true))
+    if (is_func_decl())
     {
-        node.type = extern_stmt::stmt_type::Function;
-        node.stmt = std::make_shared<func_decl_stmt>(get_func_decl());
+        node->type = extern_stmt::decl_type::Function;
+        node->decl = get_func_decl();
     }
-    else if (is_var_decl(true))
+    else if (is_var_decl())
     {
-        node.type = extern_stmt::stmt_type::Variable;
-        node.stmt = std::make_shared<decl_stmt>(get_decl_stmt());
+        node->type = extern_stmt::decl_type::Variable;
+        node->decl = get_decl_stmt();
     }
+    node->loc.end = loc_peekb();
     return node;
 }
 
-std::shared_ptr<stmt> parser::get_stmt()
+stmth parser::get_stmt()
 {
-    // Should probably be a std::shared_ptr tbh
-    std::shared_ptr<stmt> result;
+    stmth result;
     tkn_type t = this->peek().type;
     // Switches get stiches
     if (t == tkn_type::kw_ret)
     {
-        result = std::make_shared<ret_stmt>();
-        *static_cast<ret_stmt*>(result.get()) = get_ret();
+        skip();
+        return get_ret();
     }
     else if (t == tkn_type::lbrace)
     {
-        result = std::make_shared<compound_stmt>();
-        *static_cast<compound_stmt*>(result.get()) = get_compound_stmt();
+        skip();
+        return get_compound_stmt();
     }
-    else if (is_func_call(true))
+    else if (is_var_decl())
     {
-        result = std::make_shared<func_call_stmt>();
-        *static_cast<func_call_stmt*>(result.get()) = get_fcall();
+        return get_decl_stmt();
     }
-    else if (is_var_decldef())
+    else if (is_var_def())
     {
-        result = std::make_shared<decldef_stmt>();
-        *static_cast<decldef_stmt*>(result.get()) = get_decldef_stmt();
+        return get_def_stmt();
     }
-    else if (is_var_decl(true))
+    else if (auto expr = get_expr(true))
     {
-        result = std::make_shared<decl_stmt>();
-        *static_cast<decl_stmt*>(result.get()) = get_decl_stmt();
-    }
-    else if (is_var_def(true))
-    {
-        result = std::make_shared<def_stmt>();
-        *static_cast<def_stmt*>(result.get()) = get_def_stmt();
+        return std::make_shared<expr_stmt>(std::move(expr));
     }
     else
     {
         this->ok = false;
 
-        helper e;
-        e.type = helper_type::location_err;
-        e.l = this->peek().loc;
+        diagnostic e;
+        e.type = diagnostic_type::location_err;
+        e.l = loc_peek();
         e.msg = "Statement could not be parsed";
 
-        this->helpers.push_back(e);
+        this->diagnostics.push_back(std::move(e));
         result = nullptr;
     }
     return result;
 }
 
-compound_stmt parser::get_compound_stmt()
+std::shared_ptr<compound_stmt> parser::get_compound_stmt()
 {
-    compound_stmt node;
-    node.type = stmt_type::compound;
-    node.line = peek().loc.line;
-    expect(tkn_type::lbrace);
-    
+    auto node = std::make_shared<compound_stmt>();
+    node->loc = loc_peekb();
+
     while (this->ok && !match(tkn_type::rbrace) && !match(tkn_type::eof))
     {
         //stmt* aaaa = get_stmt();
         //node.body.push_back(aaaa);
-        node.body.push_back(get_stmt());
+        node->body.push_back(get_stmt());
     }
+
+    node->loc.end = loc_peekb();
 
     return node;
 }

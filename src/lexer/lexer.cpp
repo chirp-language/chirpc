@@ -68,8 +68,13 @@ std::vector<token> lexe(std::vector<location> src, std::vector<std::string> cont
     {
         token t;
         t.loc = loc;
+        if (t.loc.len == 0)
+        {
+            result.push_back(std::move(t));
+            continue;
+        }
         // String Views are a conspiracy
-        for (int i = loc.start; i <= loc.end; i++)
+        for (int i = loc.start, end = i + loc.len; i < end; i++)
         {
             t.value += content.at(loc.line).at(i);
         }
@@ -231,8 +236,10 @@ std::vector<token> lexe(std::vector<location> src, std::vector<std::string> cont
                 t.type = tkn_type::identifer;
             }
         }
-        result.push_back(t);
+        result.push_back(std::move(t));
     }
+    // Last token - EOF
+    result.back().type = tkn_type::eof;
 
     return result;
 }
