@@ -1,4 +1,5 @@
 #include "ast.hpp"
+#include "../color.hpp"
 
 #include <iostream>
 #include <queue>
@@ -42,6 +43,7 @@ std::string dump_dtname(dtypename n)
         result = "none";
         break;
     }
+    result = write_color(std::move(result), color::green);
     return result;
 }
 
@@ -75,11 +77,11 @@ std::string dump_dtmod(dtypemod m)
 std::string ast_root::dump(int depth, [[maybe_unused]]location_provider const& prov) const
 {
     std::string result;
-    result += "Top Level:\n";
+    result += write_color("Top Level:\n", color::blue | color::bright | color::bold);
 
     if (this->imports.size() == 0)
     {
-        result += "-- No imports --\n";
+        result += write_color("-- No imports --\n", color::red | color::blue | color::bright);
     }
     else
     {
@@ -91,7 +93,7 @@ std::string ast_root::dump(int depth, [[maybe_unused]]location_provider const& p
 
     if (this->externs.size() == 0)
     {
-        result += "-- No externs --\n";
+        result += write_color("-- No externs --\n", color::red | color::blue | color::bright);
     }
     else
     {
@@ -103,7 +105,7 @@ std::string ast_root::dump(int depth, [[maybe_unused]]location_provider const& p
 
     if (this->fdecls.empty())
     {
-        result += "-- No function declarations on top-level --\n";
+        result += write_color("-- No function declarations on top-level --\n", color::red | color::blue | color::bright);
     }
     else
     {
@@ -115,7 +117,7 @@ std::string ast_root::dump(int depth, [[maybe_unused]]location_provider const& p
 
     if (this->fdefs.empty())
     {
-        result += "-- No function definitions on top-level --\n";
+        result += write_color("-- No function definitions on top-level --\n", color::red | color::blue | color::bright);
     }
     else
     {
@@ -131,7 +133,7 @@ std::string ast_root::dump(int depth, [[maybe_unused]]location_provider const& p
     }
     else
     {
-        result += "-- No entry --\n";
+        result += write_color("-- No entry --\n", color::red | color::blue | color::bright);
     }
     return result;
 }
@@ -152,7 +154,7 @@ std::string identifier::dump(int depth, [[maybe_unused]]location_provider const&
 {
     std::string result;
     result += indent(depth);
-    result += "identifier ";
+    result += write_color("identifier ", color::blue | color::bright);
     result += prov.print_loc(loc);
     result += " <";
     int i = 0;
@@ -174,7 +176,7 @@ std::string loperand::dump(int depth, [[maybe_unused]]location_provider const& p
 {
     std::string result;
     result += indent(depth);
-    result += "left_operand:";
+    result += write_color("left_operand:", color::blue);
     result += prov.print_loc(loc);
     result += "\n";
     return result;
@@ -184,7 +186,7 @@ std::string literal_node::dump(int depth, [[maybe_unused]]location_provider cons
 {
     std::string result;
     result += indent(depth);
-    result += "none_literal";
+    result += write_color("none_literal", color::blue);
     result += prov.print_loc(loc);
     result += "\n";
     return result;
@@ -194,16 +196,16 @@ std::string txt_literal::dump(int depth, [[maybe_unused]]location_provider const
 {
     std::string result;
     result += indent(depth);
-    result += "text_literal ";
+    result += write_color("text_literal ", color::green);
     result += prov.print_loc(loc);
     result += " ";
     if (this->is_character)
     {
-        result += "(char) ";
+        result += write_color("(char) ", color::green | color::bright);
     }
     else
     {
-        result += "(string) ";
+        result += write_color("(string) ", color::green | color::bright);
     }
     result += "\"";
     result += value;
@@ -215,7 +217,7 @@ std::string num_literal::dump(int depth, [[maybe_unused]]location_provider const
 {
     std::string result;
     result += indent(depth);
-    result += "number_literal ";
+    result += write_color("number_literal ", color::green);
     result += prov.print_loc(loc);
     result += " ";
     result += value;
@@ -227,7 +229,7 @@ std::string binop::dump(int depth, [[maybe_unused]]location_provider const& prov
 {
     std::string result;
     result += indent(depth);
-    result += "binop ";
+    result += write_color("binop ", color::green);
     result += prov.print_loc(loc);
     result += " ";
     result += exprop_id(op);
@@ -285,7 +287,7 @@ std::string arguments::dump(int depth, [[maybe_unused]]location_provider const& 
 {
     std::string result;
     result += indent(depth);
-    result += "arguments: ";
+    result += write_color("arguments: ", color::green);
     result += prov.print_loc(loc);
     result += "\n";
     for (auto& n : body)
@@ -299,7 +301,7 @@ std::string parameters::dump(int depth, [[maybe_unused]]location_provider const&
 {
     std::string result;
     result += indent(depth);
-    result += "parameters: ";
+    result += write_color("parameters: ", color::green);
     result += prov.print_loc(loc);
     result += "\n";
     for (auto& param : this->body)
@@ -315,7 +317,7 @@ std::string stmt::dump(int depth, [[maybe_unused]]location_provider const& prov)
 {
     std::string result;
     result += indent(depth);
-    result += "null_statement ";
+    result += write_color("null_statement ", color::green);
     result += prov.print_loc(loc);
     result += "\n";
     return result;
@@ -354,7 +356,7 @@ std::string decl_stmt::dump(int depth, [[maybe_unused]]location_provider const& 
 {
     std::string result;
     result += indent(depth);
-    result += "decl_statement: ";
+    result += write_color("decl_statement: ", color::green);
     result += prov.print_loc(loc);
     result += "\n";
     result += this->data_type.dump(depth + 1, prov);
@@ -368,7 +370,7 @@ std::string def_stmt::dump(int depth, [[maybe_unused]]location_provider const& p
 {
     std::string result;
     result += indent(depth);
-    result += "def_statement: ";
+    result += write_color("def_statement: ", color::green);
     result += prov.print_loc(loc);
     result += "\n";
     result += this->ident->dump(depth + 1, prov);
@@ -380,7 +382,7 @@ std::string compound_stmt::dump(int depth, [[maybe_unused]]location_provider con
 {
     std::string result;
     result += indent(depth);
-    result += "compound_statement: ";
+    result += write_color("compound_statement: ", color::green);
     result += prov.print_loc(loc);
     result += "\n";
     for (auto& s : this->body)
@@ -394,7 +396,7 @@ std::string entry_stmt::dump(int depth, [[maybe_unused]]location_provider const&
 {
     std::string result;
     result += indent(depth);
-    result += "entry_statement ";
+    result += write_color("entry_statement ", color::green);
     result += prov.print_loc(loc);
     result += " ";
     result += "(no_args)";
@@ -407,7 +409,7 @@ std::string import_stmt::dump(int depth, [[maybe_unused]]location_provider const
 {
     std::string result;
     result += indent(depth);
-    result += "import_statement:";
+    result += write_color("import_statement:", color::green);
     result += prov.print_loc(loc);
     result += "\n";
     result += this->filename.dump(depth + 1, prov);
@@ -418,7 +420,7 @@ std::string ret_stmt::dump(int depth, [[maybe_unused]]location_provider const& p
 {
     std::string result;
     result += indent(depth);
-    result += "ret_statement:";
+    result += write_color("ret_statement:", color::green);
     result += prov.print_loc(loc);
     result += "\n";
     result += this->val->dump(depth + 1, prov);
@@ -429,20 +431,20 @@ std::string extern_stmt::dump(int depth, [[maybe_unused]]location_provider const
 {
     std::string result;
     result += indent(depth);
-    result += "extern ";
+    result += write_color("extern ", color::blue | color::green | color::bright);
     result += prov.print_loc(loc);
     result += " (";
     
     switch (this->type)
     {
         case extern_stmt::decl_type::None:
-            result += "None";
+            result += write_color("None", color::green);
             break;
         case extern_stmt::decl_type::Function:
-            result += "Function";
+            result += write_color("Function", color::green);
             break;
         case extern_stmt::decl_type::Variable:
-            result += "Variable";
+            result += write_color("Variable", color::green);
             break;
     }
     
@@ -464,7 +466,7 @@ std::string func_def_stmt::dump(int depth, [[maybe_unused]]location_provider con
 {
     std::string result;
     result += indent(depth);
-    result += "function_definition: ";
+    result += write_color("function_definition: ", color::green);
     result += prov.print_loc(loc);
     result += "\n";
     result += data_type.dump(depth + 1, prov);
@@ -478,7 +480,7 @@ std::string func_decl_stmt::dump(int depth, [[maybe_unused]]location_provider co
 {
     std::string result;
     result += indent(depth);
-    result += "function_declaration: ";
+    result += write_color("function_declaration: ", color::green);
     result += prov.print_loc(loc);
     result += "\n";
     result += data_type.dump(depth + 1, prov);
@@ -491,7 +493,7 @@ std::string func_call::dump(int depth, [[maybe_unused]]location_provider const& 
 {
     std::string result;
     result += indent(depth);
-    result += "function_call: ";
+    result += write_color("function_call: ", color::green);
     result += prov.print_loc(loc);
     result += "\n";
     result += this->callee->dump(depth + 1, prov);
@@ -503,7 +505,7 @@ std::string expr_stmt::dump(int depth, [[maybe_unused]]location_provider const& 
 {
     std::string result;
     result += indent(depth);
-    result += "expr_stmt: ";
+    result += write_color("expr_stmt: ", color::green);
     result += prov.print_loc(loc);
     result += "\n";
     result += this->node->dump(depth + 1, prov);

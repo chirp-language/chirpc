@@ -33,7 +33,7 @@ std::string diagnostic::show_output(location_provider const& prov, std::vector<s
     ) {
         if (options.has_color)
         {
-            result = write_color("[WARNING]", color::yellow);
+            result = write_color("[WARNING]", color::red | color::green | color::bright | color::bold);
         }
         else
         {
@@ -49,7 +49,7 @@ std::string diagnostic::show_output(location_provider const& prov, std::vector<s
     {
         if (options.has_color)
         {
-            result = write_color("[ERROR]", color::red);
+            result = write_color("[ERROR]", color::red | color::bright | color::bold);
         }
         else
         {
@@ -79,7 +79,7 @@ std::string diagnostic::show_output(location_provider const& prov, std::vector<s
         result += std::to_string(tloc.line);
         if (options.has_color)
         {
-            result += write_color(" --> ", color::yellow);
+            result += write_color(" --> ", color::red | color::green | color::bright | color::bold);
         }
         else
         {
@@ -91,7 +91,7 @@ std::string diagnostic::show_output(location_provider const& prov, std::vector<s
         if (type == diagnostic_type::location_warning || type == diagnostic_type::location_err)
         {
             std::string identation;
-            result += "    | ";
+            result += "    |  ";
 
             for (int i = 0; i < tloc.start; i++)
             {

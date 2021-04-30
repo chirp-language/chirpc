@@ -188,7 +188,7 @@ arguments parser::get_arguments()
                 while (match(tkn_type::comma))
                     ;
             }
-            exprh e = get_expr(false);
+            node.body.push_back(get_expr(false));
             if (match(tkn_type::comma))
                 continue;
             else if (match(tkn_type::rparen))

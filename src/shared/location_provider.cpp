@@ -1,4 +1,5 @@
 #include "location_provider.hpp"
+#include "../color.hpp"
 
 std::string location_provider::print_loc(location_range loc) const
 {
@@ -33,5 +34,5 @@ std::string location_provider::print_loc(location_range loc) const
 			result += std::to_string(loce->start+1);
 	}
 	result += ">";
-	return result;
+	return write_color(std::move(result), color::red | color::green);
 }

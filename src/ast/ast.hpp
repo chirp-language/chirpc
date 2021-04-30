@@ -312,7 +312,10 @@ class expr_stmt : public stmt
     std::string dump(int depth, location_provider const&) const override;
 
     expr_stmt(exprh expr)
-        : stmt(stmt_type::expr), node(std::move(expr)) {}
+        : stmt(stmt_type::expr), node(std::move(expr))
+    {
+        loc = node->loc;
+    }
 };
 
 class ast_root

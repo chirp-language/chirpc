@@ -1,10 +1,7 @@
 entry
 {
-	int: x = 5
-    #int ptr: px = ref x
-    #deref x = 4
-    int: a = 123
-    char: b = 'b'
-    char ptr: c = "chirp" # C-Style string
-    char ptr: s = "a"
+	io.print("Hello, world %d", util.getrandom())
+	none: a
+	ptr: b
+	int asgdfs = 325 + 123213 / (1345 * 345 + add(2, 3))
 }
