@@ -4,16 +4,22 @@
 
 #include "ast.hpp"
 
+enum class color;
+
 class text_ast_dumper {
     bool has_colors;
+    int depth = 0;
+    location_provider* loc_prov;
 
     public:
-    text_ast_dumper(bool enable_colors)
-        : has_colors(enable_colors)
+    text_ast_dumper(bool enable_colors, location_provider* loc_prov = nullptr)
+        : has_colors(enable_colors), loc_prov(loc_prov)
     {}
 
     void dump_ast(ast_root const& root);
-    void dump_node(ast_node const& node);
+    void dump_expr(expr const& node);
+    void dump_decl(decl const& node);
+    void dump_stmt(stmt const& node);
 
     // Expressions
     void dump_exprtype(exprtype const&);
@@ -38,4 +44,8 @@ class text_ast_dumper {
     void dump_compound_stmt(compound_stmt const&);
     void dump_ret_stmt(ret_stmt const&);
     void dump_expr_stmt(expr_stmt const&);
+
+    private:
+    void write_color(std::string, color);
+    void print_location(location_range);
 };

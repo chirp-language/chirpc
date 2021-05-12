@@ -264,7 +264,7 @@ class func_def : public func_decl
 class parameters : public ast_node
 {
     public:
-    std::vector<std::shared_ptr<decl_stmt>> body;
+    std::vector<std::shared_ptr<var_decl>> body;
 };
 
 // === Statements ===

@@ -97,7 +97,7 @@ parameters parser::get_parameters()
 
     do
     {
-        node.body.push_back(get_decl_stmt());
+        node.body.push_back(get_var_decl());
     } while (match(tkn_type::comma));
 
     expect(tkn_type::rparen);
