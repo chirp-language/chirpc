@@ -1,10 +1,29 @@
 #include "codegen.hpp"
 
-std::string codegen::emit_decl(decl_stmt& node)
+std::string codegen::emit_decl(decl const& node)
+{
+    switch (node.type)
+    {
+        case decl_type::var:
+            return emit_var_decl(static_cast<var_decl const&>(node));
+        case decl_type::entry:
+            return emit_entry_decl(static_cast<entry_decl const&>(node));
+        /*case decl_type::import:
+            return emit_import_decl(static_cast<import_decl const&>(node));
+        case decl_type::fdecl:
+            return emit_func_decl(static_cast<func_decl const&>(node));
+        case decl_type::fdef:
+            return emit_func_def(static_cast<func_def const&>(node));
+        case decl_type::external:
+            return emit_extern_decl(static_cast<extern_decl const&>(node));*/
+    }
+}
+
+std::string codegen::emit_var_decl(var_decl const& node)
 {
     std::string result;
     
-    if (!m_tracker->register_var(node.ident->namespaces, node.ident->name))
+    if (!m_tracker->bind_var(node.ident.get(), &node))
     {
         result = "// declaration error here\n";
         diagnostic e;
@@ -16,9 +35,9 @@ std::string codegen::emit_decl(decl_stmt& node)
         return result;
     }
     
-    result += emit_datatype(node.data_type);
+    result += emit_datatype(node.var_type);
     result += " ";
-    result += emit_ident(*node.ident);
+    result += emit_identifier(*node.ident);
     if (node.init)
     {
         result += " = ";
@@ -28,11 +47,12 @@ std::string codegen::emit_decl(decl_stmt& node)
     return result;
 }
 
-std::string codegen::emit_def(def_stmt& node)
+std::string codegen::emit_assign_stmt(assign_stmt const& node)
 {
     std::string result;
-    
-    if (!m_tracker->check_var(node.ident->namespaces,node.ident->name))
+
+    auto var = m_tracker->lookup_var(node.ident.get());
+    if (!var)
     {
         this->errored = true;
         result += "// error here\n";
@@ -43,8 +63,9 @@ std::string codegen::emit_def(def_stmt& node)
         this->diagnostics.push_back(std::move(e));
         return result;
     }
-    
-    result += emit_ident(*node.ident);
+
+    const_cast<assign_stmt&>(node).target = const_cast<var_decl*>(var); // Keep track of the assigned variable (move to semantic analysis)
+    result += emit_identifier(*node.ident);
     result += " = ";
     result += emit_expr(*node.value);
     result += ";\n";
@@ -52,7 +73,7 @@ std::string codegen::emit_def(def_stmt& node)
 }
 
 
-std::string codegen::emit_ret(ret_stmt& node)
+std::string codegen::emit_ret_stmt(ret_stmt const& node)
 {
     std::string result;
     result += "return ";
@@ -61,32 +82,32 @@ std::string codegen::emit_ret(ret_stmt& node)
     return result;
 }
 
-std::string codegen::emit_stmt(std::shared_ptr<stmt> s)
+std::string codegen::emit_stmt(stmt const& s)
 {
     std::string result;
-    switch (s->type)
+    switch (s.type)
     {
         case stmt_type::compound:
-            result += emit_compound(static_cast<compound_stmt&>(*s));
+            result += emit_compound_stmt(static_cast<compound_stmt const&>(s));
             break;
         case stmt_type::expr:
-            result += emit_expr(*static_cast<expr_stmt&>(*s).node);
+            result += emit_expr(*static_cast<expr_stmt const&>(s).node);
             result += ";\n"; // Because this is kindof an expression stuff
         break;
         case stmt_type::decl:
-            result += emit_decl(static_cast<decl_stmt&>(*s));
+            result += emit_decl(*static_cast<decl_stmt const&>(s).inner_decl);
             break;
-        case stmt_type::def:
-            result += emit_def(static_cast<def_stmt&>(*s));
+        case stmt_type::assign:
+            result += emit_assign_stmt(static_cast<assign_stmt const&>(s));
             break;
         case stmt_type::ret:
-            result += emit_ret(static_cast<ret_stmt&>(*s));
+            result += emit_ret_stmt(static_cast<ret_stmt const&>(s));
             break;
     }
     return result;
 }
 
-std::string codegen::emit_compound(compound_stmt& cstmt)
+std::string codegen::emit_compound_stmt(compound_stmt const& cstmt)
 {
     std::string result;
     result += "{\n";
@@ -94,7 +115,7 @@ std::string codegen::emit_compound(compound_stmt& cstmt)
     
     for (auto& s : cstmt.body)
     {
-        result += emit_stmt(s);
+        result += emit_stmt(*s);
     }
     
     this->m_tracker->pop_scope();

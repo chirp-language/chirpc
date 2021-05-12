@@ -6,6 +6,7 @@
 #include "parser/parser.hpp"
 #include "codegen/codegen.hpp"
 #include "frontend/frontend.hpp"
+#include "ast/ast_dumper.hpp"
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -18,7 +19,6 @@
 int main(int argc, char** argv)
 {
     cmd options = parse_cmd(argc, argv);
-    cmd::program_cmd = &options;
 
     if (options.version)
     {
@@ -100,7 +100,10 @@ int main(int argc, char** argv)
             std::cout << "--------------------" << '\n';
         }
 
-        std::cout << p.get_ast().dump(0, p) << '\n';
+        text_ast_dumper dumper(options.has_color, &p);
+
+        dumper.dump_ast(p.get_ast());
+        std::cout << '\n';
     }
 
     if (!ok)
@@ -114,7 +117,7 @@ int main(int argc, char** argv)
     {
         if (options.has_color)
         {
-            std::cout << write_color("[TOOL MISSING]", color::red);
+            std::cout << apply_color("[TOOL MISSING]", color::red);
         }
         else
         {
@@ -132,7 +135,6 @@ int main(int argc, char** argv)
     codegen generator;
 
     auto t = std::make_unique<tracker>();
-    t->init();
 
     generator.set_tree(&p.get_ast(), options.filename);
     generator.set_tracker(t.get());

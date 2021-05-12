@@ -10,7 +10,7 @@
 
 // Colors used by the AST dump
 constexpr color c_color_top_level = color::blue | color::bright | color::bold;
-constexpr color c_color_top_level_unavail = color::blue | color::bright | color::bold;
+constexpr color c_color_top_level_unavail = color::red | color::bright | color::bold;
 constexpr color c_color_type = color::green;
 constexpr color c_color_expr = color::blue | color::bright | color::bold;
 constexpr color c_color_decl = color::green | color::bright | color::bold;
@@ -447,6 +447,20 @@ void text_ast_dumper::dump_extern_decl(extern_decl const& n)
     --depth;
 }
 
+void text_ast_dumper::dump_parameters(parameters const& n)
+{
+    std::cout << indent(depth);
+    write_color("parameters ", c_color_decl);
+    print_location(n.loc);
+    std::cout << '\n';
+    ++depth;
+    for (auto& param : n.body)
+    {
+        dump_var_decl(*param);
+    }
+    --depth;
+}
+
 void text_ast_dumper::dump_func_decl(func_decl const& n)
 {
     std::cout << indent(depth);
@@ -474,20 +488,6 @@ void text_ast_dumper::dump_func_def(func_def const& n)
     --depth;
 }
 
-void text_ast_dumper::dump_parameters(parameters const& n)
-{
-    std::cout << indent(depth);
-    write_color("parameters ", c_color_decl);
-    print_location(n.loc);
-    std::cout << '\n';
-    ++depth;
-    for (auto& param : n.body)
-    {
-        dump_var_decl(*param);
-    }
-    --depth;
-}
-
 
 void text_ast_dumper::dump_decl_stmt(decl_stmt const& n)
 {
@@ -508,6 +508,7 @@ void text_ast_dumper::dump_assign_stmt(assign_stmt const& n)
     std::cout << '\n';
     ++depth;
     dump_identifier(*n.ident);
+    // TODO: Print variable after analysis
     dump_expr(*n.value);
     --depth;
 }

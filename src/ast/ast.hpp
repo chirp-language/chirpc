@@ -27,13 +27,12 @@ class loperand;
 class literal_node;
 class txt_literal;
 class num_literal;
-class num_literal;
 class decl;
 class var_decl;
 class entry_decl;
+class parameters;
 class func_decl;
 class func_def;
-class parameters;
 class stmt;
 class decl_stmt;
 class assign_stmt;
@@ -41,6 +40,11 @@ class compound_stmt;
 class ret_stmt;
 class expr_stmt;
 class ast_root;
+
+// Node handles (shorthands)
+using exprh = std::shared_ptr<expr>;
+using declh = std::shared_ptr<decl>;
+using stmth = std::shared_ptr<stmt>;
 
 // === Expressions ===
 // They take values and spit out other values.
@@ -75,13 +79,10 @@ class expr : public ast_node
     exprtype type;
     optype kind;
 
+protected:
     expr(optype kind)
         : type{}, kind(kind) {}
 };
-
-// Expression handle (shorthand)
-using exprh = std::shared_ptr<expr>;
-
 
 // Operator
 enum class exprop : short {
@@ -162,6 +163,7 @@ class literal_node : public expr
 public:
     littype ltype;
 
+protected:
     literal_node(littype t) : expr(optype::lit), ltype(t) {}
 };
 
@@ -197,11 +199,9 @@ class decl : public ast_node
 public:
     decl_type type;
 
+protected:
     decl(decl_type type) : type(type) {}
 };
-
-// Declaration handle (shorthand)
-using declh = std::shared_ptr<decl>;
 
 class var_decl : public decl
 {
@@ -238,6 +238,12 @@ class extern_decl : public decl
     extern_decl() : decl(decl_type::external) {}
 };
 
+class parameters : public ast_node
+{
+    public:
+    std::vector<std::shared_ptr<var_decl>> body;
+};
+
 // Like a function definition but without the code
 class func_decl : public decl
 {
@@ -261,12 +267,6 @@ class func_def : public func_decl
     func_def() : func_decl(decl_type::fdef) {}
 };
 
-class parameters : public ast_node
-{
-    public:
-    std::vector<std::shared_ptr<var_decl>> body;
-};
-
 // === Statements ===
 
 enum class stmt_type
@@ -282,11 +282,9 @@ public:
     // There's a bunch of them so gotta make another enum smh
     stmt_type type;
 
+protected:
     stmt(stmt_type type) : type(type) {}
 };
-
-// Statement handle (shorthand)
-using stmth = std::shared_ptr<stmt>;
 
 class decl_stmt : public stmt
 {

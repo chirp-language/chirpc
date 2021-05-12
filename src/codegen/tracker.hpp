@@ -3,12 +3,14 @@
 #include <string>
 #include <vector>
 
+#include "../ast/ast.hpp"
+
 // Tracked variable, can go out of scope
 class tracked_var
 {
     public:
-    std::vector<std::string> namespaces;
-    std::string ident;
+    identifier const* name;
+    var_decl const* target;
     unsigned int depth;
 };
 
@@ -21,15 +23,12 @@ which means it also tracks imports.
 class tracker
 {
     public:
-    // Doesn't really have any real use
-    void init();
-
     // Returns true if a variable with same name DOESN'T exist
     // Return false otherwise
-    bool register_var(std::vector<std::string>,std::string);
+    bool bind_var(identifier const* name, var_decl const* var);
 
-    // Returns if var exists
-    bool check_var(std::vector<std::string>, std::string);
+    // If var doesn't exist, returns nullptr
+    var_decl const* lookup_var(identifier const* name) const;
 
     // Get's out of the current scope
     // and check for variabless that are deeper then
@@ -46,9 +45,9 @@ class tracker
 
     private:
     // Depth in the scope
-    unsigned int depth;
+    unsigned int depth = 0;
     // True if entry is already set
-    bool entry_set;
+    bool entry_set = false;
 
     // Keeps track of all the variables
     std::vector<tracked_var> vars;

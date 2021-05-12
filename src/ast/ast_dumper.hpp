@@ -35,9 +35,9 @@ class text_ast_dumper {
     void dump_entry_decl(entry_decl const&);
     void dump_import_decl(import_decl const&);
     void dump_extern_decl(extern_decl const&);
+    void dump_parameters(parameters const&);
     void dump_func_decl(func_decl const&);
     void dump_func_def(func_def const&);
-    void dump_parameters(parameters const&);
     // Statements
     void dump_decl_stmt(decl_stmt const&);
     void dump_assign_stmt(assign_stmt const&);
