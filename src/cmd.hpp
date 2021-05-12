@@ -24,9 +24,6 @@ public:
     std::string filename;
     void write_help();
     void write_version();
-
-    // shhhhhh
-    static cmd* program_cmd;
 };
 
 cmd parse_cmd(int, char*[]);

@@ -11,7 +11,7 @@ void codegen::gen()
 void codegen::set_tree(ast_root* t, std::string f)
 {
     this->m_tree = t;
-    this->filename = f;
+    this->filename = std::move(f);
 }
 
 void codegen::set_tracker(tracker* t)
@@ -19,7 +19,7 @@ void codegen::set_tracker(tracker* t)
     this->m_tracker = t;
 }
 
-std::string codegen::get_result()
+std::string&& codegen::get_result()
 {
-    return result;  
+    return std::move(result);  
 }

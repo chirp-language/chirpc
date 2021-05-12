@@ -52,18 +52,18 @@ std::shared_ptr<literal_node> parser::get_literal()
     return nullptr;
 }
 
-entry_stmt parser::get_entry()
+std::shared_ptr<entry_decl> parser::get_entry()
 {
-    entry_stmt node;
-    node.loc = loc_peekb();
-    node.code = get_stmt();
-    node.loc.end = loc_peekb();
+    auto node = std::make_shared<entry_decl>();
+    node->loc = loc_peekb();
+    node->code = get_stmt();
+    node->loc.end = loc_peekb();
     return node;
 }
 
-std::shared_ptr<import_stmt> parser::get_import()
+std::shared_ptr<import_decl> parser::get_import()
 {
-    auto node = std::make_shared<import_stmt>();
+    auto node = std::make_shared<import_decl>();
     node->loc = loc_peekb();
     node->filename = get_txt_lit();
     node->loc = loc_peekb();
@@ -79,21 +79,19 @@ std::shared_ptr<ret_stmt> parser::get_ret()
     return node;
 }
 
-std::shared_ptr<extern_stmt> parser::get_extern()
+std::shared_ptr<extern_decl> parser::get_extern()
 {
-    auto node = std::make_shared<extern_stmt>();
+    auto node = std::make_shared<extern_decl>();
     node->loc = loc_peekb();
     node->real_name = get_txt_lit();
    
     if (is_func_decl())
     {
-        node->type = extern_stmt::decl_type::Function;
-        node->decl = get_func_decl();
+        node->inner_decl = get_func_decl();
     }
     else if (is_var_decl())
     {
-        node->type = extern_stmt::decl_type::Variable;
-        node->decl = get_decl_stmt();
+        node->inner_decl = get_var_decl();
     }
     node->loc.end = loc_peekb();
     return node;
@@ -116,15 +114,15 @@ stmth parser::get_stmt()
     }
     else if (is_var_decl())
     {
-        return get_decl_stmt();
+        return decl_stmt::from(get_var_decl());
     }
-    else if (is_var_def())
+    else if (is_var_assign())
     {
-        return get_def_stmt();
+        return get_assign_stmt();
     }
     else if (auto expr = get_expr(true))
     {
-        return std::make_shared<expr_stmt>(std::move(expr));
+        return expr_stmt::from(std::move(expr));
     }
     else
     {

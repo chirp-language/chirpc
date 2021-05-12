@@ -26,4 +26,4 @@ constexpr color operator&(color a, color b)
     return static_cast<color>(static_cast<unsigned>(a) & static_cast<unsigned>(b));
 }
 
-std::string write_color(std::string, color);
+std::string apply_color(std::string txt, color c);

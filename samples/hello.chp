@@ -3,5 +3,5 @@ entry
 	io.print("Hello, world %d", util.getrandom())
 	none: a
 	ptr: b
-	int asgdfs = 325 + 123213 / (1345 * 345 + add(2, 3))
+	int: asgdfs = 325 + 123213 / (1345 * 345 + add(2, 3))
 }

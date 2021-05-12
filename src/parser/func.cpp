@@ -97,16 +97,16 @@ parameters parser::get_parameters()
 
     do
     {
-        node.body.push_back(get_decl_stmt());
+        node.body.push_back(get_var_decl());
     } while (match(tkn_type::comma));
 
     expect(tkn_type::rparen);
     return node;
 }
 
-std::shared_ptr<func_decl_stmt> parser::get_func_decl()
+std::shared_ptr<func_decl> parser::get_func_decl()
 {
-    auto node = std::make_shared<func_decl_stmt>();
+    auto node = std::make_shared<func_decl>();
 
     // Inherited stuff
     node->loc = loc_peek();
@@ -132,9 +132,9 @@ std::shared_ptr<func_decl_stmt> parser::get_func_decl()
     return node;
 }
 
-std::shared_ptr<func_def_stmt> parser::get_func_def()
+std::shared_ptr<func_def> parser::get_func_def()
 {
-    auto node = std::make_shared<func_def_stmt>();
+    auto node = std::make_shared<func_def>();
 
     // Inherited stuff
     node->loc = loc_peek();

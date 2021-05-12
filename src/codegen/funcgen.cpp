@@ -1,6 +1,6 @@
 #include "codegen.hpp"
 
-std::string codegen::emit_args(arguments& node)
+std::string codegen::emit_arguments(arguments const& node)
 {
     std::string result;
     result += "(";
@@ -18,10 +18,10 @@ std::string codegen::emit_args(arguments& node)
     return result;
 }
 
-std::string codegen::emit_fcall(func_call& node)
+std::string codegen::emit_func_call(func_call const& node)
 {
     std::string result;
     result += emit_expr(*node.callee);
-    result += emit_args(node.args);
+    result += emit_arguments(node.args);
     return result;
 }

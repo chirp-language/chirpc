@@ -1,7 +1,7 @@
 #include "parser.hpp"
 #include <string_view>
 
-dtypename parser::get_dtypename(std::string txt)
+dtypename parser::get_dtypename(std::string const& txt)
 {
     // The else aren't really needed, cuz you're supposed to already return
     if (txt == "int")
@@ -46,7 +46,7 @@ dtypename parser::get_dtypename(std::string txt)
     #endif
 }
 
-dtypemod parser::get_dtypemod(std::string txt)
+dtypemod parser::get_dtypemod(std::string const& txt)
 {
     using namespace std::string_literals;
     dtypemod mod;
@@ -90,7 +90,7 @@ bool parser::is_var_decl()
     return is_datatype();
 }
 
-bool parser::is_var_def()
+bool parser::is_var_assign()
 {
     // Doesn't care about cast (yet)
     return probe(tkn_type::identifer) && peekf().type == tkn_type::assign_op;
@@ -138,11 +138,11 @@ exprtype parser::get_datatype()
     return type;
 }
 
-std::shared_ptr<decl_stmt> parser::get_decl_stmt()
+std::shared_ptr<var_decl> parser::get_var_decl()
 {
-    auto node = std::make_shared<decl_stmt>();
+    auto node = std::make_shared<var_decl>();
     node->loc = loc_peek();
-    node->data_type = get_datatype();
+    node->var_type = get_datatype();
     expect(tkn_type::colon);
     node->ident = get_identifier();
     if (match(tkn_type::assign_op))
@@ -151,9 +151,9 @@ std::shared_ptr<decl_stmt> parser::get_decl_stmt()
     return node;
 }
 
-std::shared_ptr<def_stmt> parser::get_def_stmt()
+std::shared_ptr<assign_stmt> parser::get_assign_stmt()
 {
-    auto node = std::make_shared<def_stmt>();
+    auto node = std::make_shared<assign_stmt>();
     node->loc = loc_peek();
     node->ident = get_identifier();
     expect(tkn_type::assign_op);

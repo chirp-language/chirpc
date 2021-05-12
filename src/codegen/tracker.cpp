@@ -1,78 +1,63 @@
 #include "tracker.hpp"
 
-void tracker::init()
+bool tracker::bind_var(identifier const* name, var_decl const* var)
 {
-    this->depth = 0;
-    this->entry_set = false;
-}
+    if (lookup_var(name))
+        return false;
 
-bool tracker::register_var(std::vector<std::string> nspace, std::string name)
-{
-    if (!this->check_var(nspace, name))
-    {
-        tracked_var v;
-        v.namespaces = nspace;
-        v.ident = name;
-        v.depth = this->depth;
-        this->vars.push_back(v);
-        return true;
-    }
-    return false;
+    tracked_var v;
+    v.name = name;
+    v.depth = depth;
+    v.target = var;
+    vars.push_back(v);
+    return true;
 }
 
 // Linear Search, inefficient.
-bool tracker::check_var(std::vector<std::string> nspace, std::string name)
+var_decl const* tracker::lookup_var(identifier const* name) const
 {
-    bool result = false;
-    bool found = false;
-    for (auto& var : this->vars)
+    for (auto it = vars.rbegin(), end = vars.rend(); it != end; ++it)
     {
-        if (var.ident == name)
+        if (it->name->name == name->name)
         {
-            if (!found)
+            auto res = it->target;
+            auto res_depth = it->depth;
+            // Search the current depth only
+            ++it;
+            while (it != end and it->depth == res_depth)
             {
-                result = true;
-                found = true;
+                if (it->name->name == name->name)
+                    // Found a collision
+                    // TODO: Report error
+                    return nullptr;
             }
-            else
-            {
-                result = false;
-            }
+            return res;
         }
     }
-    return result;
+    return nullptr;
 }
 
-// This function is incredibly inefficient
+// This function is more efficient
 void tracker::pop_scope()
 {
-    this->depth--;
-
-    std::vector<tracked_var> nvec; // new vector
-    for (auto& var : this->vars)
+    auto it = vars.rbegin();
+    for (auto end = vars.rend(); it != end; ++it)
     {
-        if (var.depth <= this->depth)
-        {
-            nvec.push_back(var);
-        }
+        if (it->depth != depth)
+            break;
     }
-    this->vars = nvec;
+    --depth;
+    vars.erase(it.base(), vars.end());
 }
 
 void tracker::push_scope()
 {
-    this->depth++;
+    ++depth;
 }
 
 bool tracker::request_entry()
 {
-    if (this->entry_set)
-    {
-        return false;
-    }
-    else
-    {
-        this->entry_set = true;
-        return true;
-    }
+    bool r = !entry_set;
+    entry_set = true;
+    return r;
 }

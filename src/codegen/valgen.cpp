@@ -2,7 +2,7 @@
 
 #include "../ast/types.hpp"
 
-std::string codegen::emit_ident(identifier& ident)
+std::string codegen::emit_identifier(identifier const& ident)
 {
     std::string result;
 
@@ -14,7 +14,7 @@ std::string codegen::emit_ident(identifier& ident)
 }
 
 // This is not finished
-std::string codegen::emit_datatype(exprtype& d)
+std::string codegen::emit_datatype(exprtype const& t)
 {
     // Doesn't do function pointery things
     std::string result;
@@ -22,7 +22,7 @@ std::string codegen::emit_datatype(exprtype& d)
     int ptr_depth = 0;
     bool is_const = false;
 
-    for (std::byte d : d.exttp)
+    for (std::byte d : t.exttp)
     {
         dtypemod mod = static_cast<dtypemod>(d);
         if (mod == dtypemod::_ptr)
@@ -41,7 +41,7 @@ std::string codegen::emit_datatype(exprtype& d)
         result += "const ";
     }
 
-    switch (d.basetp)
+    switch (t.basetp)
     {
         case dtypename::_int:
             result += "int";
@@ -72,17 +72,17 @@ std::string codegen::emit_datatype(exprtype& d)
     return result;
 }
 
-std::string codegen::emit_literal(literal_node& node)
+std::string codegen::emit_literal(literal_node const& node)
 {
     std::string result;
     if (node.ltype == littype::num)
     {
-        num_literal lit = static_cast<num_literal&>(node);
+        num_literal lit = static_cast<num_literal const&>(node);
         result = lit.value;
     }
     else if (node.ltype == littype::txt)
     {
-        txt_literal lit = static_cast<txt_literal&>(node);
+        txt_literal lit = static_cast<txt_literal const&>(node);
         if (lit.is_character)
         {
             result += '\'';
@@ -98,12 +98,12 @@ std::string codegen::emit_literal(literal_node& node)
     }
     else
     {
-        result = "#error litteral has undefined type\n";
+        result = "\n#error litteral has undefined type\n";
     }
     return result;
 }
 
-std::string codegen::emit_op(binop& node)
+std::string codegen::emit_binop(binop const& node)
 {
     std::string result;
 
@@ -131,18 +131,18 @@ std::string codegen::emit_op(binop& node)
     return result;
 }
 
-std::string codegen::emit_expr(expr& node)
+std::string codegen::emit_expr(expr const& node)
 {
     switch (node.kind)
     {
         case optype::lit:
-            return emit_literal(static_cast<literal_node&>(node));
+            return emit_literal(static_cast<literal_node const&>(node));
         case optype::ident:
-            return emit_ident(static_cast<identifier&>(node));
+            return emit_identifier(static_cast<identifier const&>(node));
         case optype::call:
-            return emit_fcall(static_cast<func_call&>(node));
+            return emit_func_call(static_cast<func_call const&>(node));
         case optype::op:
-            return emit_op(static_cast<binop&>(node));
+            return emit_binop(static_cast<binop const&>(node));
         case optype::invalid:
         default:
             return "\n#error Bad operand, This is a bug";
