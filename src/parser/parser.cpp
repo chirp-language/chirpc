@@ -9,7 +9,7 @@ void parser::load_tokens(std::string fn, std::vector<token>&& t)
 void parser::parse()
 {
     this->ok = true;
-    //this->tree.root.children.push_back(this->get_stmt());
+
     // Only gets the top-level stuff
     while(this->ok and !match(tkn_type::eof))
     {
@@ -19,7 +19,6 @@ void parser::parse()
         {
             skip();
             this->tree.entry = get_entry();
-            this->tree.has_entry = true;
             break;
         }
         case tkn_type::kw_import:
@@ -62,7 +61,7 @@ void parser::parse()
             diagnostic e;
             e.type = diagnostic_type::location_err;
             e.l = loc_peek();
-            e.msg = "Invalid top-level statement";
+            e.msg = "Invalid top-level declaration";
             this->diagnostics.push_back(std::move(e));
         }
         }

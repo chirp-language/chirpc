@@ -70,9 +70,6 @@ private:
 
     // Actual parser stuff
 
-    dtypename get_dtypename(std::string);
-    dtypemod get_dtypemod(std::string);
-
     bool is_operand();
 
     bool is_identifier();
@@ -83,12 +80,17 @@ private:
     bool is_params();
 
     bool is_var_decl(); // (data specifiers) (:) (identifier)
-    bool is_var_def();  // (identifier) (=) (value)
+    bool is_var_assign();  // (identifier) (=) (value)
     bool is_var_decldef(); // (data specifiers) (:) (identifier) (=) (value)
 
     bool is_func_decl(); // (func) (data_types) (identifier) (params)
     bool is_func_def(); // (func_decl) (compound_statement)
     bool is_func_call(); // (identifier) ( arguments )
+
+    // Expression stuff
+    dtypename get_dtypename(std::string const&);
+    dtypemod get_dtypemod(std::string const&);
+    exprtype get_datatype();
 
     std::shared_ptr<identifier> get_identifier();
 
@@ -100,25 +102,27 @@ private:
     exprh get_primary_expr();
     exprh get_expr(bool comma_allowed);
 
-    exprtype get_datatype();
-    std::shared_ptr<decl_stmt> get_decl_stmt();
-    std::shared_ptr<def_stmt> get_def_stmt();
-
-    parameters get_parameters();
-    std::shared_ptr<func_decl_stmt> get_func_decl();
-    std::shared_ptr<func_def_stmt> get_func_def();
-
     arguments get_arguments();
     std::shared_ptr<func_call> get_fcall(exprh callee); // function call
 
-    entry_stmt get_entry();
-    std::shared_ptr<import_stmt> get_import();
-    std::shared_ptr<ret_stmt> get_ret(); // MLG wooo
+    // Declaration stuff
+    std::shared_ptr<entry_decl> get_entry();
+    std::shared_ptr<import_decl> get_import();
+    std::shared_ptr<extern_decl> get_extern();
 
-    std::shared_ptr<extern_stmt> get_extern();
+    std::shared_ptr<var_decl> get_var_decl();
 
+    std::shared_ptr<func_decl> get_func_decl();
+    std::shared_ptr<func_def> get_func_def();
+    parameters get_parameters();
+
+    // Statement stuff
     std::shared_ptr<stmt> get_stmt();
     std::shared_ptr<compound_stmt> get_compound_stmt();
+
+    std::shared_ptr<decl_stmt> get_decl_stmt();
+    std::shared_ptr<assign_stmt> get_assign_stmt();
+    std::shared_ptr<ret_stmt> get_ret(); // MLG wooo
 
     bool ok = false;
     std::string filename;
