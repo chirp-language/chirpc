@@ -292,7 +292,10 @@ class decl_stmt : public stmt
     declh inner_decl;
 
     decl_stmt(declh inner)
-        : stmt(stmt_type::decl), inner_decl(std::move(inner)) {}
+        : stmt(stmt_type::decl), inner_decl(std::move(inner))
+    {
+        loc = inner_decl->loc;
+    }
 
     static std::shared_ptr<decl_stmt> from(declh decl) {
         return std::make_shared<decl_stmt>(std::move(decl));
