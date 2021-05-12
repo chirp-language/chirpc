@@ -12,8 +12,6 @@
 #include <vector>
 #include <string>
 
-cmd* cmd::program_cmd;
-
 // Returns 0 if everything goes normal
 // Returns -1 if bad code
 // Returns -2 if error(i.e. can't open file)

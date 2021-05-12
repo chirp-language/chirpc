@@ -8,6 +8,16 @@
 // === UTILS FUNCTIONS FOR THE UTIL AST DUMPS ===
 // ^ meta
 
+// Colors used by the AST dump
+constexpr color c_color_top_level = color::blue | color::bright | color::bold;
+constexpr color c_color_top_level_unavail = color::blue | color::bright | color::bold;
+constexpr color c_color_type = color::green;
+constexpr color c_color_expr = color::blue | color::bright | color::bold;
+constexpr color c_color_decl = color::green | color::bright | color::bold;
+constexpr color c_color_stmt = color::red | color::blue | color::bright | color::bold;
+constexpr color c_color_identifier = color::blue | color::bright;
+constexpr color c_color_location = color::red | color::green;
+
 std::string indent(int x)
 {
     std::string result;
@@ -41,9 +51,9 @@ void text_ast_dumper::write_color(std::string txt, color c) {
 
 void text_ast_dumper::print_location(location_range loc) {
     if (loc_prov)
-        write_color(loc_prov->print_loc(loc), color::red | color::green);
+        write_color(loc_prov->print_loc(loc), c_color_location);
     else
-        write_color("<unavail>", color::red | color::green);
+        write_color("<unavail>", c_color_location);
 }
 
 // I don't even care about names now
@@ -132,11 +142,11 @@ std::string exprop_id(exprop op)
 
 void text_ast_dumper::dump_ast(ast_root const& root)
 {
-    write_color("Top Level:\n", color::blue | color::bright | color::bold);
+    write_color("Top Level:\n", c_color_top_level);
 
     if (root.imports.empty())
     {
-        write_color("-- No imports --\n", color::red | color::blue | color::bright);
+        write_color("-- No imports --\n", c_color_top_level_unavail);
     }
     else
     {
@@ -148,7 +158,7 @@ void text_ast_dumper::dump_ast(ast_root const& root)
 
     if (root.externs.empty())
     {
-        write_color("-- No externs --\n", color::red | color::blue | color::bright);
+        write_color("-- No externs --\n", c_color_top_level_unavail);
     }
     else
     {
@@ -160,7 +170,7 @@ void text_ast_dumper::dump_ast(ast_root const& root)
 
     if (root.fdecls.empty())
     {
-        write_color("-- No function declarations on top-level --\n", color::red | color::blue | color::bright);
+        write_color("-- No function declarations on top-level --\n", c_color_top_level_unavail);
     }
     else
     {
@@ -172,7 +182,7 @@ void text_ast_dumper::dump_ast(ast_root const& root)
 
     if (root.fdefs.empty())
     {
-        write_color("-- No function definitions on top-level --\n", color::red | color::blue | color::bright);
+        write_color("-- No function definitions on top-level --\n", c_color_top_level_unavail);
     }
     else
     {
@@ -188,7 +198,7 @@ void text_ast_dumper::dump_ast(ast_root const& root)
     }
     else
     {
-        write_color("-- No entry --\n", color::red | color::blue | color::bright);
+        write_color("-- No entry --\n", c_color_top_level_unavail);
     }
 }
 
@@ -262,7 +272,7 @@ void text_ast_dumper::dump_exprtype(exprtype const& t)
     std::cout << "data_type\n";
     std::cout << indent(depth + 1);
     std::cout << "typename ";
-    write_color(dump_dtname(t.basetp), color::green);
+    write_color(dump_dtname(t.basetp), c_color_type);
     std::cout << ";\n";
     std::cout << indent(depth + 1);
     if (t.exttp.empty())
@@ -286,7 +296,7 @@ void text_ast_dumper::dump_exprtype(exprtype const& t)
 void text_ast_dumper::dump_binop(binop const& n)
 {
     std::cout << indent(depth);
-    write_color("binop ", color::green);
+    write_color("binop ", c_color_expr);
     print_location(n.loc);
     std::cout << ' ';
     std::cout << exprop_id(n.op);
@@ -306,7 +316,7 @@ void text_ast_dumper::dump_binop(binop const& n)
 void text_ast_dumper::dump_arguments(arguments const& n)
 {
     std::cout << indent(depth);
-    write_color("arguments ", color::green);
+    write_color("arguments ", c_color_expr);
     print_location(n.loc);
     std::cout << '\n';
     ++depth;
@@ -320,7 +330,7 @@ void text_ast_dumper::dump_arguments(arguments const& n)
 void text_ast_dumper::dump_func_call(func_call const& n)
 {
     std::cout << indent(depth);
-    write_color("function_call ", color::green);
+    write_color("function_call ", c_color_expr);
     print_location(n.loc);
     std::cout << '\n';
     ++depth;
@@ -332,7 +342,7 @@ void text_ast_dumper::dump_func_call(func_call const& n)
 void text_ast_dumper::dump_identifier(identifier const& n)
 {
     std::cout << indent(depth);
-    write_color("identifier ", color::blue | color::bright);
+    write_color("identifier ", c_color_identifier);
     print_location(n.loc);
     std::cout << " <";
     int i = 0;
@@ -352,7 +362,7 @@ void text_ast_dumper::dump_identifier(identifier const& n)
 /*void text_ast_dumper::dump_loperand(loperand const& n)
 {
     std::cout << indent(depth);
-    write_color("left_operand:", color::blue);
+    write_color("left_operand:", c_color_expr);
     print_location(n.loc);
     std::cout << '\n';
 }*/
@@ -360,16 +370,16 @@ void text_ast_dumper::dump_identifier(identifier const& n)
 void text_ast_dumper::dump_txt_literal(txt_literal const& n)
 {
     std::cout << indent(depth);
-    write_color("text_literal ", color::green);
+    write_color("text_literal ", c_color_expr);
     print_location(n.loc);
     std::cout << ' ';
     if (n.is_character)
     {
-        write_color("(char) ", color::green | color::bright);
+        write_color("(char) ", c_color_expr);
     }
     else
     {
-        write_color("(string) ", color::green | color::bright);
+        write_color("(string) ", c_color_expr);
     }
     std::cout << '"';
     std::cout << n.value;
@@ -379,7 +389,7 @@ void text_ast_dumper::dump_txt_literal(txt_literal const& n)
 void text_ast_dumper::dump_num_literal(num_literal const& n)
 {
     std::cout << indent(depth);
-    write_color("number_literal ", color::green);
+    write_color("number_literal ", c_color_expr);
     print_location(n.loc);
     std::cout << ' ';
     std::cout << n.value;
@@ -390,7 +400,7 @@ void text_ast_dumper::dump_num_literal(num_literal const& n)
 void text_ast_dumper::dump_var_decl(var_decl const& n)
 {
     std::cout << indent(depth);
-    write_color("variable_declaration ", color::green);
+    write_color("variable_declaration ", c_color_decl);
     print_location(n.loc);
     std::cout << '\n';
     ++depth;
@@ -404,7 +414,7 @@ void text_ast_dumper::dump_var_decl(var_decl const& n)
 void text_ast_dumper::dump_entry_decl(entry_decl const& n)
 {
     std::cout << indent(depth);
-    write_color("entry_declaration ", color::green);
+    write_color("entry_declaration ", c_color_decl);
     print_location(n.loc);
     std::cout << ' ';
     std::cout << "(no_args)";
@@ -417,7 +427,7 @@ void text_ast_dumper::dump_entry_decl(entry_decl const& n)
 void text_ast_dumper::dump_import_decl(import_decl const& n)
 {
     std::cout << indent(depth);
-    write_color("import_declaration ", color::green);
+    write_color("import_declaration ", c_color_decl);
     print_location(n.loc);
     std::cout << '\n';
     ++depth;
@@ -428,7 +438,7 @@ void text_ast_dumper::dump_import_decl(import_decl const& n)
 void text_ast_dumper::dump_extern_decl(extern_decl const& n)
 {
     std::cout << indent(depth);
-    write_color("extern ", color::blue | color::green | color::bright);
+    write_color("extern ", c_color_decl);
     print_location(n.loc);
     std::cout << '\n';
 
@@ -440,7 +450,7 @@ void text_ast_dumper::dump_extern_decl(extern_decl const& n)
 void text_ast_dumper::dump_func_decl(func_decl const& n)
 {
     std::cout << indent(depth);
-    write_color("function_declaration ", color::green);
+    write_color("function_declaration ", c_color_decl);
     print_location(n.loc);
     std::cout << '\n';
     ++depth;
@@ -453,7 +463,7 @@ void text_ast_dumper::dump_func_decl(func_decl const& n)
 void text_ast_dumper::dump_func_def(func_def const& n)
 {
     std::cout << indent(depth);
-    write_color("function_definition ", color::green);
+    write_color("function_definition ", c_color_decl);
     print_location(n.loc);
     std::cout << '\n';
     ++depth;
@@ -467,7 +477,7 @@ void text_ast_dumper::dump_func_def(func_def const& n)
 void text_ast_dumper::dump_parameters(parameters const& n)
 {
     std::cout << indent(depth);
-    write_color("parameters ", color::green);
+    write_color("parameters ", c_color_decl);
     print_location(n.loc);
     std::cout << '\n';
     ++depth;
@@ -482,7 +492,7 @@ void text_ast_dumper::dump_parameters(parameters const& n)
 void text_ast_dumper::dump_decl_stmt(decl_stmt const& n)
 {
     std::cout << indent(depth);
-    write_color("declaration_statement ", color::green);
+    write_color("declaration_statement ", c_color_stmt);
     print_location(n.loc);
     std::cout << '\n';
     ++depth;
@@ -493,7 +503,7 @@ void text_ast_dumper::dump_decl_stmt(decl_stmt const& n)
 void text_ast_dumper::dump_assign_stmt(assign_stmt const& n)
 {
     std::cout << indent(depth);
-    write_color("assign_statement ", color::green);
+    write_color("assign_statement ", c_color_stmt);
     print_location(n.loc);
     std::cout << '\n';
     ++depth;
@@ -505,7 +515,7 @@ void text_ast_dumper::dump_assign_stmt(assign_stmt const& n)
 void text_ast_dumper::dump_compound_stmt(compound_stmt const& n)
 {
     std::cout << indent(depth);
-    write_color("compound_statement ", color::green);
+    write_color("compound_statement ", c_color_stmt);
     print_location(n.loc);
     std::cout << '\n';
     ++depth;
@@ -519,7 +529,7 @@ void text_ast_dumper::dump_compound_stmt(compound_stmt const& n)
 void text_ast_dumper::dump_ret_stmt(ret_stmt const& n)
 {
     std::cout << indent(depth);
-    write_color("ret_statement ", color::green);
+    write_color("ret_statement ", c_color_stmt);
     print_location(n.loc);
     std::cout << '\n';
     ++depth;
@@ -530,7 +540,7 @@ void text_ast_dumper::dump_ret_stmt(ret_stmt const& n)
 void text_ast_dumper::dump_expr_stmt(expr_stmt const& n)
 {
     std::cout << indent(depth);
-    write_color("expression_statement ", color::green);
+    write_color("expression_statement ", c_color_stmt);
     print_location(n.loc);
     std::cout << '\n';
     ++depth;
