@@ -11,9 +11,24 @@ static inline std::string get_spacing(int l)
     return og;
 }
 
+static inline std::string replace_tabs(std::string s)
+{
+    for (size_t i = 0; i != s.size(); )
+    {
+        if (s[i] == '\t')
+        {
+            s.replace(i, 1, "    ");
+            i += 4;
+        }
+        else
+            ++i;
+    }
+    return s;
+}
+
 static bool is_important(std::string const& line)
 {
-    for(char c : line)
+    for (char c : line)
     {
         if(!isspace(c))
             return true;
@@ -21,9 +36,8 @@ static bool is_important(std::string const& line)
     return false;
 }
 
-std::string diagnostic::show_output(location_provider const& prov, std::vector<std::string> const& content, cmd& options) const
+void diagnostic::show_output(location_provider const& prov, std::vector<std::string> const& content, cmd& options, std::ostream& os) const
 {
-    std::string result;
     location const& tloc = prov.get_loc(l.begin);
     
     if (
@@ -33,14 +47,14 @@ std::string diagnostic::show_output(location_provider const& prov, std::vector<s
     ) {
         if (options.has_color)
         {
-            result = apply_color("[WARNING]", color::red | color::green | color::bright | color::bold);
+            os << apply_color("[WARNING]", color::red | color::green | color::bright | color::bold);
         }
         else
         {
-            result = "[WARNING]";
+            os << "[WARNING]";
         }
 
-        result += this->msg;
+        os << this->msg;
     }
     else if (
         type == diagnostic_type::global_err || 
@@ -49,79 +63,85 @@ std::string diagnostic::show_output(location_provider const& prov, std::vector<s
     {
         if (options.has_color)
         {
-            result = apply_color("[ERROR]", color::red | color::bright | color::bold);
+            os << apply_color("[ERROR]", color::red | color::bright | color::bold);
         }
         else
         {
-            result = "[ERROR]";
+            os << "[ERROR]";
         }
 
-        result += this->msg;
+        os << this->msg;
     }
     
-    result += "\n";
+    os << '\n';
     
     if (type != diagnostic_type::global_warning && type != diagnostic_type::global_err)
     {
-        result += "In ";
-        result += prov.print_loc(l);
+        os << "In ";
+        os << prov.print_loc(l);
 
-        result += "\n";
+        os << '\n';
         
         if (tloc.line - 1 >= 0 && is_important(content.at(tloc.line + 1)))
         {
-            //result += "    | ";
-            result += get_spacing(tloc.line - 1);
-            result += content.at(tloc.line - 1);
-            result += "\n    | \n";
+            //os << "    | ";
+            os << get_spacing(tloc.line - 1);
+            os << replace_tabs(content.at(tloc.line - 1));
+            os << "\n    | \n";
         }
 
-        result += std::to_string(tloc.line);
+        os << tloc.line;
         if (options.has_color)
         {
-            result += apply_color(" --> ", color::red | color::green | color::bright | color::bold);
+            os << apply_color(" --> ", color::red | color::green | color::bright | color::bold);
         }
         else
         {
-            result += " --> ";
+            os << " --> ";
         }
-        result += content.at(tloc.line);
-        result += "\n";
+        os << replace_tabs(content.at(tloc.line));
+        os << '\n';
 
         if (type == diagnostic_type::location_warning || type == diagnostic_type::location_err)
         {
-            std::string identation;
-            result += "    |  ";
+            auto const& line = content.at(tloc.line);
+            std::string indentation;
+            os << "    | ";
 
             for (int i = 0; i < tloc.start; i++)
             {
-                identation += " ";
+                if (line[i] == '\t')
+                    indentation += "    ";
+                else
+                    indentation += ' ';
             }
             for (int i = 0; i < tloc.len; i++)
             {
-                identation += "^";
+                if (line[tloc.start + i] == '\t')
+                    indentation += "^^^^";
+                else
+                    indentation += '^';
             }
             if (options.has_color)
             {
-                result += apply_color(identation, color::red);
+                os << apply_color(std::move(indentation), color::red);
             }
             else
             {
-                result += identation;
+                os << indentation;
             }
-            result += "\n";
+            os << '\n';
         }
         else
         {
-            result += "    |\n";
+            os << "    |\n";
         }
         if (tloc.line + 1 < content.size() && is_important(content.at(tloc.line + 1)))
         {
-            //result += "    | ";
-            result += get_spacing(tloc.line + 1);
-            result += content.at(tloc.line + 1);
-            result += "\n";
+            //os << "    | ";
+            os << get_spacing(tloc.line + 1);
+            os << replace_tabs(content.at(tloc.line + 1));
+            os << '\n';
         }
     }
-    return result;
 }

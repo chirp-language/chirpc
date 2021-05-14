@@ -1,0 +1,3 @@
+func int fib(n: int) {
+	int: a, b
+}

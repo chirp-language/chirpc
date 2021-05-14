@@ -82,7 +82,7 @@ int main(int argc, char** argv)
     {
         // Always copying the file content is like
         // really really really bad & inneficient
-        std::cout << h.show_output(p, content, options) << '\n';
+        h.show_output(p, content, options, std::cerr);
 
         if (
             h.type == diagnostic_type::global_err ||
@@ -144,7 +144,7 @@ int main(int argc, char** argv)
     {
         for (auto const& h : generator.diagnostics)
         {
-            std::cout << h.show_output(p, content, options) << '\n';
+            h.show_output(p, content, options, std::cerr);
         }
     }
 

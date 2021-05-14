@@ -33,5 +33,5 @@ public:
 
     // Writes the diagnostic, in a human readable way
     // Possible Improvement: Add an option to create a "machine-readable" error prompt
-    std::string show_output(location_provider const& prov, std::vector<std::string> const& source, cmd& options) const;
+    void show_output(location_provider const& prov, std::vector<std::string> const& source, cmd& options, std::ostream& os) const;
 };

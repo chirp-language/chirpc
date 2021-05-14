@@ -4,4 +4,7 @@ entry
 	none: a
 	ptr: b
 	int: asgdfs = 325 + 123213 / (1345 * 345 + add(2, 3))
+	ret 3
+	+ 4
+	a = 5
 }

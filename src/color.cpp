@@ -18,6 +18,6 @@ std::string apply_color(std::string txt, color c) {
 	result += "\033[m";
 	return result;
 	#else
-	return std::move(txt);
+	return txt;
 	#endif
 }
