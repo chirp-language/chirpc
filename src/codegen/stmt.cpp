@@ -103,6 +103,8 @@ std::string codegen::emit_stmt(stmt const& s)
         case stmt_type::ret:
             result += emit_ret_stmt(static_cast<ret_stmt const&>(s));
             break;
+        case stmt_type::conditional:
+            result += emit_conditional_stmt(static_cast<conditional_stmt const&>(s));
     }
     return result;
 }
@@ -120,5 +122,20 @@ std::string codegen::emit_compound_stmt(compound_stmt const& cstmt)
     
     this->m_tracker->pop_scope();
     result += "}\n";
+    return result;
+}
+
+std::string codegen::emit_conditional_stmt(conditional_stmt const& node)
+{
+    std::string result;
+    result += "if (";
+    result += emit_expr(*node.cond);
+    result += ")\n";
+    result += emit_stmt(*node.true_branch);
+    if (node.false_branch)
+    {
+        result += "else\n";
+        result += emit_stmt(*node.false_branch);
+    }
     return result;
 }

@@ -122,7 +122,8 @@ private:
 
     std::shared_ptr<decl_stmt> get_decl_stmt();
     std::shared_ptr<assign_stmt> get_assign_stmt();
-    std::shared_ptr<ret_stmt> get_ret(); // MLG wooo
+    std::shared_ptr<ret_stmt> get_ret();
+    std::shared_ptr<conditional_stmt> get_cond(); // 420 NoScope!
 
     bool ok = false;
     std::string filename;

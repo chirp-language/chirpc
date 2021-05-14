@@ -112,6 +112,11 @@ stmth parser::get_stmt()
         skip();
         return get_compound_stmt();
     }
+    else if (t == tkn_type::kw_if)
+    {
+        skip();
+        return get_cond();
+    }
     else if (is_var_decl())
     {
         return decl_stmt::from(get_var_decl());

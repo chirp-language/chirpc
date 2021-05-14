@@ -99,6 +99,10 @@ std::vector<token> lexe(std::vector<location> src, std::vector<std::string> cont
         {
             t.type = tkn_type::kw_else;
         }
+        else if (t.value == "elif")
+        {
+            t.type = tkn_type::kw_elif;
+        }
         else if(t.value == "and")
         {
             t.type = tkn_type::kw_and;

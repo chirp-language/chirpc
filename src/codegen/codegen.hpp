@@ -36,6 +36,7 @@ class codegen
     std::string emit_assign_stmt(assign_stmt const&);
     std::string emit_compound_stmt(compound_stmt const&);
     std::string emit_ret_stmt(ret_stmt const&);
+    std::string emit_conditional_stmt(conditional_stmt const&);
 
     void gen_toplevel();
 

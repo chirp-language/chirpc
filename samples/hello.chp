@@ -7,4 +7,16 @@ entry
 	ret 3
 	+ 4
 	a = 5
+	if a + b
+	{
+		print("Yes")
+	}
+	elif a - b
+	{
+		print("Maybe")
+	}
+	else
+	{
+		print("No.")
+	}
 }
