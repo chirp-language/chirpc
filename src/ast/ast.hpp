@@ -39,6 +39,7 @@ class assign_stmt;
 class compound_stmt;
 class ret_stmt;
 class conditional_stmt;
+class iteration_stmt;
 class expr_stmt;
 class ast_root;
 
@@ -274,7 +275,8 @@ enum class stmt_type
 {
     decl, assign,
     compound, ret,
-    conditional, expr,
+    conditional,
+    iteration, expr,
 };
 
 class stmt : public ast_node
@@ -337,6 +339,15 @@ class conditional_stmt : public stmt
     stmth false_branch; // Can be null
 
     conditional_stmt() : stmt(stmt_type::conditional) {}
+};
+
+class iteration_stmt : public stmt
+{
+    public:
+    exprh cond;
+    stmth loop_body;
+
+    iteration_stmt() : stmt(stmt_type::iteration) {}
 };
 
 class expr_stmt : public stmt

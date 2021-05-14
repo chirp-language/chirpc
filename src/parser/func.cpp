@@ -18,78 +18,6 @@ bool parser::is_params()
     return result;
 }
 
-bool parser::is_func_decl()
-{
-    bool result = false;
-    int op = this->cursor;
-
-    if (match(tkn_type::kw_func))
-    {
-        if (is_datatype() && is_identifier())
-        {
-            if (is_params())
-            {
-                return true;
-            }
-        }
-    }
-
-    return false;
-}
-
-bool parser::is_func_def()
-{
-    bool result = false;
-    int op = this->cursor;
-
-    if (is_func_decl())
-    {
-        if (probe(tkn_type::lbrace))
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-bool parser::is_func_call()
-{
-    // TODO: Needs rework | form: <expr> ( <arg_list>? )
-    bool result = false;
-    int og = this->cursor;
-
-    if (is_identifier())
-    {
-        if (match(tkn_type::lparen))
-        {
-            result = true;
-
-            // Just skips until lparenA
-            int depth = 1;
-            while (depth != 0)
-            {
-                if (peek().type == tkn_type::lparen)
-                {
-                    depth++;
-                }
-                if (peek().type == tkn_type::rparen)
-                {
-                    depth--;
-                }
-                this->cursor++;
-            }
-        }
-        else
-        {
-            result = false;
-        }
-    }
-    this->cursor = og;
-
-    return result;
-}
-
 parameters parser::get_parameters()
 {
     parameters node;
@@ -106,60 +34,34 @@ parameters parser::get_parameters()
 
 std::shared_ptr<func_decl> parser::get_func_decl()
 {
-    auto node = std::make_shared<func_decl>();
-
     // Inherited stuff
-    node->loc = loc_peek();
+    auto loc = loc_peekb();
 
-    expect(tkn_type::kw_func);
     if (!this->ok)
-    {
-        return node;
-    }
-    node->data_type = get_datatype();
+        return nullptr;
+    auto data_type = get_datatype();
     if (!this->ok)
-    {
-        return node;
-    }
-    node->ident = get_identifier();
+        return nullptr;
+    auto ident = get_identifier();
     if (!this->ok)
-    {
-        return node;
-    }
-    node->params = get_parameters();
-    node->loc.end = loc_peekb();
-
-    return node;
-}
-
-std::shared_ptr<func_def> parser::get_func_def()
-{
-    auto node = std::make_shared<func_def>();
-
-    // Inherited stuff
-    node->loc = loc_peek();
-
-    expect(tkn_type::kw_func);
+        return nullptr;
+    auto params = get_parameters();
     if (!this->ok)
+        return nullptr;
+    std::shared_ptr<func_decl> node;
+    if (match(tkn_type::lbrace))
     {
-        return node;
+        node = std::make_shared<func_def>();
+        static_cast<func_def&>(*node).body = get_compound_stmt();
     }
-    node->data_type = get_datatype();
-    if (!this->ok)
+    else
     {
-        return node;
+        node = std::make_shared<func_decl>();
     }
-    node->ident = get_identifier();
-    if (!this->ok)
-    {
-        return node;
-    }
-    node->params = get_parameters();
-    if (!this->ok)
-    {
-        return node;
-    }
-    node->body = get_compound_stmt();
+    node->loc = loc;
+    node->data_type = std::move(data_type);
+    node->ident = std::move(ident);
+    node->params = std::move(params);
     node->loc.end = loc_peekb();
 
     return node;

@@ -31,12 +31,16 @@ class codegen
     std::string emit_decl(decl const&);
     std::string emit_var_decl(var_decl const&);
     std::string emit_entry_decl(entry_decl const&);
+    std::string emit_parameters(parameters const&);
+    std::string emit_func_decl(func_decl const&);
+    std::string emit_func_def(func_def const&);
 
     std::string emit_stmt(stmt const&);
     std::string emit_assign_stmt(assign_stmt const&);
     std::string emit_compound_stmt(compound_stmt const&);
     std::string emit_ret_stmt(ret_stmt const&);
     std::string emit_conditional_stmt(conditional_stmt const&);
+    std::string emit_iteration_stmt(iteration_stmt const&);
 
     void gen_toplevel();
 

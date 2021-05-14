@@ -5,7 +5,6 @@
 bool parser::is_operand()
 {
     return (
-        is_func_call()         ||
         is_identifier()            ||
         probe(tkn_type::literal)    ||
         probe(tkn_type::math_op)    ||

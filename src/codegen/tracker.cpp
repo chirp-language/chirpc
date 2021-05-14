@@ -30,6 +30,7 @@ var_decl const* tracker::lookup_var(identifier const* name) const
                     // Found a collision
                     // TODO: Report error
                     return nullptr;
+                ++it;
             }
             return res;
         }

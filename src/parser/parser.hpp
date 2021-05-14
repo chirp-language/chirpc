@@ -81,11 +81,6 @@ private:
 
     bool is_var_decl(); // (data specifiers) (:) (identifier)
     bool is_var_assign();  // (identifier) (=) (value)
-    bool is_var_decldef(); // (data specifiers) (:) (identifier) (=) (value)
-
-    bool is_func_decl(); // (func) (data_types) (identifier) (params)
-    bool is_func_def(); // (func_decl) (compound_statement)
-    bool is_func_call(); // (identifier) ( arguments )
 
     // Expression stuff
     dtypename get_dtypename(std::string const&);
@@ -113,7 +108,6 @@ private:
     std::shared_ptr<var_decl> get_var_decl();
 
     std::shared_ptr<func_decl> get_func_decl();
-    std::shared_ptr<func_def> get_func_def();
     parameters get_parameters();
 
     // Statement stuff
@@ -124,6 +118,7 @@ private:
     std::shared_ptr<assign_stmt> get_assign_stmt();
     std::shared_ptr<ret_stmt> get_ret();
     std::shared_ptr<conditional_stmt> get_cond(); // 420 NoScope!
+    std::shared_ptr<iteration_stmt> get_iter();
 
     bool ok = false;
     std::string filename;

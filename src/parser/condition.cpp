@@ -19,3 +19,14 @@ std::shared_ptr<conditional_stmt> parser::get_cond()
     node->loc.end = loc_peekb();
     return node;
 }
+
+std::shared_ptr<iteration_stmt> parser::get_iter()
+{
+	auto node = std::make_shared<iteration_stmt>();
+	node->loc = loc_peekb();
+	node->cond = get_expr(true);
+	expect(tkn_type::lbrace);
+	node->loop_body = get_compound_stmt();
+	node->loc.end = loc_peekb();
+	return node;
+}
