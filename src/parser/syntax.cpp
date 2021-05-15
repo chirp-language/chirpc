@@ -85,11 +85,11 @@ std::shared_ptr<extern_decl> parser::get_extern()
     node->loc = loc_peekb();
     node->real_name = get_txt_lit();
    
-    if (is_func_decl())
+    if (match(tkn_type::kw_func))
     {
         node->inner_decl = get_func_decl();
     }
-    else if (is_var_decl())
+    else
     {
         node->inner_decl = get_var_decl();
     }
@@ -111,6 +111,16 @@ stmth parser::get_stmt()
     {
         skip();
         return get_compound_stmt();
+    }
+    else if (t == tkn_type::kw_if)
+    {
+        skip();
+        return get_cond();
+    }
+    else if (t == tkn_type::kw_while)
+    {
+        skip();
+        return get_iter();
     }
     else if (is_var_decl())
     {

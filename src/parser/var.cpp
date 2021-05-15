@@ -96,12 +96,6 @@ bool parser::is_var_assign()
     return probe(tkn_type::identifer) && peekf().type == tkn_type::assign_op;
 }
 
-bool parser::is_var_decldef()
-{
-    // Continuation of a decl
-    return probe(tkn_type::assign_op);
-}
-
 exprtype parser::get_datatype()
 {
     exprtype type;

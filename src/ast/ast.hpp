@@ -38,6 +38,8 @@ class decl_stmt;
 class assign_stmt;
 class compound_stmt;
 class ret_stmt;
+class conditional_stmt;
+class iteration_stmt;
 class expr_stmt;
 class ast_root;
 
@@ -272,8 +274,9 @@ class func_def : public func_decl
 enum class stmt_type
 {
     decl, assign,
-    compound,
-    ret, expr,
+    compound, ret,
+    conditional,
+    iteration, expr,
 };
 
 class stmt : public ast_node
@@ -323,10 +326,28 @@ public:
 class ret_stmt : public stmt
 {
 public:
-    // Should be replaced by expr, when I get to those
     exprh val;
 
     ret_stmt() : stmt(stmt_type::ret) {}
+};
+
+class conditional_stmt : public stmt
+{
+    public:
+    exprh cond;
+    stmth true_branch;
+    stmth false_branch; // Can be null
+
+    conditional_stmt() : stmt(stmt_type::conditional) {}
+};
+
+class iteration_stmt : public stmt
+{
+    public:
+    exprh cond;
+    stmth loop_body;
+
+    iteration_stmt() : stmt(stmt_type::iteration) {}
 };
 
 class expr_stmt : public stmt

@@ -257,6 +257,10 @@ void text_ast_dumper::dump_stmt(stmt const& node)
             return dump_compound_stmt(static_cast<compound_stmt const&>(node));
         case stmt_type::ret:
             return dump_ret_stmt(static_cast<ret_stmt const&>(node));
+        case stmt_type::conditional:
+            return dump_conditional_stmt(static_cast<conditional_stmt const&>(node));
+        case stmt_type::iteration:
+            return dump_iteration_stmt(static_cast<iteration_stmt const&>(node));
         case stmt_type::expr:
             return dump_expr_stmt(static_cast<expr_stmt const&>(node));
         default:
@@ -535,6 +539,32 @@ void text_ast_dumper::dump_ret_stmt(ret_stmt const& n)
     std::cout << '\n';
     ++depth;
     dump_expr(*n.val);
+    --depth;
+}
+
+void text_ast_dumper::dump_conditional_stmt(conditional_stmt const& n)
+{
+    std::cout << indent(depth);
+    write_color("conditional_statement ", c_color_stmt);
+    print_location(n.loc);
+    std::cout << '\n';
+    ++depth;
+    dump_expr(*n.cond);
+    dump_stmt(*n.true_branch);
+    if (n.false_branch)
+        dump_stmt(*n.false_branch);
+    --depth;
+}
+
+void text_ast_dumper::dump_iteration_stmt(iteration_stmt const& n)
+{
+    std::cout << indent(depth);
+    write_color("iteration_statement ", c_color_stmt);
+    print_location(n.loc);
+    std::cout << '\n';
+    ++depth;
+    dump_expr(*n.cond);
+    dump_stmt(*n.loop_body);
     --depth;
 }
 

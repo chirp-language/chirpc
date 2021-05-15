@@ -27,7 +27,7 @@ class text_ast_dumper {
     void dump_arguments(arguments const&);
     void dump_func_call(func_call const&);
     void dump_identifier(identifier const&);
-    //void dump_loperand(loperand const&);
+    void dump_loperand(loperand const&) = delete;
     void dump_txt_literal(txt_literal const&);
     void dump_num_literal(num_literal const&);
     // Declarations
@@ -43,6 +43,8 @@ class text_ast_dumper {
     void dump_assign_stmt(assign_stmt const&);
     void dump_compound_stmt(compound_stmt const&);
     void dump_ret_stmt(ret_stmt const&);
+    void dump_conditional_stmt(conditional_stmt const&);
+    void dump_iteration_stmt(iteration_stmt const&);
     void dump_expr_stmt(expr_stmt const&);
 
     private:

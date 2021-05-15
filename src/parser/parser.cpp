@@ -35,24 +35,12 @@ void parser::parse()
         }
         case tkn_type::kw_func:
         {
-            if(is_func_def())
-            {
-                this->tree.fdefs.push_back(get_func_def());
-            }
-            else if(is_func_decl())
-            {
-                this->tree.fdecls.push_back(get_func_decl());
-            }
+            skip();
+            auto f = get_func_decl();
+            if (f->type == decl_type::fdef)
+                this->tree.fdefs.push_back(std::shared_ptr<func_def>(std::move(f), static_cast<func_def*>(f.get())));
             else
-            {
-                // Is either a var or an error
-                diagnostic e;
-                e.l = loc_peek();
-                e.msg = "I am no longer a lazy person";
-                e.type = diagnostic_type::location_err;
-                this->diagnostics.push_back(std::move(e));
-                this->ok = false;
-            }
+                this->tree.fdecls.push_back(std::move(f));
             break;
         }
         default:
