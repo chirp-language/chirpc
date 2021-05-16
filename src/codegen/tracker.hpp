@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "../ast/ast.hpp"
+#include "../shared/diagnostic.hpp"
 
 // Tracked variable, can go out of scope
 class tracked_var
@@ -23,6 +24,9 @@ which means it also tracks imports.
 class tracker
 {
     public:
+    tracker(diagnostic_manager& diag)
+        : diagnostics(diag) {}
+
     // Returns true if a variable with same name DOESN'T exist
     // Return false otherwise
     bool bind_var(identifier const* name, var_decl const* var);
@@ -51,4 +55,6 @@ class tracker
 
     // Keeps track of all the variables
     std::vector<tracked_var> vars;
+
+    diagnostic_manager& diagnostics;
 };

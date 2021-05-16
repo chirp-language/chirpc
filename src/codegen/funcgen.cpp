@@ -78,8 +78,8 @@ std::string codegen::emit_func_def(func_def const& node)
             diagnostic e;
             e.l = param.loc;
             e.msg = "A parameter with the same name already exists";
-            e.type = diagnostic_type::line_err;
-            this->diagnostics.push_back(std::move(e));
+            e.type = diagnostic_type::location_err;
+            this->diagnostics.show(e);
             this->errored = true;
             return result;
         }

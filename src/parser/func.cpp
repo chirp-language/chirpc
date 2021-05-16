@@ -85,7 +85,7 @@ arguments parser::get_arguments()
                 e.l = loc_peekb();
                 e.msg = "Missing an argument before comma";
                 e.type = diagnostic_type::location_err;
-                this->diagnostics.push_back(std::move(e));
+                this->diagnostics.show(e);
                 this->ok = false;
                 while (match(tkn_type::comma))
                     ;
@@ -101,7 +101,7 @@ arguments parser::get_arguments()
                 e.l = loc_peekb();
                 e.msg = "Expected ')' or ','";
                 e.type = diagnostic_type::location_err;
-                this->diagnostics.push_back(std::move(e));
+                this->diagnostics.show(e);
                 this->ok = false;
                 break;
             }

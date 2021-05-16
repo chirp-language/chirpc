@@ -20,6 +20,7 @@ public:
     bool dump_ast = false;
     bool keep_tmp = false;
     bool has_color = true;
+    bool ignore_unresolved_refs = true;
 
     std::string filename;
     void write_help();

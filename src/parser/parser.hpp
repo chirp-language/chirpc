@@ -15,10 +15,6 @@ public:
     void parse();
 
     void load_tokens(std::string, std::vector<token>&&);
-    std::vector<diagnostic> const& get_diagnostics() const
-    {
-        return diagnostics;
-    }
     ast_root& get_ast()
     {
         return tree;
@@ -30,6 +26,8 @@ public:
 
     location const& get_loc(token_location loc) const override;
 
+    parser(diagnostic_manager& diag)
+        : diagnostics(diag) {}
 private:
     size_t cursor = 0;
 
@@ -123,6 +121,6 @@ private:
     bool ok = false;
     std::string filename;
     ast_root tree;
-    std::vector<diagnostic> diagnostics;
+    diagnostic_manager& diagnostics;
     std::vector<token> tkns;
 };

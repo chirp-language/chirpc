@@ -13,6 +13,19 @@ std::string codegen::emit_identifier(identifier const& ident)
     return result;
 }
 
+std::string codegen::emit_id_ref_expr(identifier const& ident)
+{
+    if (!ignore_unresolved_refs && !m_tracker->lookup_var(&ident))
+    {
+        diagnostic d;
+        d.type = diagnostic_type::location_warning;
+        d.l = ident.loc;
+        d.msg = "Referenced an undefined variable or a global function/variable (TODO)";
+        diagnostics.show(d);
+    }
+    return emit_identifier(ident);
+}
+
 // This is not finished
 std::string codegen::emit_datatype(exprtype const& t)
 {
@@ -138,7 +151,7 @@ std::string codegen::emit_expr(expr const& node)
         case optype::lit:
             return emit_literal(static_cast<literal_node const&>(node));
         case optype::ident:
-            return emit_identifier(static_cast<identifier const&>(node));
+            return emit_id_ref_expr(static_cast<identifier const&>(node));
         case optype::call:
             return emit_func_call(static_cast<func_call const&>(node));
         case optype::op:

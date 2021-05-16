@@ -60,6 +60,9 @@ int main(int argc, char** argv)
     f.close();
 
     // Preprocessing & Lexing
+    diagnostic_manager diagnostics(std::cerr, options.has_color);
+    diagnostics.current_source = &content;
+
     auto proccesed = preprocess(options.filename, content);
     auto tkns = lexe(proccesed, content);
 
@@ -73,25 +76,10 @@ int main(int argc, char** argv)
         }
     }
     // Parsing
-    parser p;
+    parser p(diagnostics);
     p.load_tokens(options.filename, std::move(tkns));
+    diagnostics.loc_prov = &p;
     p.parse();
-    bool ok = true;
-
-    for (auto const& h : p.get_diagnostics())
-    {
-        // Always copying the file content is like
-        // really really really bad & inneficient
-        h.show_output(p, content, options, std::cerr);
-
-        if (
-            h.type == diagnostic_type::global_err ||
-            h.type == diagnostic_type::line_err ||
-            h.type == diagnostic_type::location_err)
-        {
-            ok = false;
-        }
-    }
 
     if (options.dump_ast)
     {
@@ -106,7 +94,7 @@ int main(int argc, char** argv)
         std::cout << '\n';
     }
 
-    if (!ok)
+    if (diagnostics.error)
     {
         return -1;
     }
@@ -117,24 +105,25 @@ int main(int argc, char** argv)
     {
         if (options.has_color)
         {
-            std::cout << apply_color("[TOOL MISSING]", color::red);
+            std::cerr << apply_color("[TOOL MISSING] ", color::red);
         }
         else
         {
-            std::cout << "[TOOL MISSING] ";
+            std::cerr << "[TOOL MISSING] ";
         }
 
-        std::cout << "Couldn't find supported C compiler on this machine.\n";
-        std::cout << "Supported compilers are clang and gcc\n";
-        std::cout << "To specify C compiler use option -compiler-path, and then the path to the compiler.\n";
+        std::cerr << "Couldn't find supported C compiler on this machine.\n";
+        std::cerr << "Supported compilers are clang and gcc\n";
+        std::cerr << "To specify C compiler use option -compiler-path, and then the path to the compiler.\n";
 
         return -1;
     }
 
     // Code Generation
-    codegen generator;
+    codegen generator(diagnostics);
+    generator.ignore_unresolved_refs = options.ignore_unresolved_refs;
 
-    auto t = std::make_unique<tracker>();
+    auto t = std::make_unique<tracker>(diagnostics);
 
     generator.set_tree(&p.get_ast(), options.filename);
     generator.set_tracker(t.get());
@@ -142,12 +131,7 @@ int main(int argc, char** argv)
 
     if (generator.errored)
     {
-        for (auto const& h : generator.diagnostics)
-        {
-            h.show_output(p, content, options, std::cerr);
-        }
-
-        std::cout<<"Could not finish compile, because of error in codegen\n";
+        std::cerr << "Could not finish compile, because of error in codegen\n";
         return -1;
     }
 

@@ -17,8 +17,12 @@ class codegen
     std::string&& get_result();
 
     bool errored = false;
-    std::vector<diagnostic> diagnostics;
+    bool ignore_unresolved_refs = false;
+
+    codegen(diagnostic_manager& diag)
+        : diagnostics(diag) {}
     private:
+    diagnostic_manager& diagnostics;
 
     std::string emit_datatype(exprtype const&);
     std::string emit_expr(expr const&);
@@ -27,6 +31,8 @@ class codegen
     std::string emit_func_call(func_call const&);
     std::string emit_identifier(identifier const&);
     std::string emit_literal(literal_node const&);
+    // Reference of an identifier in an expression
+    std::string emit_id_ref_expr(identifier const&);
 
     std::string emit_decl(decl const&);
     std::string emit_var_decl(var_decl const&);

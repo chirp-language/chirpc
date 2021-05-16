@@ -2,8 +2,31 @@
 
 bool tracker::bind_var(identifier const* name, var_decl const* var)
 {
-    if (lookup_var(name))
-        return false;
+    // Search for collisions, the current depth only
+    for (auto it = vars.rbegin(), end = vars.rend(); it != end; ++it)
+    {
+        if (it->depth != depth)
+            break;
+
+        if (it->name->name == name->name)
+        {
+            // Found a collision
+            {
+                diagnostic d;
+                d.type = diagnostic_type::location_err;
+                d.l = var->loc;
+                d.msg = "Redefinition of a variable";
+                diagnostics.show(d);
+            }
+            {
+                diagnostic d;
+                d.type = diagnostic_type::location_note;
+                d.l = it->target->loc;
+                d.msg = "Previous declaration here";
+            }
+            return false;
+        }
+    }
 
     tracked_var v;
     v.name = name;
@@ -20,19 +43,7 @@ var_decl const* tracker::lookup_var(identifier const* name) const
     {
         if (it->name->name == name->name)
         {
-            auto res = it->target;
-            auto res_depth = it->depth;
-            // Search the current depth only
-            ++it;
-            while (it != end and it->depth == res_depth)
-            {
-                if (it->name->name == name->name)
-                    // Found a collision
-                    // TODO: Report error
-                    return nullptr;
-                ++it;
-            }
-            return res;
+            return it->target;
         }
     }
     return nullptr;

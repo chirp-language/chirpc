@@ -129,7 +129,7 @@ exprh parser::get_primary_expr()
         e.msg = "Invalid operand";
         e.type = diagnostic_type::location_err;
         this->ok = false;
-        this->diagnostics.push_back(std::move(e));
+        this->diagnostics.show(e);
         return nullptr;
     }
 }

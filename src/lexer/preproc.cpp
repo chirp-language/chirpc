@@ -220,12 +220,12 @@ std::vector<location> preprocess(std::string fname, std::vector<std::string> con
                 else if (cmd == "end"s)
                 {
                     // It's normal behaviour now
-                    //std::cout<<"PREPROCESSOR WARN: Uncatched end at ("<<src.at(i+1).line<<":"<<src.at(i+1).start<<")"<<std::endl;
+                    //std::cerr<<"PREPROCESSOR WARN: Uncatched end at ("<<src.at(i+1).line<<":"<<src.at(i+1).start<<")"<<std::endl;
                     i++;
                 }
                 else
                 {
-                    std::cout << "PREPROCESSOR WARN: Unknown at (" << 
+                    std::cerr << "PREPROCESSOR WARN: Unknown at (" << 
                     src.at(i + 1).line << ":" << src.at(i + 1).start << ")\n";
                     i++;
                 }

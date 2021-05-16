@@ -69,6 +69,10 @@ cmd parse_cmd(int argc, char *argv[])
         {
             c.keep_tmp = true;
         }
+        else if (std::strcmp(argv[i], "-show-unresolved-refs") == 0)
+        {
+            c.ignore_unresolved_refs = false;
+        }
         else
         {
             if (c.filename.empty())

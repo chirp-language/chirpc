@@ -22,15 +22,15 @@ std::string codegen::emit_decl(decl const& node)
 std::string codegen::emit_var_decl(var_decl const& node)
 {
     std::string result;
-    
+
     if (!m_tracker->bind_var(node.ident.get(), &node))
     {
         result = "// declaration error here\n";
         diagnostic e;
         e.l = node.loc;
         e.msg = "A variable with the same name already exists";
-        e.type = diagnostic_type::line_err;
-        this->diagnostics.push_back(std::move(e));
+        e.type = diagnostic_type::location_err;
+        this->diagnostics.show(e);
         this->errored = true;
         return result;
     }
@@ -53,9 +53,9 @@ std::string codegen::emit_var_decl(var_decl const& node)
         {
             diagnostic e;
             e.msg = "Variable cannot be of type `none`, unless a pointer";
-            e.type = diagnostic_type::line_err;
+            e.type = diagnostic_type::location_err;
             e.l = node.loc;
-            this->diagnostics.push_back(std::move(e));
+            this->diagnostics.show(e);
             this->errored = true;
             return "/*errored here*/";
         }
@@ -84,9 +84,9 @@ std::string codegen::emit_assign_stmt(assign_stmt const& node)
         result += "// error here\n";
         diagnostic e;
         e.l = node.loc;
-        e.msg = "Cannot define an unexisting variable.";
-        e.type = diagnostic_type::line_err;
-        this->diagnostics.push_back(std::move(e));
+        e.msg = "Cannot assign to a non-existant variable";
+        e.type = diagnostic_type::location_err;
+        this->diagnostics.show(e);
         return result;
     }
 

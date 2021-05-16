@@ -32,7 +32,7 @@ num_literal parser::get_num_lit()
         e.msg = "Trying to perform math operation with a string literal";
         e.type = diagnostic_type::location_err;
         this->ok = false;
-        this->diagnostics.push_back(std::move(e));
+        this->diagnostics.show(e);
     } 
     // Carries on after that, as it shouldn't break anything, 
     // until the codegen phase, but it throws an error so it won't reach that
@@ -143,7 +143,7 @@ stmth parser::get_stmt()
         e.l = loc_peek();
         e.msg = "Statement could not be parsed";
 
-        this->diagnostics.push_back(std::move(e));
+        this->diagnostics.show(e);
         result = nullptr;
     }
     return result;

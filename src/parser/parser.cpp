@@ -50,7 +50,7 @@ void parser::parse()
             e.type = diagnostic_type::location_err;
             e.l = loc_peek();
             e.msg = "Invalid top-level declaration";
-            this->diagnostics.push_back(std::move(e));
+            this->diagnostics.show(e);
         }
         }
     }
@@ -88,23 +88,18 @@ bool parser::expect(tkn_type v)
     if (!match(v))
     {
         diagnostic e;
+        e.type = diagnostic_type::location_err;
         if (cursor >= this->tkns.size())
         {
-            e.type = diagnostic_type::line_err;
             e.l = loc_eof();
-            // If line err, doesn't care about start or end, just line
-            location l;
-            l.filename = this->filename;
-            l.line = this->tkns.at(this->tkns.size() - 1).loc.line;
             e.msg = "Unexpected end of file.";
         }
         else
         {
             e.l = loc_peek();
-            e.type = diagnostic_type::location_err;
             e.msg = "Unexpected token";
         }
-        this->diagnostics.push_back(std::move(e));
+        this->diagnostics.show(e);
         return false;
     }
     return true;

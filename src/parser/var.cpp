@@ -39,7 +39,7 @@ dtypename parser::get_dtypename(std::string const& txt)
     diagnostic e;
     e.type = diagnostic_type::global_err;
     e.msg = "Couldn't get typename from '" + txt + "', location unknown";
-    this->diagnostics.push_back(std::move(e));
+    this->diagnostics.show(e);
     return dtypename::_none;
     #else
     __builtin_unreachable();
@@ -76,7 +76,7 @@ dtypemod parser::get_dtypemod(std::string const& txt)
     diagnostic e;
     e.type = diagnostic_type::global_err;
     e.msg = "Couldn't get type modifier from '" + txt + "', location unknown";
-    this->diagnostics.push_back(std::move(e));
+    this->diagnostics.show(e);
     return mod;
 }
 
