@@ -41,6 +41,7 @@ class ret_stmt;
 class conditional_stmt;
 class iteration_stmt;
 class expr_stmt;
+class null_stmt;
 class ast_root;
 
 // Node handles (shorthands)
@@ -277,6 +278,7 @@ enum class stmt_type
     compound, ret,
     conditional,
     iteration, expr,
+    null,
 };
 
 class stmt : public ast_node
@@ -363,6 +365,16 @@ class expr_stmt : public stmt
 
     static std::shared_ptr<expr_stmt> from(exprh expr) {
         return std::make_shared<expr_stmt>(std::move(expr));
+    }
+};
+
+class null_stmt : public stmt
+{
+    public:
+    null_stmt(location_range loc)
+        : stmt(stmt_type::null)
+    {
+        this->loc = loc;
     }
 };
 

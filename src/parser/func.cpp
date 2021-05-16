@@ -27,7 +27,7 @@ parameters parser::get_parameters()
     {
         do
         {
-            node.body.push_back(get_var_decl());
+            node.body.push_back(get_parameter());
         } while (match(tkn_type::comma));
 
         expect(tkn_type::rparen);
@@ -59,6 +59,7 @@ std::shared_ptr<func_decl> parser::get_func_decl()
     }
     else
     {
+        expect(tkn_type::semi);
         node = std::make_shared<func_decl>();
     }
     node->loc = loc;

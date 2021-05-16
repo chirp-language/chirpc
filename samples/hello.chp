@@ -1,29 +1,29 @@
 import "io"
 
-func int util.getrandom()
+func int util.getrandom();
 
-extern "dlopen" func none ptr dlopen(char const ptr: filename, int: flags)
-extern "stdout" ptr: stdout
+extern "dlopen" func none ptr dlopen(char const ptr: filename, int: flags);
+extern "stdout" ptr: stdout;
 
 entry
 {
-	io.print("Hello, world %d", util.getrandom())
-	int: a = 123
-	ptr: b
-	int: c = 325 + 123213 / (1345 * 345 + add(2, 3))
+	io.print("Hello, world %d", util.getrandom());
+	int: a = 123;
+	ptr: b;
+	int: c = 325 + 123213 / (1345 * 345 + add(2, 3));
 	ret 3
-	+ 4
-	a = 5
+	+ 4;
+	a = 5; ; # Null statement
 	if a + c
 	{
-		print("Yes")
+		print("Yes");
 	}
 	elif a - c
 	{
-		print("Maybe")
+		print("Maybe");
 	}
 	else
 	{
-		print("No.")
+		print("No.");
 	}
 }

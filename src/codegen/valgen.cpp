@@ -158,6 +158,6 @@ std::string codegen::emit_expr(expr const& node)
             return emit_binop(static_cast<binop const&>(node));
         case optype::invalid:
         default:
-            return "\n#error Bad operand, This is a bug";
+            return "\n#error Bad operand, This is a bug\n";
     }
 }

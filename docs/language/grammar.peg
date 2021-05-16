@@ -1,27 +1,33 @@
 # Declarations
 program := top_declaration* ;
-top_declaration := entry_decl / import_decl / extern_decl / function_decldef ;
-entry_decl := "entry" stmt ;
+top_declaration := entry_decl / import_decl / extern_decl / function_decl ;
+entry_decl := "entry" compound_stmt ;
 import_decl := "import" T_string ;
-extern_decl := "extern" T_string ( function_decl / var_decl ) ;
-function_decl := "func" type params_decl ;
-params_decl := "(" var_decl ("," var_decl)* ")" ;
-function_decldef := function_decl (compund_stmt)? ;
+extern_decl := "extern" T_string ( function_decl / var_decl ) ";" ;
+function_decl := "func" type identifier params_decl (";" | compound_stmt) ;
+params_decl := "(" (param ("," param)*)? ")" ;
+param := typename (":" identifier)? ;
 
 # Statements
-stmt := compund_stmt / simple_stmt ; # TODO: Conditionals
+stmt :=
+	compound_stmt /
+	cond_stmt /
+	iter_stmt /
+	simple_stmt ;
 
-compund_stmt := "{" stmt* "}" ;
+compound_stmt := "{" stmt* "}" ;
 
 simple_stmt :=
 	("ret" expr ";") /
-	var_decldef /
-	expr ;
+	var_decl /
+	assign_stmt /
+	(expr ";") /
+	";" ;
 
-var_decldef := var_decl / var_def ;
-
-var_decl := typename ":" identifier ("=" expr) ;
-var_def := identifier "=" expr ;
+var_decl := typename ":" identifier ("=" expr) ";" ;
+assign_stmt := identifier "=" expr ";" ;
+cond_stmt := "if" expr compound_stmt ("elif" expr compound_stmt)* ("else" compound_stmt)?
+iter_stmt := "while" expr compound_stmt
 
 # Expressions
 expr := expr_primary ((T_expr_op expr_primary) / ("(" arguments ")"))* ;

@@ -2,9 +2,9 @@
 #The compiler should normally fail on this sample
 entry
 {
-    none: a
-    float: b = 1230.0gfbd # <-- This one, for some reason, gets lexed as an identifier
-    ptr: b # Redefinition
+    none: a;
+    float: b = 1230.0gfbd; # <-- This one, for some reason, gets lexed as an identifier
+    ptr: b; # Redefinition
 }
 
 func none sample(int: a, ptr: b, const ptr: a)

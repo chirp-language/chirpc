@@ -35,6 +35,7 @@ std::string token::util_dump(){
         tknstr(tkn_type::rbrace    , rbrace    )
         tknstr(tkn_type::lbracket  , lbracket  )
         tknstr(tkn_type::rbracket  , rbracket  )
+        tknstr(tkn_type::semi      , semi      )
         tknstr(tkn_type::identifer , identifer )
         tknstr(tkn_type::literal   , literal   )
         tknstr(tkn_type::unknown   , unknown   )

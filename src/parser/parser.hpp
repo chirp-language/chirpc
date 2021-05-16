@@ -104,6 +104,7 @@ private:
     std::shared_ptr<extern_decl> get_extern();
 
     std::shared_ptr<var_decl> get_var_decl();
+    std::shared_ptr<var_decl> get_parameter();
 
     std::shared_ptr<func_decl> get_func_decl();
     parameters get_parameters();

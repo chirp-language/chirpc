@@ -263,6 +263,8 @@ void text_ast_dumper::dump_stmt(stmt const& node)
             return dump_iteration_stmt(static_cast<iteration_stmt const&>(node));
         case stmt_type::expr:
             return dump_expr_stmt(static_cast<expr_stmt const&>(node));
+        case stmt_type::null:
+            return dump_null_stmt(node);
         default:
             return;
     }
@@ -577,4 +579,12 @@ void text_ast_dumper::dump_expr_stmt(expr_stmt const& n)
     ++depth;
     dump_expr(*n.node);
     --depth;
+}
+
+void text_ast_dumper::dump_null_stmt(stmt const& n)
+{
+    std::cout << indent(depth);
+    write_color("null_statement ", c_color_stmt);
+    print_location(n.loc);
+    std::cout << '\n';
 }

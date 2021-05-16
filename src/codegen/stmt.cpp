@@ -17,6 +17,11 @@ std::string codegen::emit_decl(decl const& node)
         case decl_type::external:
             return emit_extern_decl(static_cast<extern_decl const&>(node));*/
     }
+    #ifndef NDEBUG
+    return "\n#error Bad declaration, this is a bug\n";
+    #else
+    __builtin_unreachable();
+    #endif
 }
 
 std::string codegen::emit_var_decl(var_decl const& node)
@@ -119,7 +124,7 @@ std::string codegen::emit_stmt(stmt const& s)
         case stmt_type::expr:
             result += emit_expr(*static_cast<expr_stmt const&>(s).node);
             result += ";\n"; // Because this is kindof an expression stuff
-        break;
+            break;
         case stmt_type::decl:
             result += emit_decl(*static_cast<decl_stmt const&>(s).inner_decl);
             break;
@@ -131,8 +136,12 @@ std::string codegen::emit_stmt(stmt const& s)
             break;
         case stmt_type::conditional:
             result += emit_conditional_stmt(static_cast<conditional_stmt const&>(s));
+            break;
         case stmt_type::iteration:
             result += emit_iteration_stmt(static_cast<iteration_stmt const&>(s));
+            break;
+        case stmt_type::null:
+            break; // emit nothing
     }
     return result;
 }

@@ -56,7 +56,8 @@ std::shared_ptr<entry_decl> parser::get_entry()
 {
     auto node = std::make_shared<entry_decl>();
     node->loc = loc_peekb();
-    node->code = get_stmt();
+    expect(tkn_type::lbrace);
+    node->code = get_compound_stmt();
     node->loc.end = loc_peekb();
     return node;
 }
@@ -75,6 +76,7 @@ std::shared_ptr<ret_stmt> parser::get_ret()
     auto node = std::make_shared<ret_stmt>();
     node->loc = loc_peekb();
     node->val = get_expr(true);
+    expect(tkn_type::semi);
     node->loc.end = loc_peekb();
     return node;
 }
@@ -99,27 +101,21 @@ std::shared_ptr<extern_decl> parser::get_extern()
 
 stmth parser::get_stmt()
 {
-    stmth result;
-    tkn_type t = this->peek().type;
     // Switches get stiches
-    if (t == tkn_type::kw_ret)
+    if (match(tkn_type::kw_ret))
     {
-        skip();
         return get_ret();
     }
-    else if (t == tkn_type::lbrace)
+    else if (match(tkn_type::lbrace))
     {
-        skip();
         return get_compound_stmt();
     }
-    else if (t == tkn_type::kw_if)
+    else if (match(tkn_type::kw_if))
     {
-        skip();
         return get_cond();
     }
-    else if (t == tkn_type::kw_while)
+    else if (match(tkn_type::kw_while))
     {
-        skip();
         return get_iter();
     }
     else if (is_var_decl())
@@ -130,8 +126,14 @@ stmth parser::get_stmt()
     {
         return get_assign_stmt();
     }
+    else if (match(tkn_type::semi))
+    {
+        // Null statement
+        return std::make_shared<null_stmt>(loc_peekb());
+    }
     else if (auto expr = get_expr(true))
     {
+        expect(tkn_type::semi);
         return expr_stmt::from(std::move(expr));
     }
     else
@@ -144,9 +146,8 @@ stmth parser::get_stmt()
         e.msg = "Statement could not be parsed";
 
         this->diagnostics.show(e);
-        result = nullptr;
+        return nullptr;
     }
-    return result;
 }
 
 std::shared_ptr<compound_stmt> parser::get_compound_stmt()
@@ -156,8 +157,6 @@ std::shared_ptr<compound_stmt> parser::get_compound_stmt()
 
     while (this->ok && !match(tkn_type::rbrace) && !match(tkn_type::eof))
     {
-        //stmt* aaaa = get_stmt();
-        //node.body.push_back(aaaa);
         node->body.push_back(get_stmt());
     }
 

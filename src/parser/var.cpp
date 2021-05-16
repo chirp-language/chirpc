@@ -34,13 +34,15 @@ dtypename parser::get_dtypename(std::string const& txt)
     }
 
     #ifndef NDEBUG
-    // If this manages to reach here, then uhhh it's not supposed to happen
-    this->ok = false;
-    diagnostic e;
-    e.type = diagnostic_type::global_err;
-    e.msg = "Couldn't get typename from '" + txt + "', location unknown";
-    this->diagnostics.show(e);
-    return dtypename::_none;
+    {
+        // If this manages to reach here, then uhhh it's not supposed to happen
+        this->ok = false;
+        diagnostic e;
+        e.type = diagnostic_type::global_err;
+        e.msg = "Couldn't get typename from '" + txt + "', location unknown";
+        this->diagnostics.show(e);
+        return dtypename::_none;
+    }
     #else
     __builtin_unreachable();
     #endif
@@ -141,6 +143,20 @@ std::shared_ptr<var_decl> parser::get_var_decl()
     node->ident = get_identifier();
     if (match(tkn_type::assign_op))
         node->init = get_expr(false);
+    expect(tkn_type::semi);
+    node->loc.end = loc_peekb();
+    return node;
+}
+
+std::shared_ptr<var_decl> parser::get_parameter()
+{
+    auto node = std::make_shared<var_decl>();
+    node->loc = loc_peek();
+    node->var_type = get_datatype();
+    if (match(tkn_type::colon))
+    {
+        node->ident = get_identifier();
+    }
     node->loc.end = loc_peekb();
     return node;
 }
@@ -156,6 +172,7 @@ std::shared_ptr<assign_stmt> parser::get_assign_stmt()
         return node;
 
     node->value = get_expr(false);
+    expect(tkn_type::semi);
     node->loc.end = loc_peekb();
     return node;
 }

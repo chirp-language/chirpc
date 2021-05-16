@@ -1,12 +1,12 @@
 func int fib(int: n) {
-	int: a = 0
-	int: b = 1
+	int: a = 0;
+	int: b = 1;
 	while n
 	{
-		const int: tmp = b
-		n = n - 1
-		b = a + b
-		a = tmp
+		const int: tmp = b;
+		n = n - 1;
+		b = a + b;
+		a = tmp;
 	}
-	ret a
+	ret a;
 }

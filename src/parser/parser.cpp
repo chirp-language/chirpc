@@ -43,6 +43,12 @@ void parser::parse()
                 this->tree.fdecls.push_back(std::move(f));
             break;
         }
+        case tkn_type::semi:
+        {
+            // Ignore null top-level declaration
+            skip();
+            break;
+        }
         default:
         {
             this->ok = false;

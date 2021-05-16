@@ -221,6 +221,10 @@ std::vector<token> lexe(std::vector<location> src, std::vector<std::string> cont
         {
             t.type = tkn_type::rbracket;
         }
+        else if (t.value == ";")
+        {
+            t.type = tkn_type::semi;
+        }
         // Other
         else if (all_spaces(t.value))
         {

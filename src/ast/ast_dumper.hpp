@@ -46,6 +46,7 @@ class text_ast_dumper {
     void dump_conditional_stmt(conditional_stmt const&);
     void dump_iteration_stmt(iteration_stmt const&);
     void dump_expr_stmt(expr_stmt const&);
+    void dump_null_stmt(stmt const&); // null_stmt contains no further members
 
     private:
     void write_color(std::string, color);
