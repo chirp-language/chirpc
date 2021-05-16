@@ -146,6 +146,9 @@ int main(int argc, char** argv)
         {
             h.show_output(p, content, options, std::cerr);
         }
+
+        std::cout<<"Could not finish compile, because of error in codegen\n";
+        return -1;
     }
 
     frontend.make_tmp_folder();

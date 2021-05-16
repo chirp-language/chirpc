@@ -7,7 +7,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/chirpc",
             "args": [
-                "test.ch",
+                "samples/invalid.chp",
                 "-dump-tokens",
                 "-dump-ast"
             ],

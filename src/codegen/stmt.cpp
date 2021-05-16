@@ -34,6 +34,32 @@ std::string codegen::emit_var_decl(var_decl const& node)
         this->errored = true;
         return result;
     }
+
+    // Check for invalid type
+    if(node.var_type.basetp == dtypename::_none)
+    {
+        // Checks if it's a pointer.
+        bool is_ptr = false;
+        for(std::byte d : node.var_type.exttp)
+        {
+            if(static_cast<dtypemod>(d) == dtypemod::_ptr)
+            {
+                is_ptr = true;
+                break;
+            }
+        }
+
+        if(!is_ptr)
+        {
+            diagnostic e;
+            e.msg = "Variable cannot be of type `none`, unless a pointer";
+            e.type = diagnostic_type::line_err;
+            e.l = node.loc;
+            this->diagnostics.push_back(std::move(e));
+            this->errored = true;
+            return "/*errored here*/";
+        }
+    }
     
     result += emit_datatype(node.var_type);
     result += " ";

@@ -62,7 +62,7 @@ std::string codegen::emit_datatype(exprtype const& t)
             result += "bool";
             break;
         case dtypename::_none:
-            result += "none";
+            result += "void";
             break;
     }
 
