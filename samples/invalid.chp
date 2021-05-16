@@ -3,5 +3,6 @@
 entry
 {
     none: a
-    float: b = 1230.0gfbd # <-- This one doesn't throw an error yet
+    float: b = 1230.0gfbd # <-- This one, for some reason, gets lexed as an identifier
+    ptr: b # Redefinition
 }

@@ -23,6 +23,7 @@ bool tracker::bind_var(identifier const* name, var_decl const* var)
                 d.type = diagnostic_type::location_note;
                 d.l = it->target->loc;
                 d.msg = "Previous declaration here";
+                diagnostics.show(d);
             }
             return false;
         }
