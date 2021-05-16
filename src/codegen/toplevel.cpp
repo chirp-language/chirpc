@@ -18,11 +18,11 @@ std::string codegen::emit_entry_decl(entry_decl const& e)
 
 void codegen::gen_toplevel()
 {
-    // The entry point will always be the last thing
-    if (m_tree->entry)
-        result += emit_entry_decl(*m_tree->entry);
     for (auto const& d : m_tree->fdecls)
         result += emit_func_decl(*d);
     for (auto const& d : m_tree->fdefs)
         result += emit_func_def(*d);
+    // The entry point will always be the last thing
+    if (m_tree->entry)
+        result += emit_entry_decl(*m_tree->entry);
 }

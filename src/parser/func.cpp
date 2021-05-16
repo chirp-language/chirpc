@@ -23,12 +23,15 @@ parameters parser::get_parameters()
     parameters node;
     expect(tkn_type::lparen);
 
-    do
+    if (!match(tkn_type::rparen))
     {
-        node.body.push_back(get_var_decl());
-    } while (match(tkn_type::comma));
+        do
+        {
+            node.body.push_back(get_var_decl());
+        } while (match(tkn_type::comma));
 
-    expect(tkn_type::rparen);
+        expect(tkn_type::rparen);
+    }
     return node;
 }
 

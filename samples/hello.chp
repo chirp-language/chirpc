@@ -1,17 +1,24 @@
+import "io"
+
+func int util.getrandom()
+
+extern "dlopen" func none ptr dlopen(char const ptr: filename, int: flags)
+extern "stdout" ptr: stdout
+
 entry
 {
 	io.print("Hello, world %d", util.getrandom())
-	int: a
+	int: a = 123
 	ptr: b
-	int: asgdfs = 325 + 123213 / (1345 * 345 + add(2, 3))
+	int: c = 325 + 123213 / (1345 * 345 + add(2, 3))
 	ret 3
 	+ 4
 	a = 5
-	if a + b
+	if a + c
 	{
 		print("Yes")
 	}
-	elif a - b
+	elif a - c
 	{
 		print("Maybe")
 	}

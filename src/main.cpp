@@ -96,6 +96,7 @@ int main(int argc, char** argv)
 
     if (diagnostics.error)
     {
+        std::cerr << "Compilation aborted\n";
         return -1;
     }
 
@@ -131,7 +132,7 @@ int main(int argc, char** argv)
 
     if (generator.errored)
     {
-        std::cerr << "Could not finish compile, because of error in codegen\n";
+        std::cerr << "Compilation aborted, because of error in codegen\n";
         return -1;
     }
 
