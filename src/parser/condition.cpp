@@ -2,9 +2,9 @@
 
 #include "parser.hpp"
 
-std::shared_ptr<conditional_stmt> parser::get_cond()
+nodeh<conditional_stmt> parser::get_cond()
 {
-    auto node = std::make_shared<conditional_stmt>();
+    auto node = new_node<conditional_stmt>();
     node->loc = loc_peekb();
     node->cond = get_expr(true);
     expect(tkn_type::lbrace);
@@ -20,9 +20,9 @@ std::shared_ptr<conditional_stmt> parser::get_cond()
     return node;
 }
 
-std::shared_ptr<iteration_stmt> parser::get_iter()
+nodeh<iteration_stmt> parser::get_iter()
 {
-	auto node = std::make_shared<iteration_stmt>();
+	auto node = new_node<iteration_stmt>();
 	node->loc = loc_peekb();
 	node->cond = get_expr(true);
 	expect(tkn_type::lbrace);

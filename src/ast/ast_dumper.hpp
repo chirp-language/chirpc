@@ -17,6 +17,7 @@ class text_ast_dumper {
     {}
 
     void dump_ast(ast_root const& root);
+    void dump_identifier(identifier const&);
     void dump_expr(expr const& node);
     void dump_decl(decl const& node);
     void dump_stmt(stmt const& node);
@@ -26,7 +27,7 @@ class text_ast_dumper {
     void dump_binop(binop const&);
     void dump_arguments(arguments const&);
     void dump_func_call(func_call const&);
-    void dump_identifier(identifier const&);
+    void dump_id_ref_expr(id_ref_expr const&);
     void dump_loperand(loperand const&) = delete;
     void dump_txt_literal(txt_literal const&);
     void dump_num_literal(num_literal const&);

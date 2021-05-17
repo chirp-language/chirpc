@@ -202,6 +202,26 @@ void text_ast_dumper::dump_ast(ast_root const& root)
     }
 }
 
+void text_ast_dumper::dump_identifier(identifier const& n)
+{
+    std::cout << indent(depth);
+    write_color("identifier ", c_color_identifier);
+    print_location(n.loc);
+    std::cout << " <";
+    int i = 0;
+    for (std::string const& wot : n.namespaces)
+    {
+        std::cout << wot;
+        if (i != n.namespaces.size() - 1)
+        {
+            std::cout << ".";
+        }
+    }
+    std::cout << "> ";
+    std::cout << n.name;
+    std::cout << '\n';
+}
+
 // Dispatch functions
 
 void text_ast_dumper::dump_expr(expr const& node)
@@ -213,7 +233,7 @@ void text_ast_dumper::dump_expr(expr const& node)
                 return dump_txt_literal(static_cast<txt_literal const&>(node));
             return dump_num_literal(static_cast<num_literal const&>(node));
         case optype::ident:
-            return dump_identifier(static_cast<identifier const&>(node));
+            return dump_id_ref_expr(static_cast<id_ref_expr const&>(node));
         case optype::call:
             return dump_func_call(static_cast<func_call const&>(node));
         case optype::op:
@@ -345,23 +365,23 @@ void text_ast_dumper::dump_func_call(func_call const& n)
     --depth;
 }
 
-void text_ast_dumper::dump_identifier(identifier const& n)
+void text_ast_dumper::dump_id_ref_expr(id_ref_expr const& n)
 {
     std::cout << indent(depth);
-    write_color("identifier ", c_color_identifier);
+    write_color("id_ref_expr ", c_color_expr);
     print_location(n.loc);
     std::cout << " <";
     int i = 0;
-    for (std::string const& wot : n.namespaces)
+    for (std::string const& wot : n.ident.namespaces)
     {
         std::cout << wot;
-        if (i != n.namespaces.size() - 1)
+        if (i != n.ident.namespaces.size() - 1)
         {
             std::cout << ".";
         }
     }
     std::cout << "> ";
-    std::cout << n.name;
+    std::cout << n.ident.name;
     std::cout << '\n';
 }
 
@@ -411,7 +431,7 @@ void text_ast_dumper::dump_var_decl(var_decl const& n)
     std::cout << '\n';
     ++depth;
     dump_exprtype(n.var_type);
-    dump_identifier(*n.ident);
+    dump_identifier(n.ident);
     if (n.init)
         dump_expr(*n.init);
     --depth;
@@ -475,7 +495,7 @@ void text_ast_dumper::dump_func_decl(func_decl const& n)
     std::cout << '\n';
     ++depth;
     dump_exprtype(n.data_type);
-    dump_identifier(*n.ident);
+    dump_identifier(n.ident);
     dump_parameters(n.params);
     --depth;
 }
@@ -488,7 +508,7 @@ void text_ast_dumper::dump_func_def(func_def const& n)
     std::cout << '\n';
     ++depth;
     dump_exprtype(n.data_type);
-    dump_identifier(*n.ident);
+    dump_identifier(n.ident);
     dump_parameters(n.params);
     dump_stmt(*n.body);
     --depth;
@@ -513,7 +533,7 @@ void text_ast_dumper::dump_assign_stmt(assign_stmt const& n)
     print_location(n.loc);
     std::cout << '\n';
     ++depth;
-    dump_identifier(*n.ident);
+    dump_identifier(n.ident);
     // TODO: Print variable after analysis
     dump_expr(*n.value);
     --depth;

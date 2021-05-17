@@ -42,7 +42,7 @@ std::string codegen::emit_parameters(parameters const& node)
 
         result += emit_datatype(var.var_type);
         result += " ";
-        result += emit_identifier(*var.ident);
+        result += emit_identifier(var.ident);
     }
 
     result += ')';
@@ -54,7 +54,7 @@ std::string codegen::emit_func_decl(func_decl const& node)
     std::string result;
     result += emit_datatype(node.data_type);
     result += ' ';
-    result += emit_identifier(*node.ident);
+    result += emit_identifier(node.ident);
     result += emit_parameters(node.params);
     result += ";\n";
     return result;
@@ -65,14 +65,14 @@ std::string codegen::emit_func_def(func_def const& node)
     std::string result;
     result += emit_datatype(node.data_type);
     result += ' ';
-    result += emit_identifier(*node.ident);
+    result += emit_identifier(node.ident);
     result += emit_parameters(node.params);
     result += '\n';
     m_tracker->push_scope();
     for (auto const& p : node.params.body)
     {
         auto const& param = *p;
-        if (!m_tracker->bind_var(param.ident.get(), &param))
+        if (!m_tracker->bind_var(&param.ident, &param))
         {
             result = "// declaration error here\n";
             diagnostic e;

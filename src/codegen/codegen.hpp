@@ -1,5 +1,5 @@
 #pragma once
-#include "tracker.hpp"
+#include "../seman/tracker.hpp"
 #include "../ast/ast.hpp"
 #include "../shared/diagnostic.hpp"
 #include <string>
@@ -24,15 +24,14 @@ class codegen
     private:
     diagnostic_manager& diagnostics;
 
+    std::string emit_identifier(identifier const&);
     std::string emit_datatype(exprtype const&);
     std::string emit_expr(expr const&);
     std::string emit_binop(binop const&);
     std::string emit_arguments(arguments const&);
     std::string emit_func_call(func_call const&);
-    std::string emit_identifier(identifier const&);
+    std::string emit_id_ref_expr(id_ref_expr const&);
     std::string emit_literal(literal_node const&);
-    // Reference of an identifier in an expression
-    std::string emit_id_ref_expr(identifier const&);
 
     std::string emit_decl(decl const&);
     std::string emit_var_decl(var_decl const&);

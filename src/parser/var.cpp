@@ -134,9 +134,9 @@ exprtype parser::get_datatype()
     return type;
 }
 
-std::shared_ptr<var_decl> parser::get_var_decl()
+nodeh<var_decl> parser::get_var_decl()
 {
-    auto node = std::make_shared<var_decl>();
+    auto node = new_node<var_decl>();
     node->loc = loc_peek();
     node->var_type = get_datatype();
     expect(tkn_type::colon);
@@ -148,9 +148,9 @@ std::shared_ptr<var_decl> parser::get_var_decl()
     return node;
 }
 
-std::shared_ptr<var_decl> parser::get_parameter()
+nodeh<var_decl> parser::get_parameter()
 {
-    auto node = std::make_shared<var_decl>();
+    auto node = new_node<var_decl>();
     node->loc = loc_peek();
     node->var_type = get_datatype();
     if (match(tkn_type::colon))
@@ -161,9 +161,9 @@ std::shared_ptr<var_decl> parser::get_parameter()
     return node;
 }
 
-std::shared_ptr<assign_stmt> parser::get_assign_stmt()
+nodeh<assign_stmt> parser::get_assign_stmt()
 {
-    auto node = std::make_shared<assign_stmt>();
+    auto node = new_node<assign_stmt>();
     node->loc = loc_peek();
     node->ident = get_identifier();
     expect(tkn_type::assign_op);

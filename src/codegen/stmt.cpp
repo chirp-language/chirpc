@@ -28,7 +28,7 @@ std::string codegen::emit_var_decl(var_decl const& node)
 {
     std::string result;
 
-    if (!m_tracker->bind_var(node.ident.get(), &node))
+    if (!m_tracker->bind_var(&node.ident, &node))
     {
         result = "// declaration error here\n";
         diagnostic e;
@@ -68,7 +68,7 @@ std::string codegen::emit_var_decl(var_decl const& node)
     
     result += emit_datatype(node.var_type);
     result += " ";
-    result += emit_identifier(*node.ident);
+    result += emit_identifier(node.ident);
     if (node.init)
     {
         result += " = ";
@@ -82,7 +82,7 @@ std::string codegen::emit_assign_stmt(assign_stmt const& node)
 {
     std::string result;
 
-    auto var = m_tracker->lookup_var(node.ident.get());
+    auto var = m_tracker->lookup_var(&node.ident);
     if (!var)
     {
         this->errored = true;
@@ -96,7 +96,7 @@ std::string codegen::emit_assign_stmt(assign_stmt const& node)
     }
 
     const_cast<assign_stmt&>(node).target = const_cast<var_decl*>(var); // Keep track of the assigned variable (move to semantic analysis)
-    result += emit_identifier(*node.ident);
+    result += emit_identifier(node.ident);
     result += " = ";
     result += emit_expr(*node.value);
     result += ";\n";

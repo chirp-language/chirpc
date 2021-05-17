@@ -27,7 +27,7 @@ parameters parser::get_parameters()
     {
         do
         {
-            node.body.push_back(get_parameter());
+            node.body.push_back(static_cast<std::unique_ptr<var_decl>>(get_parameter()));
         } while (match(tkn_type::comma));
 
         expect(tkn_type::rparen);
@@ -35,7 +35,7 @@ parameters parser::get_parameters()
     return node;
 }
 
-std::shared_ptr<func_decl> parser::get_func_decl()
+nodeh<func_decl> parser::get_func_decl()
 {
     // Inherited stuff
     auto loc = loc_peekb();
@@ -51,16 +51,16 @@ std::shared_ptr<func_decl> parser::get_func_decl()
     auto params = get_parameters();
     if (!this->ok)
         return nullptr;
-    std::shared_ptr<func_decl> node;
+    nodeh<func_decl> node;
     if (match(tkn_type::lbrace))
     {
-        node = std::make_shared<func_def>();
+        node = new_node<func_def>();
         static_cast<func_def&>(*node).body = get_compound_stmt();
     }
     else
     {
         expect(tkn_type::semi);
-        node = std::make_shared<func_decl>();
+        node = new_node<func_decl>();
     }
     node->loc = loc;
     node->data_type = std::move(data_type);
@@ -117,10 +117,10 @@ arguments parser::get_arguments()
     return node;
 }
 
-std::shared_ptr<func_call> parser::get_fcall(exprh callee)
+nodeh<func_call> parser::get_fcall(exprh callee)
 {
     auto lbeg = callee->loc.begin;
-    auto node = std::make_shared<func_call>(std::move(callee), get_arguments());
+    auto node = new_node<func_call>(std::move(callee), get_arguments());
     node->loc = location_range(lbeg, loc_peekb());
     return node;
 }

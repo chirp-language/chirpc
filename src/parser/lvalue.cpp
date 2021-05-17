@@ -20,23 +20,23 @@ bool parser::is_lvalue()
     return is_lop();
 }
 
-std::shared_ptr<identifier> parser::get_identifier()
+identifier parser::get_identifier()
 {
-    auto node = std::make_shared<identifier>();
-    node->loc = loc_peek();
+    identifier node;
+    node.loc = loc_peek();
     while (match(tkn_type::identifer))
     {
         token const& ns = peekb();
         if (match(tkn_type::period))
         {
-            node->namespaces.push_back(ns.value);
+            node.namespaces.push_back(ns.value);
         }
         else
         {
-            node->name = ns.value;
+            node.name = ns.value;
             break;
         }
     }
-    node->loc.end = loc_peekb();
+    node.loc.end = loc_peekb();
     return node;
 }

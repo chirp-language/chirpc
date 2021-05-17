@@ -38,7 +38,7 @@ void parser::parse()
             skip();
             auto f = get_func_decl();
             if (f->type == decl_type::fdef)
-                this->tree.fdefs.push_back(std::shared_ptr<func_def>(std::move(f), static_cast<func_def*>(f.get())));
+                this->tree.fdefs.push_back(std::unique_ptr<func_def>(static_cast<func_def*>(f.release())));
             else
                 this->tree.fdecls.push_back(std::move(f));
             break;

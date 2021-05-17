@@ -94,7 +94,7 @@ exprh parser::get_subexpr_op(exprh lhs, int max_prec)
         }
         auto lbeg = lhs->loc.begin;
         auto lend = rhs->loc.end;
-        lhs = std::make_shared<binop>(optype, std::move(lhs), std::move(rhs));
+        lhs = new_node<binop>(optype, std::move(lhs), std::move(rhs));
         lhs->loc = location_range(lbeg, lend);
         static_cast<binop&>(*lhs).op_loc = lop;
     }
@@ -107,7 +107,7 @@ exprh parser::get_primary_expr()
 
     if (is_identifier())
     {
-        return get_identifier();
+        return id_ref_expr::from(get_identifier());
     }
     else if (probe(tkn_type::literal))
     {
