@@ -95,6 +95,7 @@ std::shared_ptr<extern_decl> parser::get_extern()
     {
         node->inner_decl = get_var_decl();
     }
+    
     node->loc.end = loc_peekb();
     return node;
 }

@@ -135,7 +135,7 @@ std::vector<token> lexe(std::vector<location> src, std::vector<std::string> cont
             t.value == "int"   || t.value == "char"   ||
             t.value == "float" || t.value == "double" ||
             t.value == "byte"  || t.value == "bool"   ||
-            t.value == "none")
+            t.value == "long"  || t.value == "none")
         {
             t.type = tkn_type::datatype;
         }
