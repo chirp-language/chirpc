@@ -3,16 +3,9 @@
 std::string codegen::emit_entry_decl(entry_decl const& e)
 {
     std::string result;
-    if (m_tracker->request_entry())
-    {
-        result += "// Reminder this doesn't check for an existing int main().\n";
-        result += "int main()";
-        result += emit_compound_stmt(static_cast<compound_stmt const&>(*e.code));
-    }
-    else
-    {
-        result += "// Error here\n";
-    }
+    result += "// Reminder this doesn't check for an existing int main().\n";
+    result += "int main()";
+    result += emit_compound_stmt(static_cast<compound_stmt const&>(*e.code));
     return result;
 }
 

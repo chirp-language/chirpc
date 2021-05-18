@@ -12,6 +12,7 @@
 constexpr color c_color_top_level = color::blue | color::bright | color::bold;
 constexpr color c_color_top_level_unavail = color::red | color::bright | color::bold;
 constexpr color c_color_type = color::green;
+constexpr color c_color_type_cat = color::green | color::blue;
 constexpr color c_color_expr = color::blue | color::bright | color::bold;
 constexpr color c_color_decl = color::green | color::bright | color::bold;
 constexpr color c_color_stmt = color::red | color::blue | color::bright | color::bold;
@@ -82,7 +83,6 @@ std::string dump_dtname(dtypename n)
 
 std::string dump_dtmod(dtypemod m)
 {
-    std::string result;
     switch (m)
     {
     case dtypemod::_ptr:
@@ -97,6 +97,21 @@ std::string dump_dtmod(dtypemod m)
         return "func";
     default:
         return "<invalid mod>";
+    }
+}
+
+std::string dump_dtcat(opcat c)
+{
+    switch (c)
+    {
+        case opcat::unset:
+            return "unset";
+        case opcat::lval:
+            return "lvalue";
+        case opcat::rval:
+            return "rvalue";
+        case opcat::error:
+            return "error";
     }
 }
 
@@ -138,7 +153,7 @@ std::string exprop_id(exprop op)
     return result;
 }
 
-// === AST UTIL DUMPS ===
+// AST util dumps
 
 void text_ast_dumper::dump_ast(ast_root const& root)
 {
@@ -290,12 +305,14 @@ void text_ast_dumper::dump_stmt(stmt const& node)
     }
 }
 
-
+// Expressions
 
 void text_ast_dumper::dump_exprtype(exprtype const& t)
 {
     std::cout << indent(depth);
-    std::cout << "data_type\n";
+    std::cout << "data_type ";
+    write_color(dump_dtcat(t.cattp), c_color_type_cat);
+    std::cout << '\n';
     std::cout << indent(depth + 1);
     std::cout << "typename ";
     write_color(dump_dtname(t.basetp), c_color_type);
@@ -330,11 +347,9 @@ void text_ast_dumper::dump_binop(binop const& n)
     print_location(n.op_loc);
     std::cout << '\n';
     ++depth;
-    std::cout << indent(depth);
-    std::cout << "left:\n";
+    if (show_expr_types)
+        dump_exprtype(n.type);
     dump_expr(*n.left);
-    std::cout << indent(depth);
-    std::cout << "right:\n";
     dump_expr(*n.right);
     --depth;
 }
@@ -360,6 +375,8 @@ void text_ast_dumper::dump_func_call(func_call const& n)
     print_location(n.loc);
     std::cout << '\n';
     ++depth;
+    if (show_expr_types)
+        dump_exprtype(n.type);
     dump_expr(*n.callee);
     dump_arguments(n.args);
     --depth;
@@ -383,6 +400,12 @@ void text_ast_dumper::dump_id_ref_expr(id_ref_expr const& n)
     std::cout << "> ";
     std::cout << n.ident.name;
     std::cout << '\n';
+    if (show_expr_types)
+    {
+        ++depth;
+        dump_exprtype(n.type);
+        --depth;
+    }
 }
 
 /*void text_ast_dumper::dump_loperand(loperand const& n)
@@ -410,6 +433,12 @@ void text_ast_dumper::dump_txt_literal(txt_literal const& n)
     std::cout << '"';
     std::cout << n.value;
     std::cout << "\";\n";
+    if (show_expr_types)
+    {
+        ++depth;
+        dump_exprtype(n.type);
+        --depth;
+    }
 }
 
 void text_ast_dumper::dump_num_literal(num_literal const& n)
@@ -420,8 +449,15 @@ void text_ast_dumper::dump_num_literal(num_literal const& n)
     std::cout << ' ';
     std::cout << n.value;
     std::cout << ";\n";
+    if (show_expr_types)
+    {
+        ++depth;
+        dump_exprtype(n.type);
+        --depth;
+    }
 }
 
+// Declarations
 
 void text_ast_dumper::dump_var_decl(var_decl const& n)
 {
@@ -514,6 +550,7 @@ void text_ast_dumper::dump_func_def(func_def const& n)
     --depth;
 }
 
+// Statements
 
 void text_ast_dumper::dump_decl_stmt(decl_stmt const& n)
 {

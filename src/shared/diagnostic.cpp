@@ -84,6 +84,12 @@ void diagnostic_manager::show(diagnostic const& d)
         if (loc_prov && current_source)
         {
             location const& tloc = loc_prov->get_loc(d.l.begin);
+            location tloce = loc_prov->get_loc(d.l.end);
+            if (tloce.line != tloc.line)
+            {
+                tloce = tloc;
+                tloce.len = current_source->at(tloce.line).size() - tloce.start;
+            }
             os << "In ";
             os << loc_prov->print_loc(d.l);
 
@@ -92,18 +98,18 @@ void diagnostic_manager::show(diagnostic const& d)
             if (tloc.line - 1 >= 0 && is_important(current_source->at(tloc.line + 1)))
             {
                 //os << "    | ";
-                os << get_spacing(tloc.line - 1);
+                os << get_spacing(tloc.line);
                 os << replace_tabs(current_source->at(tloc.line - 1));
                 os << "\n    | \n";
             }
 
             if (has_color)
             {
-                os << apply_color(get_spacing(tloc.line, '>'), color::red | color::green | color::bright | color::bold);
+                os << apply_color(get_spacing(tloc.line + 1, '>'), color::red | color::green | color::bright | color::bold);
             }
             else
             {
-                os << get_spacing(tloc.line, '>');
+                os << get_spacing(tloc.line + 1, '>');
             }
             os << replace_tabs(current_source->at(tloc.line));
             os << '\n';
@@ -120,7 +126,7 @@ void diagnostic_manager::show(diagnostic const& d)
                     else
                         indentation += ' ';
                 }
-                for (int i = 0; i < tloc.len; i++)
+                for (int i = 0; i < tloce.len + tloce.start - tloc.start; i++)
                 {
                     if (line[tloc.start + i] == '\t')
                         indentation += "^^^^";
@@ -140,7 +146,7 @@ void diagnostic_manager::show(diagnostic const& d)
             if (tloc.line + 1 < current_source->size() && is_important(current_source->at(tloc.line + 1)))
             {
                 //os << "    | ";
-                os << get_spacing(tloc.line + 1);
+                os << get_spacing(tloc.line + 2);
                 os << replace_tabs(current_source->at(tloc.line + 1));
                 os << '\n';
             }

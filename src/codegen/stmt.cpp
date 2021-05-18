@@ -27,45 +27,6 @@ std::string codegen::emit_decl(decl const& node)
 std::string codegen::emit_var_decl(var_decl const& node)
 {
     std::string result;
-
-    if (!m_tracker->bind_var(&node.ident, &node))
-    {
-        result = "// declaration error here\n";
-        diagnostic e;
-        e.l = node.loc;
-        e.msg = "A variable with the same name already exists";
-        e.type = diagnostic_type::location_err;
-        this->diagnostics.show(e);
-        this->errored = true;
-        return result;
-    }
-
-    // Check for invalid type
-    if(node.var_type.basetp == dtypename::_none)
-    {
-        // Checks if it's a pointer.
-        bool is_ptr = false;
-        for(std::byte d : node.var_type.exttp)
-        {
-            if(static_cast<dtypemod>(d) == dtypemod::_ptr)
-            {
-                is_ptr = true;
-                break;
-            }
-        }
-
-        if(!is_ptr)
-        {
-            diagnostic e;
-            e.msg = "Variable cannot be of type `none`, unless a pointer";
-            e.type = diagnostic_type::location_err;
-            e.l = node.loc;
-            this->diagnostics.show(e);
-            this->errored = true;
-            return "/*errored here*/";
-        }
-    }
-    
     result += emit_datatype(node.var_type);
     result += " ";
     result += emit_identifier(node.ident);
@@ -81,21 +42,6 @@ std::string codegen::emit_var_decl(var_decl const& node)
 std::string codegen::emit_assign_stmt(assign_stmt const& node)
 {
     std::string result;
-
-    auto var = m_tracker->lookup_var(&node.ident);
-    if (!var)
-    {
-        this->errored = true;
-        result += "// error here\n";
-        diagnostic e;
-        e.l = node.loc;
-        e.msg = "Cannot assign to a non-existant variable";
-        e.type = diagnostic_type::location_err;
-        this->diagnostics.show(e);
-        return result;
-    }
-
-    const_cast<assign_stmt&>(node).target = const_cast<var_decl*>(var); // Keep track of the assigned variable (move to semantic analysis)
     result += emit_identifier(node.ident);
     result += " = ";
     result += emit_expr(*node.value);
@@ -150,14 +96,12 @@ std::string codegen::emit_compound_stmt(compound_stmt const& cstmt)
 {
     std::string result;
     result += "{\n";
-    this->m_tracker->push_scope();
-    
+
     for (auto& s : cstmt.body)
     {
         result += emit_stmt(*s);
     }
-    
-    this->m_tracker->pop_scope();
+
     result += "}\n";
     return result;
 }

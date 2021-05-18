@@ -1,4 +1,5 @@
-func int fib(int: n) {
+func int fib(int: n)
+{
 	int: a = 0;
 	int: b = 1;
 	while n
@@ -9,4 +10,12 @@ func int fib(int: n) {
 		a = tmp;
 	}
 	ret a;
+}
+
+import "io"
+func none io.print(char const ptr: msg, int: param);
+
+entry
+{
+	io.print("Result of fib(5): ", fib(5));
 }

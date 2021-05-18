@@ -144,9 +144,10 @@ enum class optype
 
 enum class opcat
 {
-    unset = 1, // unknown/unassigned type
-    lval = 2, // lvalue, i.e. has location
-    pval = 4, // pvalue, i.e. a loose value (not tied to any object)
+    unset, // unknown/unassigned type
+    lval, // lvalue, i.e. has location
+    rval, // rvalue, i.e. a pure value (not tied to any object)
+    error, // result of an invalid operation
 };
 
 struct exprtype
@@ -154,6 +155,9 @@ struct exprtype
     dtypename basetp;
     opcat cattp;
     std::vector<std::byte> exttp; // Enums are cast to/from a byte bc why not
+
+    exprtype()
+        : basetp(dtypename::_none), cattp(opcat::unset) {}
 };
 
 class expr : public ast_node
@@ -166,7 +170,7 @@ class expr : public ast_node
 
     protected:
     expr(optype kind)
-        : type{}, kind(kind) {}
+        : kind(kind) {}
 };
 
 // Operator
@@ -223,7 +227,7 @@ class id_ref_expr : public expr
 {
     public:
     identifier ident;
-    decl* target = nullptr;
+    decl const* target = nullptr;
 
     id_ref_expr(identifier ident)
         : expr(optype::ident), ident(std::move(ident))
@@ -406,7 +410,7 @@ class assign_stmt : public stmt
 {
     public:
     identifier ident;
-    var_decl* target = nullptr;
+    var_decl const* target = nullptr;
     exprh value;
 
     assign_stmt() : stmt(stmt_type::assign) {}

@@ -68,23 +68,6 @@ std::string codegen::emit_func_def(func_def const& node)
     result += emit_identifier(node.ident);
     result += emit_parameters(node.params);
     result += '\n';
-    m_tracker->push_scope();
-    for (auto const& p : node.params.body)
-    {
-        auto const& param = *p;
-        if (!m_tracker->bind_var(&param.ident, &param))
-        {
-            result = "// declaration error here\n";
-            diagnostic e;
-            e.l = param.loc;
-            e.msg = "A parameter with the same name already exists";
-            e.type = diagnostic_type::location_err;
-            this->diagnostics.show(e);
-            this->errored = true;
-            return result;
-        }
-    }
     result += emit_compound_stmt(*node.body);
-    m_tracker->pop_scope();
     return result;
 }

@@ -1,6 +1,7 @@
 import "io"
 
 func int util.getrandom();
+func none io.print(char const ptr: msg);
 
 extern "dlopen" func none ptr dlopen(char const ptr: filename, int: flags);
 extern "stdout" ptr: stdout;
@@ -10,9 +11,7 @@ entry
 	io.print("Hello, world %d", util.getrandom());
 	int: a = 123;
 	ptr: b;
-	int: c = 325 + 123213 / (1345 * 345 + add(2, 3));
-	ret 3
-	+ 4;
+	int: c = 325 + 123213 / (1345 * 345 + util.add(2, 3));
 	a = 5; ; # Null statement
 	if a + c
 	{

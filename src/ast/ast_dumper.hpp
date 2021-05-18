@@ -8,12 +8,13 @@ enum class color;
 
 class text_ast_dumper {
     bool has_colors;
+    bool show_expr_types;
     int depth = 0;
     location_provider* loc_prov;
 
     public:
-    text_ast_dumper(bool enable_colors, location_provider* loc_prov = nullptr)
-        : has_colors(enable_colors), loc_prov(loc_prov)
+    text_ast_dumper(bool enable_colors, bool show_expr_types, location_provider* loc_prov = nullptr)
+        : has_colors(enable_colors), show_expr_types(show_expr_types), loc_prov(loc_prov)
     {}
 
     void dump_ast(ast_root const& root);

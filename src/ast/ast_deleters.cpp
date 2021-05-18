@@ -46,24 +46,24 @@ void decl_node_deleter::operator()(decl* node) const
 void stmt_node_deleter::operator()(stmt* node) const
 {
 	switch (node->type)
-    {
-        case stmt_type::decl:
-            return delete static_cast<decl_stmt*>(node);
-        case stmt_type::assign:
-            return delete static_cast<assign_stmt*>(node);
-        case stmt_type::compound:
-            return delete static_cast<compound_stmt*>(node);
-        case stmt_type::ret:
-            return delete static_cast<ret_stmt*>(node);
-        case stmt_type::conditional:
-            return delete static_cast<conditional_stmt*>(node);
-        case stmt_type::iteration:
-            return delete static_cast<iteration_stmt*>(node);
-        case stmt_type::expr:
-            return delete static_cast<expr_stmt*>(node);
-        case stmt_type::null:
-            return delete static_cast<null_stmt*>(node);
-        default:
-            return;
-    }
+	{
+		case stmt_type::decl:
+			return delete static_cast<decl_stmt*>(node);
+		case stmt_type::assign:
+			return delete static_cast<assign_stmt*>(node);
+		case stmt_type::compound:
+			return delete static_cast<compound_stmt*>(node);
+		case stmt_type::ret:
+			return delete static_cast<ret_stmt*>(node);
+		case stmt_type::conditional:
+			return delete static_cast<conditional_stmt*>(node);
+		case stmt_type::iteration:
+			return delete static_cast<iteration_stmt*>(node);
+		case stmt_type::expr:
+			return delete static_cast<expr_stmt*>(node);
+		case stmt_type::null:
+			return delete static_cast<null_stmt*>(node);
+		default:
+			return;
+	}
 }

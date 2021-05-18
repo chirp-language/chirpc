@@ -6,12 +6,12 @@
 #include "../ast/ast.hpp"
 #include "../shared/diagnostic.hpp"
 
-// Tracked variable, can go out of scope
-class tracked_var
+// Tracked symbol, can go out of scope
+class tracked_sym
 {
     public:
     identifier const* name;
-    var_decl const* target;
+    decl const* target;
     unsigned int depth;
 };
 
@@ -27,25 +27,27 @@ class tracker
     tracker(diagnostic_manager& diag)
         : diagnostics(diag) {}
 
-    // Returns true if a variable with same name DOESN'T exist
+    // Returns true if a symbol with same name DOESN'T exist
     // Return false otherwise
-    bool bind_var(identifier const* name, var_decl const* var);
+    bool bind_sym(identifier const* name, decl const* target);
 
-    // If var doesn't exist, returns nullptr
-    var_decl const* lookup_var(identifier const* name) const;
+    // Binds a new symbol regardless of whether it's present in the current scope
+    void push_sym_unsafe(identifier const* name, decl const* target);
+
+    // Searches a symbol with the same name in current scope only
+    // Returns nullptr if symbol is not found
+    tracked_sym* find_sym_cur(identifier const* name);
+
+    // If symbol doesn't exist, returns nullptr
+    decl const* lookup_sym(identifier const* name) const;
+
+    // Get's deeper in the scope
+    void push_scope();
 
     // Get's out of the current scope
     // and check for variabless that are deeper then
     // current scope, and deletes them.
-    void push_scope();
-
-    // Get's deeper in the scope
     void pop_scope();
-
-    // If called and no entry exists, will set the entry_set flag
-    // Returns false if an entry existed before
-    // Returns true if no entry existed before
-    bool request_entry();
 
     private:
     // Depth in the scope
@@ -54,7 +56,7 @@ class tracker
     bool entry_set = false;
 
     // Keeps track of all the variables
-    std::vector<tracked_var> vars;
+    std::vector<tracked_sym> syms;
 
     diagnostic_manager& diagnostics;
 };

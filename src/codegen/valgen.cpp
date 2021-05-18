@@ -15,14 +15,6 @@ std::string codegen::emit_identifier(identifier const& ident)
 
 std::string codegen::emit_id_ref_expr(id_ref_expr const& node)
 {
-    if (!ignore_unresolved_refs && !m_tracker->lookup_var(&node.ident))
-    {
-        diagnostic d;
-        d.type = diagnostic_type::location_warning;
-        d.l = node.loc;
-        d.msg = "Referenced an undefined variable or a global function/variable (TODO)";
-        diagnostics.show(d);
-    }
     return emit_identifier(node.ident);
 }
 

@@ -11,13 +11,11 @@ class codegen
     void gen();
 
     void set_tree(ast_root*, std::string);
-    void set_tracker(tracker*);
-    
+
     // The name is pretty bad ngl
     std::string&& get_result();
 
     bool errored = false;
-    bool ignore_unresolved_refs = false;
 
     codegen(diagnostic_manager& diag)
         : diagnostics(diag) {}
@@ -50,7 +48,6 @@ class codegen
     void gen_toplevel();
 
     ast_root* m_tree;
-    tracker* m_tracker;
     std::string result;
     std::string filename;
 };
