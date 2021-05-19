@@ -351,74 +351,44 @@ std::vector<token> lexer::lex(std::vector<location> const& src)
         t.value = token_value(source, loc);
 
         // Keywords
-        if (t.value == "entry")
-        {
-            t.type = tkn_type::kw_entry;
-        }
-        else if (t.value == "import")
-        {
-            t.type = tkn_type::kw_import;
-        }
-        else if (t.value == "export")
-        {
-            t.type = tkn_type::kw_export;
-        }
-        else if (t.value == "if")
-        {
-            t.type = tkn_type::kw_if;
-        }
-        else if (t.value == "else")
-        {
-            t.type = tkn_type::kw_else;
-        }
-        else if (t.value == "elif")
-        {
-            t.type = tkn_type::kw_elif;
-        }
-        else if (t.value == "and")
-        {
-            t.type = tkn_type::kw_and;
-        }
-        else if (t.value == "or")
-        {
-            t.type = tkn_type::kw_or;
-        }
-        else if (t.value == "func")
-        {
-            t.type = tkn_type::kw_func;
-        }
-        else if (t.value == "while")
-        {
-            t.type = tkn_type::kw_while;
-        }
-        else if (t.value == "for")
-        {
-            t.type = tkn_type::kw_for;
-        }
-        else if (t.value == "ret")
-        {
-            t.type = tkn_type::kw_ret;
-        }
-        else if (t.value == "extern")
-        {
-            t.type = tkn_type::kw_extern;
-        }
-        else if (
-            t.value == "int"   || t.value == "char"   ||
-            t.value == "float" || t.value == "double" ||
-            t.value == "byte"  || t.value == "bool"   ||
-            t.value == "none")
-        {
-            t.type = tkn_type::datatype;
-        }
-        else if (
-            t.value == "ptr"      || t.value == "signed" ||
-            t.value == "unsigned" || t.value == "const")
-        {
-            t.type = tkn_type::datamod;
-        }
+        #define MATCH(v, s) \
+            if (t.value == v)\
+                t.type = s;\
+            else
+        #define MATCH_KW(v) MATCH(#v, tkn_type::kw_##v)
+        MATCH_KW(entry)
+        MATCH_KW(import)
+        MATCH_KW(export)
+        MATCH_KW(if)
+        MATCH_KW(else)
+        MATCH_KW(elif)
+        MATCH_KW(and)
+        MATCH_KW(or)
+        MATCH_KW(func)
+        MATCH_KW(while)
+        MATCH_KW(for)
+        MATCH_KW(ret)
+        MATCH_KW(extern)
+        #undef MATCH_KW
+        // Types
+        #define MATCH_DT(v) MATCH(#v, tkn_type::dt_##v)
+        MATCH_DT(int)
+        MATCH_DT(char)
+        MATCH_DT(float)
+        MATCH_DT(double)
+        MATCH_DT(byte)
+        MATCH_DT(bool)
+        MATCH_DT(none)
+        #undef MATCH_DT
+        #define MATCH_DM(v) MATCH(#v, tkn_type::dm_##v)
+        MATCH_DM(ptr)
+        MATCH_DM(signed)
+        MATCH_DM(unsigned)
+        MATCH_DM(const)
+        #undef MATCH_DM
+        #undef MATCH
         // Symbols
-        else if (t.loc.len == 1)
+        /*else*/ if (t.loc.len == 1)
         {
             switch (t.value.at(0))
             {
@@ -430,11 +400,11 @@ std::vector<token> lexer::lex(std::vector<location> const& src)
                 CASE(':', tkn_type::colon)
                 CASE(',', tkn_type::comma)
                 CASE('=', tkn_type::assign_op)
-                CASE('+', tkn_type::math_op)
-                CASE('-', tkn_type::math_op)
-                CASE('*', tkn_type::math_op)
-                CASE('/', tkn_type::math_op)
-                CASE('%', tkn_type::math_op)
+                CASE('+', tkn_type::plus_op)
+                CASE('-', tkn_type::minus_op)
+                CASE('*', tkn_type::star_op)
+                CASE('/', tkn_type::slash_op)
+                CASE('%', tkn_type::perc_op)
                 CASE('(', tkn_type::lparen)
                 CASE(')', tkn_type::rparen)
                 CASE('{', tkn_type::lbrace)
@@ -450,10 +420,10 @@ std::vector<token> lexer::lex(std::vector<location> const& src)
         {
             switch (t.value.at(0))
             {
-                CASE('<', tkn_type::cmp_op)
-                CASE('>', tkn_type::cmp_op)
-                CASE('!', tkn_type::cmp_op)
-                CASE('=', tkn_type::cmp_op)
+                CASE('<', tkn_type::lteq_op)
+                CASE('>', tkn_type::gteq_op)
+                CASE('!', tkn_type::noteq_op)
+                CASE('=', tkn_type::eqeq_op)
                 CASE('+', tkn_type::assign_op)
                 CASE('-', tkn_type::assign_op)
                 CASE('*', tkn_type::assign_op)

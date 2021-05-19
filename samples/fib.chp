@@ -2,7 +2,7 @@ func int fib(int: n)
 {
 	int: a = 0;
 	int: b = 1;
-	while n
+	while n != 0
 	{
 		const int: tmp = b;
 		n = n - 1;

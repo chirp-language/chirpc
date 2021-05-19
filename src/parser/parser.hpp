@@ -35,6 +35,7 @@ private:
 
     bool match(tkn_type);
     bool probe(tkn_type); // Like match, but not consuming
+    bool probe_range(tkn_type begin, tkn_type end); // begin <= probe() <= end
     bool expect(tkn_type);
 
     token_location loc_peek()
@@ -68,12 +69,13 @@ private:
 
     // Actual parser stuff
 
-    bool is_operand();
-
+    bool is_binop();
     bool is_identifier();
     bool is_lop(); // left operand
     bool is_lvalue();
     bool is_datatype();
+    bool is_datamod();
+    bool is_type();
 
     bool is_params();
 

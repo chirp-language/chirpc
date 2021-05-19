@@ -174,25 +174,15 @@ class expr : public ast_node
 };
 
 // Operator
-enum class exprop : short {
-    none = 0,
-    as = -1,
-    deref = -2,
-    ref = -3,
-    call = -4,
-};
-
-std::string exprop_id(exprop op);
-
 class binop : public expr
 {
     public:
-    exprop op;
+    tkn_type op;
     token_location op_loc;
     exprh left;
     exprh right;
 
-    binop(exprop op, exprh l, exprh r)
+    binop(tkn_type op, exprh l, exprh r)
         : expr(optype::op), op(op), left(std::move(l)), right(std::move(r)) {}
 };
 

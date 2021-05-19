@@ -80,13 +80,12 @@ bool parser::match(tkn_type v)
 
 bool parser::probe(tkn_type v)
 {
-    // Probably good enough to stop like 99% of bad behaviour
-    if (!this->ok)
-    {
-        return false;
-    }
+    return peek().type == v;
+}
 
-    return this->peek().type == v;
+bool parser::probe_range(tkn_type begin, tkn_type end)
+{
+    return peek().type >= begin and peek().type <= end;
 }
 
 bool parser::expect(tkn_type v)

@@ -19,7 +19,7 @@ constexpr color c_color_stmt = color::red | color::blue | color::bright | color:
 constexpr color c_color_identifier = color::blue | color::bright;
 constexpr color c_color_location = color::red | color::green;
 
-std::string indent(int x)
+static std::string indent(int x)
 {
     std::string result;
     result.resize(x * 3, ' ');
@@ -58,7 +58,7 @@ void text_ast_dumper::print_location(location_range loc) {
 }
 
 // I don't even care about names now
-std::string dump_dtname(dtypename n)
+static std::string dump_dtname(dtypename n)
 {
     switch (n)
     {
@@ -81,7 +81,7 @@ std::string dump_dtname(dtypename n)
     }
 }
 
-std::string dump_dtmod(dtypemod m)
+static std::string dump_dtmod(dtypemod m)
 {
     switch (m)
     {
@@ -100,7 +100,7 @@ std::string dump_dtmod(dtypemod m)
     }
 }
 
-std::string dump_dtcat(opcat c)
+static std::string dump_dtcat(opcat c)
 {
     switch (c)
     {
@@ -113,44 +113,44 @@ std::string dump_dtcat(opcat c)
         case opcat::error:
             return "error";
     }
+    __builtin_unreachable();
 }
 
-std::string exprop_id(exprop op)
+std::string exprop_id(tkn_type op)
 {
-    std::string result;
-    result = "(";
     switch (op)
     {
-    case static_cast<exprop>('+'):
-        result += "add";
-        break;
-    case static_cast<exprop>('-'):
-        result += "sub";
-        break;
-    case static_cast<exprop>('/'):
-        result += "div";
-        break;
-    case static_cast<exprop>('*'):
-        result += "mult";
-        break;
-    case exprop::deref:
-        result += "deref";
-        break;
-    case exprop::ref:
-        result += "ref";
-        break;
-    case exprop::as:
-        result += "as";
-        break;
-    case exprop::call:
-        result += "call";
-        break;
-    case exprop::none:
+    case tkn_type::lt_op:
+        return "<";
+    case tkn_type::gt_op:
+        return ">";
+    case tkn_type::lteq_op:
+        return "<=";
+    case tkn_type::gteq_op:
+        return ">=";
+    case tkn_type::eqeq_op:
+        return "==";
+    case tkn_type::noteq_op:
+        return "!=";
+    case tkn_type::plus_op:
+        return "+";
+    case tkn_type::minus_op:
+        return "-";
+    case tkn_type::star_op:
+        return "*";
+    case tkn_type::slash_op:
+        return "/";
+    case tkn_type::perc_op:
+        return "%";
+    case tkn_type::as_op:
+        return "as";
+    case tkn_type::ref_op:
+        return "ref";
+    case tkn_type::deref_op:
+        return "deref";
     default:
-        result += "invalid";
+        return "invalid";
     }
-    result += ")";
-    return result;
 }
 
 // AST util dumps
@@ -341,11 +341,11 @@ void text_ast_dumper::dump_binop(binop const& n)
     std::cout << indent(depth);
     write_color("binop ", c_color_expr);
     print_location(n.loc);
-    std::cout << ' ';
+    std::cout << " (";
     std::cout << exprop_id(n.op);
     std::cout << ' ';
     print_location(n.op_loc);
-    std::cout << '\n';
+    std::cout << ")\n";
     ++depth;
     if (show_expr_types)
         dump_exprtype(n.type);

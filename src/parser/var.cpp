@@ -84,12 +84,22 @@ dtypemod parser::get_dtypemod(std::string const& txt)
 
 bool parser::is_datatype()
 {
-    return probe(tkn_type::datamod) || probe(tkn_type::datatype);
+    return probe_range(tkn_type::datatype_S, tkn_type::datatype_E);
+}
+
+bool parser::is_datamod()
+{
+    return probe_range(tkn_type::datamod_S, tkn_type::datamod_E);
+}
+
+bool parser::is_type()
+{
+    return is_datatype() or is_datamod();
 }
 
 bool parser::is_var_decl()
 {
-    return is_datatype();
+    return is_type();
 }
 
 bool parser::is_var_assign()
@@ -103,32 +113,35 @@ exprtype parser::get_datatype()
     exprtype type;
     bool has_candidate = false;
     //  Mods before the typename
-    while (match(tkn_type::datamod))
+    while (is_datamod())
     {
-        type.exttp.push_back(static_cast<std::byte>(get_dtypemod(peekb().value)));
+        type.exttp.push_back(static_cast<std::byte>(get_dtypemod(peek().value)));
 
-        if (static_cast<dtypemod>(get_dtypemod(peekb().value)) == dtypemod::_ptr)
+        if (static_cast<dtypemod>(get_dtypemod(peek().value)) == dtypemod::_ptr)
             has_candidate = true;
+        skip();
     }
 
     // Could also be a token identifier, but we don't care about that yet
-    if (!match(tkn_type::datatype))
+    if (!is_datatype())
     {
         if (has_candidate)
             type.basetp = dtypename::_none;
     }
     else
     {
-        type.basetp = get_dtypename(this->peekb().value);
+        type.basetp = get_dtypename(peek().value);
+        skip();
     }
     if (!this->ok)
     {
         return type;
     }
     // Mods after the typename
-    while (match(tkn_type::datamod))
+    while (is_datamod())
     {
-        type.exttp.push_back(static_cast<std::byte>(get_dtypemod(peekb().value)));
+        type.exttp.push_back(static_cast<std::byte>(get_dtypemod(peek().value)));
+        skip();
     }
     // expect(tkn_type::colon);
     return type;

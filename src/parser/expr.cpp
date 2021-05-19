@@ -2,16 +2,14 @@
 // DeKrain's Improved Expression Parsing "Algorithm"® a.k.a. Operator-precedence parser
 #include "parser.hpp"
 
-bool parser::is_operand()
+bool parser::is_binop()
 {
     return (
         is_identifier()            ||
-        probe(tkn_type::literal)    ||
-        probe(tkn_type::math_op)    ||
-        probe(tkn_type::deref_op)   ||
-        probe(tkn_type::ref_op)     ||
-        probe(tkn_type::as_op)      ||
-        probe(tkn_type::lparen)     ||
+        probe(tkn_type::literal)   ||
+        probe_range(tkn_type::binop_S,
+            tkn_type::binop_E)     ||
+        probe(tkn_type::lparen)    ||
         probe(tkn_type::rparen));
 }
 
@@ -21,75 +19,68 @@ enum class precedence_class {
     ref,
     prod,
     sum,
+    as,
+    cmp,
     comma,
 };
 
-static int get_operator_precedence(exprop op)
+static int get_operator_precedence(tkn_type op)
 {
     // TODO: Use map
     switch (op) {
-        case exprop::call:
+        case tkn_type::lparen:
             return static_cast<int>(precedence_class::fcall);
-        case exprop::as:
-        case exprop::deref:
-        case exprop::ref:
+        case tkn_type::ref_op:
+        case tkn_type::deref_op:
             return static_cast<int>(precedence_class::ref);
-        case static_cast<exprop>('*'):
-        case static_cast<exprop>('/'):
+        case tkn_type::as_op:
+            return static_cast<int>(precedence_class::as);
+        case tkn_type::star_op:
+        case tkn_type::slash_op:
+        case tkn_type::perc_op:
             return static_cast<int>(precedence_class::prod);
-        case static_cast<exprop>('+'):
-        case static_cast<exprop>('-'):
+        case tkn_type::plus_op:
+        case tkn_type::minus_op:
             return static_cast<int>(precedence_class::sum);
+        case tkn_type::lt_op:
+        case tkn_type::gt_op:
+        case tkn_type::lteq_op:
+        case tkn_type::gteq_op:
+        case tkn_type::eqeq_op:
+        case tkn_type::noteq_op:
+            return static_cast<int>(precedence_class::cmp);
     }
-    return -1;
+    return -1u >> 1;
 }
 
-static exprop get_operator_type(token const& t)
+static bool is_operator(tkn_type t)
 {
-    switch (t.type)
-    {
-        case tkn_type::math_op:
-            return static_cast<exprop>(static_cast<unsigned char>(t.value.front()));
-        case tkn_type::as_op:
-            return exprop::as;
-        case tkn_type::deref_op:
-            return exprop::deref;
-        case tkn_type::ref_op:
-            return exprop::ref;
-        case tkn_type::lparen:
-            return exprop::call;
-        case tkn_type::cmp_op:
-            // TODO
-        case tkn_type::assign_op:
-            // TODO
-        case tkn_type::comma:
-            // TODO: Comma expression OR list element
-        case tkn_type::period:
-            // TODO: Member access ig
-        default:
-            return exprop::none;
-    }
+    return (
+        t >= tkn_type::binop_S and t <= tkn_type::binop_E or
+        t == tkn_type::as_op or t == tkn_type::ref_op or
+        t == tkn_type::lparen // func_call
+    );
 }
 
 exprh parser::get_subexpr_op(exprh lhs, int max_prec)
 {
-    exprop optype;
+    tkn_type optype;
 
-    while ((optype = get_operator_type(peek())) != exprop::none)
+    while (is_operator(optype = peek().type))
     {
         auto lop = loc_peek();
         skip();
         int pr = get_operator_precedence(optype);
         if (pr > max_prec)
             return lhs;
-        if (optype == exprop::call) {
+        if (optype == tkn_type::lparen) {
             // Parse arguments and combine
             lhs = get_fcall(std::move(lhs));
             continue;
         }
         exprh rhs = get_primary_expr();
-        exprop tmpop;
-        while (tmpop = get_operator_type(peek()), tmpop != exprop::none and get_operator_precedence(tmpop) < pr) {
+        tkn_type tmpop;
+        while (is_operator(tmpop = peek().type) and get_operator_precedence(tmpop) < pr) {
             rhs = get_subexpr_op(std::move(rhs), max_prec - 1);
         }
         auto lbeg = lhs->loc.begin;
@@ -126,7 +117,7 @@ exprh parser::get_primary_expr()
     {
         diagnostic e;
         e.l = loc_peek();
-        e.msg = "Invalid operand";
+        e.msg = "Expected expression";
         e.type = diagnostic_type::location_err;
         this->ok = false;
         this->diagnostics.show(e);

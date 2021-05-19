@@ -116,18 +116,7 @@ std::string codegen::emit_binop(binop const& node)
     result += emit_expr(*node.left);
     result += ") ";
 
-    if (node.op == exprop::none)
-    {
-        result += "\n#error invalid operator\n";
-    }
-    if (static_cast<short>(node.op) < 0)
-    {
-        result += "\n#error special operators don't work yet\n";
-    }
-    else
-    {
-        result += static_cast<unsigned char>(node.op);
-    }
+    result += exprop_id(node.op);
 
     result += " (";
     result += emit_expr(*node.right);

@@ -136,18 +136,7 @@ stmth parser::get_stmt()
         expect(tkn_type::semi);
         return expr_stmt::from(std::move(expr));
     }
-    else
-    {
-        this->ok = false;
-
-        diagnostic e;
-        e.type = diagnostic_type::location_err;
-        e.l = loc_peek();
-        e.msg = "Statement could not be parsed";
-
-        this->diagnostics.show(e);
-        return nullptr;
-    }
+    return nullptr; // Error handled in expression
 }
 
 nodeh<compound_stmt> parser::get_compound_stmt()
