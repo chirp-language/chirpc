@@ -6,7 +6,11 @@ std::string codegen::emit_identifier(identifier const& ident)
 {
     std::string result;
 
-    // Namespaces are complicated and need more tracking, so they aren't generated yet
+    // Namespaces aren't tracked
+    for(std::string n : ident.namespaces)
+    {
+        result += n + "_";
+    }
 
     result += ident.name;
 

@@ -40,6 +40,7 @@ class codegen
     std::string emit_parameters(parameters const&);
     std::string emit_func_decl(func_decl const&);
     std::string emit_func_def(func_def const&);
+    std::string emit_namespace(namespace_decl const&);
 
     std::string emit_stmt(stmt const&);
     std::string emit_assign_stmt(assign_stmt const&);
