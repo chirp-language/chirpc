@@ -102,6 +102,7 @@ private:
     std::shared_ptr<entry_decl> get_entry();
     std::shared_ptr<import_decl> get_import();
     std::shared_ptr<extern_decl> get_extern();
+    std::shared_ptr<namespace_decl> get_namespace();
 
     std::shared_ptr<var_decl> get_var_decl();
     std::shared_ptr<var_decl> get_parameter();

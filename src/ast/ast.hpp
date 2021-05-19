@@ -229,7 +229,7 @@ public:
 class namespace_decl : public decl
 {
     public:
-    // Only contains top level statements
+    std::shared_ptr<identifier> ident;
 
     std::vector<std::shared_ptr<func_decl>> fdecls;
     std::vector<std::shared_ptr<func_def>> fdefs;

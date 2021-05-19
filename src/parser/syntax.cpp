@@ -71,6 +71,43 @@ std::shared_ptr<import_decl> parser::get_import()
     return node;
 }
 
+std::shared_ptr<namespace_decl> parser::get_namespace()
+{
+    auto node = std::make_shared<namespace_decl>();
+    node->loc = loc_peekb();
+    node->ident = get_identifier();
+
+    expect(tkn_type::lbrace);
+
+    while(this->ok && !match(tkn_type::rbrace) && !match(tkn_type::eof))
+    {
+        switch(peek().type)
+        {
+            case tkn_type::kw_func:
+            {
+                skip();
+                auto f = get_func_decl();
+                if(f->type == decl_type::fdef)
+                    node->fdefs.push_back(std::shared_ptr<func_def>(std::move(f), static_cast<func_def*>(f.get())));
+                else
+                    node->fdecls.push_back(std::move(f));
+                break;
+            }
+            default:
+            {
+                this->ok = false;
+                diagnostic e;
+                e.type = diagnostic_type::location_err;
+                e.l = loc_peek();
+                e.msg = "Invalid declaration in namespace";
+                this->diagnostics.show(e);
+            }
+        }
+    }
+    
+    return node;
+}
+
 std::shared_ptr<ret_stmt> parser::get_ret()
 {
     auto node = std::make_shared<ret_stmt>();

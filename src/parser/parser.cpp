@@ -33,6 +33,12 @@ void parser::parse()
             this->tree.externs.push_back(get_extern());
             break;
         }
+        case tkn_type::kw_namespace:
+        {
+            skip();
+            this->tree.nspaces.push_back(get_namespace());
+            break;
+        }
         case tkn_type::kw_func:
         {
             skip();

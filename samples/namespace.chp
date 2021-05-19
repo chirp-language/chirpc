@@ -5,6 +5,10 @@ namespace math
     {
         ret a + b;
     }
+    func int multi(int: a, int: b)
+    {
+        ret a * b;
+    }
 }
 
 entry
