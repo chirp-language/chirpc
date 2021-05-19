@@ -91,6 +91,10 @@ std::vector<token> lexe(std::vector<location> src, std::vector<std::string> cont
         {
             t.type = tkn_type::kw_export;
         }
+        else if(t.value == "namespace")
+        {
+            t.type = tkn_type::kw_namespace;
+        }
         else if (t.value == "if")
         {
             t.type = tkn_type::kw_if;

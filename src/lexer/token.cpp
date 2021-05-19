@@ -11,6 +11,7 @@ std::string token::util_dump(){
         tknstr(tkn_type::kw_entry  , kw_entry  )
         tknstr(tkn_type::kw_import , kw_import )
         tknstr(tkn_type::kw_export , kw_export )
+        tknstr(tkn_type::kw_namespace, kw_namespace )
         tknstr(tkn_type::kw_if     , kw_if     )
         tknstr(tkn_type::kw_else   , kw_else   )
         tknstr(tkn_type::kw_elif   , kw_elif   )

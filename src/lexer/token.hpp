@@ -8,6 +8,7 @@ enum class tkn_type
 
     kw_entry, // entry
     kw_import, kw_export, // import export
+    kw_namespace,
     kw_if, kw_else, kw_elif, // if else
     kw_and, kw_or,
     kw_func, // func

@@ -33,6 +33,7 @@ class text_ast_dumper {
     // Declarations
     void dump_var_decl(var_decl const&);
     void dump_entry_decl(entry_decl const&);
+    void dump_namespace_decl(namespace_decl const&);
     void dump_import_decl(import_decl const&);
     void dump_extern_decl(extern_decl const&);
     void dump_parameters(parameters const&);

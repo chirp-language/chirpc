@@ -30,6 +30,7 @@ class num_literal;
 class decl;
 class var_decl;
 class entry_decl;
+class namespace_decl;
 class parameters;
 class func_decl;
 class func_def;
@@ -193,6 +194,7 @@ public:
 enum class decl_type
 {
     var, entry, import,
+    nspace,
     fdecl, fdef,
     external,
 };
@@ -222,6 +224,17 @@ public:
     stmth code;
 
     entry_decl() : decl(decl_type::entry) {}
+};
+
+class namespace_decl : public decl
+{
+    public:
+    // Only contains top level statements
+
+    std::vector<std::shared_ptr<func_decl>> fdecls;
+    std::vector<std::shared_ptr<func_def>> fdefs;
+
+    namespace_decl() : decl(decl_type::nspace) {}
 };
 
 class import_decl : public decl
@@ -384,6 +397,7 @@ public:
     // Vectors are in order
     std::vector<std::shared_ptr<import_decl>> imports;
     std::vector<std::shared_ptr<extern_decl>> externs;
+    std::vector<std::shared_ptr<namespace_decl>> nspaces;
     std::vector<std::shared_ptr<func_decl>> fdecls;
     std::vector<std::shared_ptr<func_def>> fdefs;
     std::shared_ptr<entry_decl> entry;
