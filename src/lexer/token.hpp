@@ -9,11 +9,13 @@ enum class tkn_type
     kw_entry, // entry
     kw_import, kw_export, // import export
     kw_if, kw_else, kw_elif, // if else
-    kw_and, kw_or,
+    kw_and, kw_or, // and or (should be operators)
     kw_func, // func
     kw_while, kw_for, // while for
     kw_ret, // ret
-    kw_extern,
+    kw_extern, // extern
+    kw_true, // true
+    kw_false, // false
 
     // Tokens with multiple keywords
     // Types
@@ -43,6 +45,8 @@ enum class tkn_type
     lt_op, gt_op, lteq_op, gteq_op, eqeq_op, noteq_op, // > < <= >= == !=
     plus_op, minus_op, star_op, slash_op, perc_op, // + - * / %
     as_op, // as
+    cmp_S = lt_op,
+    cmd_E = noteq_op,
     binop_S = lt_op,
     binop_E = as_op,
     ref_op, deref_op, // ref deref (unary)

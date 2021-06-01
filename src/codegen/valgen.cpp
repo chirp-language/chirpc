@@ -19,7 +19,7 @@ std::string codegen::emit_id_ref_expr(id_ref_expr const& node)
 }
 
 // This is not finished
-std::string codegen::emit_datatype(exprtype const& t)
+std::string codegen::emit_datatype(basic_type const& type)
 {
     // Doesn't do function pointery things
     std::string result;
@@ -27,7 +27,7 @@ std::string codegen::emit_datatype(exprtype const& t)
     int ptr_depth = 0;
     bool is_const = false;
 
-    for (std::byte d : t.exttp)
+    for (std::byte d : type.exttp)
     {
         dtypemod mod = static_cast<dtypemod>(d);
         if (mod == dtypemod::_ptr)
@@ -46,7 +46,7 @@ std::string codegen::emit_datatype(exprtype const& t)
         result += "const ";
     }
 
-    switch (t.basetp)
+    switch (type.basetp)
     {
         case dtypename::_int:
             result += "int";
@@ -72,40 +72,32 @@ std::string codegen::emit_datatype(exprtype const& t)
     }
 
     for (int i = 0; i < ptr_depth; i++)
-        result += "*";
+        result += '*';
 
     return result;
 }
 
-std::string codegen::emit_literal(literal_node const& node)
+std::string codegen::emit_txt_literal(txt_literal const& node)
 {
     std::string result;
-    if (node.ltype == littype::num)
+    if (node.is_character)
     {
-        num_literal lit = static_cast<num_literal const&>(node);
-        result = lit.value;
-    }
-    else if (node.ltype == littype::txt)
-    {
-        txt_literal lit = static_cast<txt_literal const&>(node);
-        if (lit.is_character)
-        {
-            result += '\'';
-            result += lit.value;
-            result += '\'';
-        }
-        else
-        {
-            result += '"';
-            result += lit.value;
-            result += '"';
-        }
+        result += '\'';
+        result += node.value;
+        result += '\'';
     }
     else
     {
-        result = "\n#error litteral has undefined type\n";
+        result += '"';
+        result += node.value;
+        result += '"';
     }
     return result;
+}
+
+std::string codegen::emit_num_literal(num_literal const& node)
+{
+    return node.value;
 }
 
 std::string codegen::emit_binop(binop const& node)
@@ -125,19 +117,33 @@ std::string codegen::emit_binop(binop const& node)
     return result;
 }
 
+std::string codegen::emit_cast_expr(cast_expr const& node)
+{
+    std::string result;
+    result += "(";
+    result += emit_datatype(node.type);
+    result += ") (";
+    result += emit_expr(*node.operand);
+    result += ")";
+    return result;
+}
+
 std::string codegen::emit_expr(expr const& node)
 {
     switch (node.kind)
     {
-        case optype::lit:
-            return emit_literal(static_cast<literal_node const&>(node));
-        case optype::ident:
-            return emit_id_ref_expr(static_cast<id_ref_expr const&>(node));
-        case optype::call:
-            return emit_func_call(static_cast<func_call const&>(node));
-        case optype::op:
+        case expr_kind::binop:
             return emit_binop(static_cast<binop const&>(node));
-        case optype::invalid:
+        case expr_kind::call:
+            return emit_func_call(static_cast<func_call const&>(node));
+        case expr_kind::ident:
+            return emit_id_ref_expr(static_cast<id_ref_expr const&>(node));
+        case expr_kind::txtlit:
+            return emit_txt_literal(static_cast<txt_literal const&>(node));
+        case expr_kind::numlit:
+            return emit_num_literal(static_cast<num_literal const&>(node));
+        case expr_kind::cast:
+            return emit_cast_expr(static_cast<cast_expr const&>(node));
         default:
             return "\n#error Bad operand, This is a bug\n";
     }

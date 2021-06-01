@@ -49,8 +49,9 @@ static int get_operator_precedence(tkn_type op)
         case tkn_type::eqeq_op:
         case tkn_type::noteq_op:
             return static_cast<int>(precedence_class::cmp);
+        default:
+            return -1u >> 1;
     }
-    return -1u >> 1;
 }
 
 static bool is_operator(tkn_type t)
@@ -73,14 +74,27 @@ exprh parser::get_subexpr_op(exprh lhs, int max_prec)
         int pr = get_operator_precedence(optype);
         if (pr > max_prec)
             return lhs;
-        if (optype == tkn_type::lparen) {
+        if (optype == tkn_type::lparen)
+        {
             // Parse arguments and combine
             lhs = get_fcall(std::move(lhs));
             continue;
         }
+        if (optype == tkn_type::as_op)
+        {
+            // Cast to new type
+            basic_type newtp = get_datatype();
+            auto ecast = new_node<cast_expr>();
+            ecast->operand = std::move(lhs);
+            ecast->type = std::move(newtp);
+            ecast->cat = exprcat::rval;
+            lhs = std::move(ecast);
+            continue;
+        }
         exprh rhs = get_primary_expr();
         tkn_type tmpop;
-        while (is_operator(tmpop = peek().type) and get_operator_precedence(tmpop) < pr) {
+        while (is_operator(tmpop = peek().type) and get_operator_precedence(tmpop) < pr)
+        {
             rhs = get_subexpr_op(std::move(rhs), max_prec - 1);
         }
         auto lbeg = lhs->loc.begin;
@@ -104,11 +118,14 @@ exprh parser::get_primary_expr()
     {
         return get_literal();
     }
-    else if (probe(tkn_type::lparen))
+    else if (probe(tkn_type::kw_true) or probe(tkn_type::kw_false))
+    {
+        return new_node<num_literal>(get_bool_lit());
+    }
+    else if (match(tkn_type::lparen))
     {
         // Parenthesis are special, as they aren't considered as operations, but as sub_expressions
         // Because of this, the location of the parenthesis is not stored in the tree
-        skip();
         exprh result = get_expr(true);
         expect(tkn_type::rparen);
         return result;

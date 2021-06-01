@@ -26,9 +26,9 @@ class arguments;
 class func_call;
 class id_ref_expr;
 class loperand;
-class literal_node;
 class txt_literal;
 class num_literal;
+class cast_expr;
 class decl;
 class var_decl;
 class entry_decl;
@@ -132,32 +132,41 @@ public:
 // === Expressions ===
 // They take values and spit out other values.
 
-// Operand type
-enum class optype
+enum class expr_kind
 {
-    lit,
-    ident,
+    binop,
     call,
-    op,
-    invalid,
+    ident,
+    txtlit,
+    numlit,
+    cast,
 };
 
-enum class opcat
+enum class exprcat
 {
     unset, // unknown/unassigned type
-    lval, // lvalue, i.e. has location
-    rval, // rvalue, i.e. a pure value (not tied to any object)
+    lval, // lvalue, i.e. has memory location
+    rval, // rvalue, i.e. a pure value (not tied to any object, can be used as an operand)
     error, // result of an invalid operation
 };
 
-struct exprtype
+struct basic_type
 {
-    dtypename basetp;
-    opcat cattp;
+    dtypename basetp; // The basic type specifier
     std::vector<std::byte> exttp; // Enums are cast to/from a byte bc why not
 
-    exprtype()
-        : basetp(dtypename::_none), cattp(opcat::unset) {}
+    basic_type()
+        : basetp(dtypename::_none) {}
+    
+    bool operator==(basic_type const& o) const
+    {
+        return basetp == o.basetp and exttp == o.exttp;
+    }
+
+    bool operator!=(basic_type const& o) const
+    {
+        return !operator==(o);
+    }
 };
 
 class expr : public ast_node
@@ -165,12 +174,13 @@ class expr : public ast_node
     public:
     using node_base = expr; // For node type identification
 
-    exprtype type;
-    optype kind;
+    expr_kind kind;
+    basic_type type;
+    exprcat cat;
 
     protected:
-    expr(optype kind)
-        : kind(kind) {}
+    expr(expr_kind kind)
+        : kind(kind), cat(exprcat::unset) {}
 };
 
 // Operator
@@ -183,7 +193,7 @@ class binop : public expr
     exprh right;
 
     binop(tkn_type op, exprh l, exprh r)
-        : expr(optype::op), op(op), left(std::move(l)), right(std::move(r)) {}
+        : expr(expr_kind::binop), op(op), left(std::move(l)), right(std::move(r)) {}
 };
 
 class arguments : public ast_node
@@ -199,7 +209,7 @@ public:
     arguments args;
 
     func_call(exprh callee, arguments args)
-        : expr(optype::call), callee(std::move(callee)), args(std::move(args)) {}
+        : expr(expr_kind::call), callee(std::move(callee)), args(std::move(args)) {}
 };
 
 // Left-Side stuff
@@ -220,7 +230,7 @@ class id_ref_expr : public expr
     decl const* target = nullptr;
 
     id_ref_expr(identifier ident)
-        : expr(optype::ident), ident(std::move(ident))
+        : expr(expr_kind::ident), ident(std::move(ident))
     {
         loc = ident.loc;
     }
@@ -240,45 +250,41 @@ class loperand : public expr
 };
 #endif
 
-enum class littype
-{
-    txt,
-    num,
-};
-
-class literal_node : public expr
-{
-    public:
-    littype ltype;
-
-    protected:
-    literal_node(littype t) : expr(optype::lit), ltype(t) {}
-};
-
-class txt_literal : public literal_node
+class txt_literal : public expr
 {
     public:
     bool is_character; // Single character/packed character constant
     std::string value;
 
-    txt_literal() : literal_node(littype::txt) {}
+    txt_literal() : expr(expr_kind::txtlit) {}
 };
 
-// Should be replaced by a different literal for each types
-class num_literal : public literal_node
+// Should be replaced by a different literal for each types (or not)
+class num_literal : public expr
 {
     public:
     std::string value; // bruh
 
-    num_literal() : literal_node(littype::num) {}
+    num_literal() : expr(expr_kind::numlit) {}
+};
+
+class cast_expr : public expr
+{
+    public:
+    exprh operand;
+
+    cast_expr() : expr(expr_kind::cast) {}
 };
 
 // === Declarations ===
 
-enum class decl_type
+enum class decl_kind
 {
-    var, entry, import,
-    fdecl, fdef,
+    var,
+    entry,
+    import,
+    fdecl,
+    fdef,
     external,
 };
 
@@ -287,20 +293,20 @@ class decl : public ast_node
     public:
     using node_base = decl; // For node type identification
 
-    decl_type type;
+    decl_kind kind;
 
     protected:
-    decl(decl_type type) : type(type) {}
+    decl(decl_kind kind) : kind(kind) {}
 };
 
 class var_decl : public decl
 {
     public:
-    exprtype var_type;
     identifier ident;
+    basic_type type;
     exprh init; // Empty if not availible
 
-    var_decl() : decl(decl_type::var) {}
+    var_decl() : decl(decl_kind::var) {}
 };
 
 class entry_decl : public decl
@@ -308,7 +314,7 @@ class entry_decl : public decl
     public:
     stmth code;
 
-    entry_decl() : decl(decl_type::entry) {}
+    entry_decl() : decl(decl_kind::entry) {}
 };
 
 class import_decl : public decl
@@ -316,7 +322,7 @@ class import_decl : public decl
     public:
     txt_literal filename;
 
-    import_decl() : decl(decl_type::import) {}
+    import_decl() : decl(decl_kind::import) {}
 };
 
 class extern_decl : public decl
@@ -325,7 +331,7 @@ class extern_decl : public decl
     txt_literal real_name;
     declh inner_decl;
 
-    extern_decl() : decl(decl_type::external) {}
+    extern_decl() : decl(decl_kind::external) {}
 };
 
 class parameters : public ast_node
@@ -338,14 +344,14 @@ class parameters : public ast_node
 class func_decl : public decl
 {
     public:
-    exprtype data_type;
     identifier ident;
+    basic_type result_type;
     parameters params;
 
-    func_decl() : decl(decl_type::fdecl) {}
+    func_decl() : decl(decl_kind::fdecl) {}
 
     protected:
-    func_decl(decl_type t) : decl(t) {}
+    func_decl(decl_kind t) : decl(t) {}
 };
 
 // A function definition but with code
@@ -354,17 +360,20 @@ class func_def : public func_decl
     public:
     std::unique_ptr<compound_stmt> body;
 
-    func_def() : func_decl(decl_type::fdef) {}
+    func_def() : func_decl(decl_kind::fdef) {}
 };
 
 // === Statements ===
 
-enum class stmt_type
+enum class stmt_kind
 {
-    decl, assign,
-    compound, ret,
+    decl,
+    assign,
+    compound,
+    ret,
     conditional,
-    iteration, expr,
+    iteration,
+    expr,
     null,
 };
 
@@ -374,10 +383,10 @@ class stmt : public ast_node
     using node_base = stmt; // For node type identification
 
     // There's a bunch of them so gotta make another enum smh
-    stmt_type type;
+    stmt_kind kind;
 
     protected:
-    stmt(stmt_type type) : type(type) {}
+    stmt(stmt_kind kind) : kind(kind) {}
 };
 
 class decl_stmt : public stmt
@@ -386,7 +395,7 @@ class decl_stmt : public stmt
     declh inner_decl;
 
     decl_stmt(declh inner)
-        : stmt(stmt_type::decl), inner_decl(std::move(inner))
+        : stmt(stmt_kind::decl), inner_decl(std::move(inner))
     {
         loc = inner_decl->loc;
     }
@@ -403,7 +412,7 @@ class assign_stmt : public stmt
     var_decl const* target = nullptr;
     exprh value;
 
-    assign_stmt() : stmt(stmt_type::assign) {}
+    assign_stmt() : stmt(stmt_kind::assign) {}
 };
 
 class compound_stmt : public stmt
@@ -411,7 +420,7 @@ class compound_stmt : public stmt
     public:
     std::vector<stmth> body;
 
-    compound_stmt() : stmt(stmt_type::compound) {}
+    compound_stmt() : stmt(stmt_kind::compound) {}
 };
 
 class ret_stmt : public stmt
@@ -419,7 +428,7 @@ class ret_stmt : public stmt
     public:
     exprh val;
 
-    ret_stmt() : stmt(stmt_type::ret) {}
+    ret_stmt() : stmt(stmt_kind::ret) {}
 };
 
 class conditional_stmt : public stmt
@@ -429,7 +438,7 @@ class conditional_stmt : public stmt
     stmth true_branch;
     stmth false_branch; // Can be null
 
-    conditional_stmt() : stmt(stmt_type::conditional) {}
+    conditional_stmt() : stmt(stmt_kind::conditional) {}
 };
 
 class iteration_stmt : public stmt
@@ -438,7 +447,7 @@ class iteration_stmt : public stmt
     exprh cond;
     stmth loop_body;
 
-    iteration_stmt() : stmt(stmt_type::iteration) {}
+    iteration_stmt() : stmt(stmt_kind::iteration) {}
 };
 
 class expr_stmt : public stmt
@@ -447,7 +456,7 @@ class expr_stmt : public stmt
     exprh node;
 
     expr_stmt(exprh expr)
-        : stmt(stmt_type::expr), node(std::move(expr))
+        : stmt(stmt_kind::expr), node(std::move(expr))
     {
         loc = node->loc;
     }
@@ -461,7 +470,7 @@ class null_stmt : public stmt
 {
     public:
     null_stmt(location_range loc)
-        : stmt(stmt_type::null)
+        : stmt(stmt_kind::null)
     {
         this->loc = loc;
     }

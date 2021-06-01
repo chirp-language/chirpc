@@ -6,17 +6,18 @@ void expr_node_deleter::operator()(expr* node) const
 {
 	switch (node->kind)
 	{
-		case optype::lit:
-			if (static_cast<literal_node&>(*node).ltype == littype::txt)
-				return delete static_cast<txt_literal*>(node);
-			return delete static_cast<num_literal*>(node);
-		case optype::ident:
-			return delete static_cast<id_ref_expr*>(node);
-		case optype::call:
-			return delete static_cast<func_call*>(node);
-		case optype::op:
+		case expr_kind::binop:
 			return delete static_cast<binop*>(node);
-		case optype::invalid:
+		case expr_kind::call:
+			return delete static_cast<func_call*>(node);
+		case expr_kind::ident:
+			return delete static_cast<id_ref_expr*>(node);
+		case expr_kind::txtlit:
+			return delete static_cast<txt_literal*>(node);
+		case expr_kind::numlit:
+			return delete static_cast<num_literal*>(node);
+		case expr_kind::cast:
+			return delete static_cast<cast_expr*>(node);
 		default:
 			return;
 	}
@@ -24,19 +25,19 @@ void expr_node_deleter::operator()(expr* node) const
 
 void decl_node_deleter::operator()(decl* node) const
 {
-	switch (node->type)
+	switch (node->kind)
 	{
-		case decl_type::var:
+		case decl_kind::var:
 			return delete static_cast<var_decl*>(node);
-		case decl_type::entry:
+		case decl_kind::entry:
 			return delete static_cast<entry_decl*>(node);
-		case decl_type::import:
+		case decl_kind::import:
 			return delete static_cast<import_decl*>(node);
-		case decl_type::fdecl:
+		case decl_kind::fdecl:
 			return delete static_cast<func_decl*>(node);
-		case decl_type::fdef:
+		case decl_kind::fdef:
 			return delete static_cast<func_def*>(node);
-		case decl_type::external:
+		case decl_kind::external:
 			return delete static_cast<extern_decl*>(node);
 		default:
 			return;
@@ -45,23 +46,23 @@ void decl_node_deleter::operator()(decl* node) const
 
 void stmt_node_deleter::operator()(stmt* node) const
 {
-	switch (node->type)
+	switch (node->kind)
 	{
-		case stmt_type::decl:
+		case stmt_kind::decl:
 			return delete static_cast<decl_stmt*>(node);
-		case stmt_type::assign:
+		case stmt_kind::assign:
 			return delete static_cast<assign_stmt*>(node);
-		case stmt_type::compound:
+		case stmt_kind::compound:
 			return delete static_cast<compound_stmt*>(node);
-		case stmt_type::ret:
+		case stmt_kind::ret:
 			return delete static_cast<ret_stmt*>(node);
-		case stmt_type::conditional:
+		case stmt_kind::conditional:
 			return delete static_cast<conditional_stmt*>(node);
-		case stmt_type::iteration:
+		case stmt_kind::iteration:
 			return delete static_cast<iteration_stmt*>(node);
-		case stmt_type::expr:
+		case stmt_kind::expr:
 			return delete static_cast<expr_stmt*>(node);
-		case stmt_type::null:
+		case stmt_kind::null:
 			return delete static_cast<null_stmt*>(node);
 		default:
 			return;

@@ -108,9 +108,9 @@ bool parser::is_var_assign()
     return probe(tkn_type::identifer) && peekf().type == tkn_type::assign_op;
 }
 
-exprtype parser::get_datatype()
+basic_type parser::get_datatype()
 {
-    exprtype type;
+    basic_type type;
     bool has_candidate = false;
     //  Mods before the typename
     while (is_datamod())
@@ -151,7 +151,7 @@ nodeh<var_decl> parser::get_var_decl()
 {
     auto node = new_node<var_decl>();
     node->loc = loc_peek();
-    node->var_type = get_datatype();
+    node->type = get_datatype();
     expect(tkn_type::colon);
     node->ident = get_identifier();
     if (match(tkn_type::assign_op))
@@ -165,7 +165,7 @@ nodeh<var_decl> parser::get_parameter()
 {
     auto node = new_node<var_decl>();
     node->loc = loc_peek();
-    node->var_type = get_datatype();
+    node->type = get_datatype();
     if (match(tkn_type::colon))
     {
         node->ident = get_identifier();

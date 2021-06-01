@@ -63,7 +63,7 @@ nodeh<func_decl> parser::get_func_decl()
         node = new_node<func_decl>();
     }
     node->loc = loc;
-    node->data_type = std::move(data_type);
+    node->result_type = std::move(data_type);
     node->ident = std::move(ident);
     node->params = std::move(params);
     node->loc.end = loc_peekb();

@@ -25,7 +25,7 @@ class analyser
 	void visit_stmt(stmt& node);
 
 	// Expressions
-	void visit_exprtype(exprtype&);
+	void visit_basic_type(basic_type&) = delete;
 	void visit_binop(binop&);
 	void visit_arguments(arguments&);
 	void visit_func_call(func_call&);

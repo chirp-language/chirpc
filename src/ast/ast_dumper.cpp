@@ -100,17 +100,17 @@ static std::string dump_dtmod(dtypemod m)
     }
 }
 
-static std::string dump_dtcat(opcat c)
+static std::string dump_exprcat(exprcat c)
 {
     switch (c)
     {
-        case opcat::unset:
+        case exprcat::unset:
             return "unset";
-        case opcat::lval:
+        case exprcat::lval:
             return "lvalue";
-        case opcat::rval:
+        case exprcat::rval:
             return "rvalue";
-        case opcat::error:
+        case exprcat::error:
             return "error";
     }
     __builtin_unreachable();
@@ -243,17 +243,18 @@ void text_ast_dumper::dump_expr(expr const& node)
 {
     switch (node.kind)
     {
-        case optype::lit:
-            if (static_cast<literal_node const&>(node).ltype == littype::txt)
-                return dump_txt_literal(static_cast<txt_literal const&>(node));
-            return dump_num_literal(static_cast<num_literal const&>(node));
-        case optype::ident:
-            return dump_id_ref_expr(static_cast<id_ref_expr const&>(node));
-        case optype::call:
-            return dump_func_call(static_cast<func_call const&>(node));
-        case optype::op:
+        case expr_kind::binop:
             return dump_binop(static_cast<binop const&>(node));
-        case optype::invalid:
+        case expr_kind::call:
+            return dump_func_call(static_cast<func_call const&>(node));
+        case expr_kind::ident:
+            return dump_id_ref_expr(static_cast<id_ref_expr const&>(node));
+        case expr_kind::txtlit:
+            return dump_txt_literal(static_cast<txt_literal const&>(node));
+        case expr_kind::numlit:
+            return dump_num_literal(static_cast<num_literal const&>(node));
+        case expr_kind::cast:
+            return dump_cast_expr(static_cast<cast_expr const&>(node));
         default:
             return;
     }
@@ -261,19 +262,19 @@ void text_ast_dumper::dump_expr(expr const& node)
 
 void text_ast_dumper::dump_decl(decl const& node)
 {
-    switch (node.type)
+    switch (node.kind)
     {
-        case decl_type::var:
+        case decl_kind::var:
             return dump_var_decl(static_cast<var_decl const&>(node));
-        case decl_type::entry:
+        case decl_kind::entry:
             return dump_entry_decl(static_cast<entry_decl const&>(node));
-        case decl_type::import:
+        case decl_kind::import:
             return dump_import_decl(static_cast<import_decl const&>(node));
-        case decl_type::fdecl:
+        case decl_kind::fdecl:
             return dump_func_decl(static_cast<func_decl const&>(node));
-        case decl_type::fdef:
+        case decl_kind::fdef:
             return dump_func_def(static_cast<func_def const&>(node));
-        case decl_type::external:
+        case decl_kind::external:
             return dump_extern_decl(static_cast<extern_decl const&>(node));
         default:
             return;
@@ -282,23 +283,23 @@ void text_ast_dumper::dump_decl(decl const& node)
 
 void text_ast_dumper::dump_stmt(stmt const& node)
 {
-    switch (node.type)
+    switch (node.kind)
     {
-        case stmt_type::decl:
+        case stmt_kind::decl:
             return dump_decl_stmt(static_cast<decl_stmt const&>(node));
-        case stmt_type::assign:
+        case stmt_kind::assign:
             return dump_assign_stmt(static_cast<assign_stmt const&>(node));
-        case stmt_type::compound:
+        case stmt_kind::compound:
             return dump_compound_stmt(static_cast<compound_stmt const&>(node));
-        case stmt_type::ret:
+        case stmt_kind::ret:
             return dump_ret_stmt(static_cast<ret_stmt const&>(node));
-        case stmt_type::conditional:
+        case stmt_kind::conditional:
             return dump_conditional_stmt(static_cast<conditional_stmt const&>(node));
-        case stmt_type::iteration:
+        case stmt_kind::iteration:
             return dump_iteration_stmt(static_cast<iteration_stmt const&>(node));
-        case stmt_type::expr:
+        case stmt_kind::expr:
             return dump_expr_stmt(static_cast<expr_stmt const&>(node));
-        case stmt_type::null:
+        case stmt_kind::null:
             return dump_null_stmt(node);
         default:
             return;
@@ -307,18 +308,16 @@ void text_ast_dumper::dump_stmt(stmt const& node)
 
 // Expressions
 
-void text_ast_dumper::dump_exprtype(exprtype const& t)
+void text_ast_dumper::dump_basic_type(basic_type const& type)
 {
     std::cout << indent(depth);
-    std::cout << "data_type ";
-    write_color(dump_dtcat(t.cattp), c_color_type_cat);
-    std::cout << '\n';
+    std::cout << "basic_type\n";
     std::cout << indent(depth + 1);
     std::cout << "typename ";
-    write_color(dump_dtname(t.basetp), c_color_type);
+    write_color(dump_dtname(type.basetp), c_color_type);
     std::cout << ";\n";
     std::cout << indent(depth + 1);
-    if (t.exttp.empty())
+    if (type.exttp.empty())
     {
         std::cout << "(no type modifiers)\n";
     }
@@ -326,7 +325,36 @@ void text_ast_dumper::dump_exprtype(exprtype const& t)
     {
         std::cout << "type modifiers:\n";
         // I really gave up on naming thing well there
-        for (std::byte x : t.exttp)
+        for (std::byte x : type.exttp)
+        {
+            dtypemod w = static_cast<dtypemod>(x);
+            std::cout << indent(depth + 2);
+            std::cout << dump_dtmod(w);
+            std::cout << '\n';
+        }
+    }
+}
+
+void text_ast_dumper::dump_expr_type(basic_type const& type, exprcat cat)
+{
+    std::cout << indent(depth);
+    std::cout << "expr_type ";
+    write_color(dump_exprcat(cat), c_color_type_cat);
+    std::cout << '\n';
+    std::cout << indent(depth + 1);
+    std::cout << "typename ";
+    write_color(dump_dtname(type.basetp), c_color_type);
+    std::cout << ";\n";
+    std::cout << indent(depth + 1);
+    if (type.exttp.empty())
+    {
+        std::cout << "(no type modifiers)\n";
+    }
+    else
+    {
+        std::cout << "type modifiers:\n";
+        // I really gave up on naming thing well there
+        for (std::byte x : type.exttp)
         {
             dtypemod w = static_cast<dtypemod>(x);
             std::cout << indent(depth + 2);
@@ -348,7 +376,7 @@ void text_ast_dumper::dump_binop(binop const& n)
     std::cout << ")\n";
     ++depth;
     if (show_expr_types)
-        dump_exprtype(n.type);
+        dump_expr_type(n.type, n.cat);
     dump_expr(*n.left);
     dump_expr(*n.right);
     --depth;
@@ -376,7 +404,7 @@ void text_ast_dumper::dump_func_call(func_call const& n)
     std::cout << '\n';
     ++depth;
     if (show_expr_types)
-        dump_exprtype(n.type);
+        dump_expr_type(n.type, n.cat);
     dump_expr(*n.callee);
     dump_arguments(n.args);
     --depth;
@@ -403,7 +431,7 @@ void text_ast_dumper::dump_id_ref_expr(id_ref_expr const& n)
     if (show_expr_types)
     {
         ++depth;
-        dump_exprtype(n.type);
+        dump_expr_type(n.type, n.cat);
         --depth;
     }
 }
@@ -436,7 +464,7 @@ void text_ast_dumper::dump_txt_literal(txt_literal const& n)
     if (show_expr_types)
     {
         ++depth;
-        dump_exprtype(n.type);
+        dump_expr_type(n.type, n.cat);
         --depth;
     }
 }
@@ -452,9 +480,22 @@ void text_ast_dumper::dump_num_literal(num_literal const& n)
     if (show_expr_types)
     {
         ++depth;
-        dump_exprtype(n.type);
+        dump_expr_type(n.type, n.cat);
         --depth;
     }
+}
+
+void text_ast_dumper::dump_cast_expr(cast_expr const& n)
+{
+    std::cout << indent(depth);
+    write_color("cast_expr ", c_color_expr);
+    print_location(n.loc);
+    std::cout << '\n';
+    ++depth;
+    // Exception: always print type of a cast expression
+    dump_expr_type(n.type, n.cat);
+    dump_expr(*n.operand);
+    --depth;
 }
 
 // Declarations
@@ -466,7 +507,7 @@ void text_ast_dumper::dump_var_decl(var_decl const& n)
     print_location(n.loc);
     std::cout << '\n';
     ++depth;
-    dump_exprtype(n.var_type);
+    dump_basic_type(n.type);
     dump_identifier(n.ident);
     if (n.init)
         dump_expr(*n.init);
@@ -530,7 +571,7 @@ void text_ast_dumper::dump_func_decl(func_decl const& n)
     print_location(n.loc);
     std::cout << '\n';
     ++depth;
-    dump_exprtype(n.data_type);
+    dump_basic_type(n.result_type);
     dump_identifier(n.ident);
     dump_parameters(n.params);
     --depth;
@@ -543,7 +584,7 @@ void text_ast_dumper::dump_func_def(func_def const& n)
     print_location(n.loc);
     std::cout << '\n';
     ++depth;
-    dump_exprtype(n.data_type);
+    dump_basic_type(n.result_type);
     dump_identifier(n.ident);
     dump_parameters(n.params);
     dump_stmt(*n.body);

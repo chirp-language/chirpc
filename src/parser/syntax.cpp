@@ -21,6 +21,8 @@ txt_literal parser::get_txt_lit()
 num_literal parser::get_num_lit()
 {
     num_literal node;
+    node.type.basetp = dtypename::_int;
+    node.cat = exprcat::rval;
     token const& t = peek();
     node.loc = loc_peek();
     expect(tkn_type::literal);
@@ -40,13 +42,23 @@ num_literal parser::get_num_lit()
     return node;
 }
 
-nodeh<literal_node> parser::get_literal()
+num_literal parser::get_bool_lit()
+{
+    num_literal node;
+    node.type.basetp = dtypename::_bool;
+    node.cat = exprcat::rval;
+    node.loc = loc_peek();
+    node.value = probe(tkn_type::kw_true) ? "1" : "0";
+    skip();
+    return node;
+}
+
+exprh parser::get_literal()
 {
     auto const& val = peek().value;
 
     if (val.at(0) == '"' || val.at(0) == '\'')
         return new_node<txt_literal>(get_txt_lit());
-    // oof, doesn't check for booleans, too bad
     else
         return new_node<num_literal>(get_num_lit());
     return nullptr;

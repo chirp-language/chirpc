@@ -24,7 +24,8 @@ class text_ast_dumper {
     void dump_stmt(stmt const& node);
 
     // Expressions
-    void dump_exprtype(exprtype const&);
+    void dump_basic_type(basic_type const&);
+    void dump_expr_type(basic_type const& type, exprcat cat);
     void dump_binop(binop const&);
     void dump_arguments(arguments const&);
     void dump_func_call(func_call const&);
@@ -32,6 +33,7 @@ class text_ast_dumper {
     void dump_loperand(loperand const&) = delete;
     void dump_txt_literal(txt_literal const&);
     void dump_num_literal(num_literal const&);
+    void dump_cast_expr(cast_expr const&);
     // Declarations
     void dump_var_decl(var_decl const&);
     void dump_entry_decl(entry_decl const&);

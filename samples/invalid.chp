@@ -5,6 +5,7 @@ entry
     none: a;
     float: b = 1230.0gfbd; # <-- This one, for some reason, gets lexed as an identifier
     ptr: b; # Redefinition
+    ptr: c = false; # Invalid initializer/assignment value type (TODO)
 }
 
 func none sample(int: a, ptr: b, const ptr: a)

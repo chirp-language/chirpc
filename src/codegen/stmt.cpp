@@ -2,19 +2,19 @@
 
 std::string codegen::emit_decl(decl const& node)
 {
-    switch (node.type)
+    switch (node.kind)
     {
-        case decl_type::var:
+        case decl_kind::var:
             return emit_var_decl(static_cast<var_decl const&>(node));
-        case decl_type::entry:
+        case decl_kind::entry:
             return emit_entry_decl(static_cast<entry_decl const&>(node));
-        /*case decl_type::import:
+        /*case decl_kind::import:
             return emit_import_decl(static_cast<import_decl const&>(node));
-        case decl_type::fdecl:
+        case decl_kind::fdecl:
             return emit_func_decl(static_cast<func_decl const&>(node));
-        case decl_type::fdef:
+        case decl_kind::fdef:
             return emit_func_def(static_cast<func_def const&>(node));
-        case decl_type::external:
+        case decl_kind::external:
             return emit_extern_decl(static_cast<extern_decl const&>(node));*/
     }
     #ifndef NDEBUG
@@ -27,8 +27,8 @@ std::string codegen::emit_decl(decl const& node)
 std::string codegen::emit_var_decl(var_decl const& node)
 {
     std::string result;
-    result += emit_datatype(node.var_type);
-    result += " ";
+    result += emit_datatype(node.type);
+    result += ' ';
     result += emit_identifier(node.ident);
     if (node.init)
     {
@@ -62,31 +62,31 @@ std::string codegen::emit_ret_stmt(ret_stmt const& node)
 std::string codegen::emit_stmt(stmt const& s)
 {
     std::string result;
-    switch (s.type)
+    switch (s.kind)
     {
-        case stmt_type::compound:
+        case stmt_kind::compound:
             result += emit_compound_stmt(static_cast<compound_stmt const&>(s));
             break;
-        case stmt_type::expr:
+        case stmt_kind::expr:
             result += emit_expr(*static_cast<expr_stmt const&>(s).node);
             result += ";\n"; // Because this is kindof an expression stuff
             break;
-        case stmt_type::decl:
+        case stmt_kind::decl:
             result += emit_decl(*static_cast<decl_stmt const&>(s).inner_decl);
             break;
-        case stmt_type::assign:
+        case stmt_kind::assign:
             result += emit_assign_stmt(static_cast<assign_stmt const&>(s));
             break;
-        case stmt_type::ret:
+        case stmt_kind::ret:
             result += emit_ret_stmt(static_cast<ret_stmt const&>(s));
             break;
-        case stmt_type::conditional:
+        case stmt_kind::conditional:
             result += emit_conditional_stmt(static_cast<conditional_stmt const&>(s));
             break;
-        case stmt_type::iteration:
+        case stmt_kind::iteration:
             result += emit_iteration_stmt(static_cast<iteration_stmt const&>(s));
             break;
-        case stmt_type::null:
+        case stmt_kind::null:
             break; // emit nothing
     }
     return result;

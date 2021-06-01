@@ -20,17 +20,16 @@ void analyser::visit_expr(expr& node)
 {
 	switch (node.kind)
 	{
-		case optype::lit:
-			if (static_cast<literal_node&>(node).ltype == littype::txt)
-				return visit_txt_literal(static_cast<txt_literal&>(node));
-			return visit_num_literal(static_cast<num_literal&>(node));
-		case optype::ident:
-			return visit_id_ref_expr(static_cast<id_ref_expr&>(node));
-		case optype::call:
-			return visit_func_call(static_cast<func_call&>(node));
-		case optype::op:
+		case expr_kind::binop:
 			return visit_binop(static_cast<binop&>(node));
-		case optype::invalid:
+		case expr_kind::call:
+			return visit_func_call(static_cast<func_call&>(node));
+		case expr_kind::ident:
+			return visit_id_ref_expr(static_cast<id_ref_expr&>(node));
+		case expr_kind::txtlit:
+			return visit_txt_literal(static_cast<txt_literal&>(node));
+		case expr_kind::numlit:
+			return visit_num_literal(static_cast<num_literal&>(node));
 		default:
 			return;
 	}
@@ -38,19 +37,19 @@ void analyser::visit_expr(expr& node)
 
 void analyser::visit_decl(decl& node)
 {
-	switch (node.type)
+	switch (node.kind)
 	{
-		case decl_type::var:
+		case decl_kind::var:
 			return visit_var_decl(static_cast<var_decl&>(node));
-		case decl_type::entry:
+		case decl_kind::entry:
 			return visit_entry_decl(static_cast<entry_decl&>(node));
-		case decl_type::import:
+		case decl_kind::import:
 			return visit_import_decl(static_cast<import_decl&>(node));
-		case decl_type::fdecl:
+		case decl_kind::fdecl:
 			return visit_func_decl(static_cast<func_decl&>(node));
-		case decl_type::fdef:
+		case decl_kind::fdef:
 			return visit_func_def(static_cast<func_def&>(node));
-		case decl_type::external:
+		case decl_kind::external:
 			return visit_extern_decl(static_cast<extern_decl&>(node));
 		default:
 			return;
@@ -59,23 +58,23 @@ void analyser::visit_decl(decl& node)
 
 void analyser::visit_stmt(stmt& node)
 {
-	switch (node.type)
+	switch (node.kind)
 	{
-		case stmt_type::decl:
+		case stmt_kind::decl:
 			return visit_decl_stmt(static_cast<decl_stmt&>(node));
-		case stmt_type::assign:
+		case stmt_kind::assign:
 			return visit_assign_stmt(static_cast<assign_stmt&>(node));
-		case stmt_type::compound:
+		case stmt_kind::compound:
 			return visit_compound_stmt(static_cast<compound_stmt&>(node));
-		case stmt_type::ret:
+		case stmt_kind::ret:
 			return visit_ret_stmt(static_cast<ret_stmt&>(node));
-		case stmt_type::conditional:
+		case stmt_kind::conditional:
 			return visit_conditional_stmt(static_cast<conditional_stmt&>(node));
-		case stmt_type::iteration:
+		case stmt_kind::iteration:
 			return visit_iteration_stmt(static_cast<iteration_stmt&>(node));
-		case stmt_type::expr:
+		case stmt_kind::expr:
 			return visit_expr_stmt(static_cast<expr_stmt&>(node));
-		case stmt_type::null:
+		case stmt_kind::null:
 			return visit_null_stmt(node);
 		default:
 			return;
@@ -88,7 +87,35 @@ void analyser::visit_binop(binop& node)
 {
 	visit_expr(*node.left);
 	visit_expr(*node.right);
-	// TODO: Handle operation
+
+	if (node.left->cat == exprcat::error or node.right->cat == exprcat::error)
+	{
+		node.cat = exprcat::error;
+	}
+	else if (node.left->type != node.right->type)
+	{
+		node.cat = exprcat::error;
+
+		diagnostic d;
+		d.type = diagnostic_type::location_err;
+		d.l = node.op_loc;
+		d.msg = "Operand types don't match";
+		diagnostics.show(d);
+	}
+	else
+	{
+		// TODO: Do deeper type analysis
+		node.cat = exprcat::rval;
+		if (node.op >= tkn_type::cmp_S
+			and node.op <= tkn_type::cmd_E)
+		{
+			node.type.basetp = dtypename::_bool;
+		}
+		else
+		{
+			node.type = node.left->type;
+		}
+	}
 }
 
 void analyser::visit_arguments(arguments& node)
@@ -108,11 +135,11 @@ void analyser::visit_func_call(func_call& node)
 	if (!node.type.exttp.empty() and static_cast<dtypemod>(node.type.exttp.back()) == dtypemod::_func)
 	{
 		node.type.exttp.pop_back();
-		node.type.cattp = opcat::rval;
+		node.cat = exprcat::rval;
 	}
 	else
 	{
-		node.type.cattp = opcat::error;
+		node.cat = exprcat::error;
 	}
 }
 
@@ -122,20 +149,20 @@ void analyser::visit_id_ref_expr(id_ref_expr& node)
 	if (auto sym = sym_tracker.lookup_sym(&node.ident))
 	{
 		node.target = sym;
-		if (sym->type == decl_type::var)
+		if (sym->kind == decl_kind::var)
 		{
-			node.type = static_cast<var_decl const&>(*sym).var_type;
-			node.type.cattp = opcat::lval;
+			node.type = static_cast<var_decl const&>(*sym).type;
+			node.cat = exprcat::lval;
 		}
-		else if (sym->type == decl_type::fdecl or sym->type == decl_type::fdef)
+		else if (sym->kind == decl_kind::fdecl or sym->kind == decl_kind::fdef)
 		{
-			node.type = static_cast<func_decl const&>(*sym).data_type;
-			node.type.cattp = opcat::rval;
+			node.type = static_cast<func_decl const&>(*sym).result_type;
+			node.cat = exprcat::rval;
 			node.type.exttp.push_back(static_cast<std::byte>(dtypemod::_func));
 		}
 		else
 		{
-			node.type.cattp = opcat::error;
+			node.cat = exprcat::error;
 			diagnostic d;
 			d.type = diagnostic_type::location_err;
 			d.l = node.loc;
@@ -145,7 +172,7 @@ void analyser::visit_id_ref_expr(id_ref_expr& node)
 	}
 	else
 	{
-		node.type.cattp = opcat::error;
+		node.cat = exprcat::error;
 		if (!ignore_unresolved_refs)
 		{
 			diagnostic d;
@@ -159,7 +186,9 @@ void analyser::visit_id_ref_expr(id_ref_expr& node)
 
 void analyser::visit_txt_literal(txt_literal& node)
 {
-	node.type.cattp = opcat::rval;
+	if (node.cat != exprcat::unset)
+		return;
+	node.cat = exprcat::rval;
 	node.type.basetp = dtypename::_char;
 	node.type.exttp.push_back(static_cast<std::byte>(dtypemod::_const));
 	node.type.exttp.push_back(static_cast<std::byte>(dtypemod::_ptr));
@@ -167,8 +196,9 @@ void analyser::visit_txt_literal(txt_literal& node)
 
 void analyser::visit_num_literal(num_literal& node)
 {
-	node.type.cattp = opcat::rval;
-	node.type.basetp = dtypename::_int;
+	// Category & type should've been set in the parser
+	if (node.cat == exprcat::unset)
+		node.cat = exprcat::error;
 }
 
 // Declarations
@@ -187,11 +217,11 @@ void analyser::visit_var_decl(var_decl& node)
 	}
 
 	// Check for invalid type
-	if (node.var_type.basetp == dtypename::_none)
+	if (node.type.basetp == dtypename::_none)
 	{
 		// Checks if it's a pointer.
 		bool is_ptr = false;
-		for (std::byte d : node.var_type.exttp)
+		for (std::byte d : node.type.exttp)
 		{
 			if (static_cast<dtypemod>(d) == dtypemod::_ptr)
 			{
@@ -263,7 +293,7 @@ void analyser::visit_func_def(func_def& node)
 	if (auto sym = sym_tracker.find_sym_cur(&node.ident))
 	{
 		// TODO: Check if declarations match
-		if (sym->target->type == decl_type::fdecl)
+		if (sym->target->kind == decl_kind::fdecl)
 		{
 			// Rebind the symbol to point to definition
 			sym->target = &node;
@@ -300,7 +330,7 @@ void analyser::visit_assign_stmt(assign_stmt& node)
 	//! Point of interest
 	if (auto var = sym_tracker.lookup_sym(&node.ident))
 	{
-		if (var->type == decl_type::var)
+		if (var->kind == decl_kind::var)
 		{
 			node.target = static_cast<var_decl const*>(var);
 			// TODO: Convert from expression type to variable type

@@ -8,6 +8,18 @@ static inline std::string_view token_value(std::vector<std::string> const& sourc
     return std::string_view(source.at(loc.line)).substr(loc.start, loc.len);
 }
 
+static inline bool is_ident_begin(char c)
+{
+    return (c >= 'A' and c <= 'Z')
+        or (c >= 'a' and c <= 'z')
+        or c == '_';
+}
+
+static inline bool is_ident_char(char c)
+{
+    return is_ident_begin(c) or (c >= '0' and c <= '9');
+}
+
 // Cuts the input into individual words/locations -> will later become tokens
 std::vector<location> lexer::lex_raw()
 {
@@ -58,12 +70,12 @@ std::vector<location> lexer::lex_raw()
                 loc.len = i - loc.start;
                 result.push_back(loc);
             }
-            else if (isalnum(line.at(i)))
+            else if (is_ident_char(line.at(i)))
             {
                 loc.start = i;
                 loc.line = nline;
                 ++i;
-                while (i < line.size() && isalnum(line.at(i)))
+                while (i < line.size() && is_ident_char(line.at(i)))
                 {
                     if (i < line.size() - 2)
                     {
@@ -274,7 +286,7 @@ std::vector<location> lexer::preprocess(std::vector<location> const& raw_tokens)
 }
 
 
-bool all_spaces(std::string txt)
+bool all_spaces(std::string const& txt)
 {
     for (char c : txt)
     {
@@ -286,7 +298,7 @@ bool all_spaces(std::string txt)
     return true;
 }
 
-bool is_number(std::string txt)
+bool is_number(std::string const& txt)
 {
     for (char c : txt)
     {
@@ -298,7 +310,7 @@ bool is_number(std::string txt)
     return true;
 }
 
-bool is_float(std::string txt)
+bool is_float(std::string const& txt)
 {
     if (txt.size() > 3)
     {
@@ -321,7 +333,7 @@ bool ishex(char c)
     return false;
 }
 
-bool is_addr(std::string txt)
+bool is_addr(std::string const& txt)
 {
     if (txt.size() > 3)
     {
@@ -369,6 +381,8 @@ std::vector<token> lexer::lex(std::vector<location> const& src)
         MATCH_KW(for)
         MATCH_KW(ret)
         MATCH_KW(extern)
+        MATCH_KW(true)
+        MATCH_KW(false)
         #undef MATCH_KW
         // Types
         #define MATCH_DT(v) MATCH(#v, tkn_type::dt_##v)
@@ -455,7 +469,7 @@ std::vector<token> lexer::lex(std::vector<location> const& src)
             if (
                 t.value.at(0) == '"' || t.value.at(0) == '\'' || 
                 is_number(t.value)   || is_float(t.value)     ||
-                t.value == "true"    || t.value == "false"    || is_addr(t.value) )
+                is_addr(t.value))
             {
                 t.type = tkn_type::literal;
             }

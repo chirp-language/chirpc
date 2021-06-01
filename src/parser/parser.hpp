@@ -85,13 +85,14 @@ private:
     // Expression stuff
     dtypename get_dtypename(std::string const&);
     dtypemod get_dtypemod(std::string const&);
-    exprtype get_datatype();
+    basic_type get_datatype();
 
     identifier get_identifier();
 
     txt_literal get_txt_lit();
     num_literal get_num_lit();
-    nodeh<literal_node> get_literal();
+    num_literal get_bool_lit();
+    exprh get_literal();
 
     exprh get_subexpr_op(exprh lhs, int min_prec);
     exprh get_primary_expr();
