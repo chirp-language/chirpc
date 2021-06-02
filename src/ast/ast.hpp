@@ -34,6 +34,7 @@ class var_decl;
 class entry_decl;
 class import_decl;
 class extern_decl;
+class namespace_decl;
 class parameters;
 class func_decl;
 class func_def;
@@ -115,6 +116,7 @@ public:
     // Vectors are in order
     std::vector<std::unique_ptr<import_decl>> imports;
     std::vector<std::unique_ptr<extern_decl>> externs;
+    std::vector<std::unique_ptr<namespace_decl>> nspaces;
     std::vector<std::unique_ptr<func_decl>> fdecls;
     std::vector<std::unique_ptr<func_def>> fdefs;
     std::unique_ptr<entry_decl> entry;
@@ -283,6 +285,7 @@ enum class decl_kind
     var,
     entry,
     import,
+    nspace,
     fdecl,
     fdef,
     external,
@@ -332,6 +335,17 @@ class extern_decl : public decl
     declh inner_decl;
 
     extern_decl() : decl(decl_kind::external) {}
+};
+
+class namespace_decl : public decl
+{
+    public:
+    identifier ident;
+
+    std::vector<std::shared_ptr<func_decl>> fdecls;
+    std::vector<std::shared_ptr<func_def>> fdefs;
+
+    namespace_decl() : decl(decl_kind::nspace) {}
 };
 
 class parameters : public ast_node

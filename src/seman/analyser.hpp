@@ -39,6 +39,7 @@ class analyser
 	void visit_entry_decl(entry_decl&);
 	void visit_import_decl(import_decl&);
 	void visit_extern_decl(extern_decl&);
+	void visit_namespace_decl(namespace_decl&);
 	void visit_parameters(parameters&);
 	void visit_func_decl(func_decl&);
 	void visit_func_def(func_def&);

@@ -42,7 +42,7 @@ tracked_sym* tracker::find_sym_cur(identifier const* name)
         if (it->depth != depth)
             break;
 
-        if (it->name->name == name->name)
+        if (it->name->name == name->name and it->name->namespaces == name->namespaces)
             return &*it;
     }
     return nullptr;
@@ -53,7 +53,7 @@ decl const* tracker::lookup_sym(identifier const* name) const
 {
     for (auto it = syms.rbegin(), end = syms.rend(); it != end; ++it)
     {
-        if (it->name->name == name->name)
+        if (it->name->name == name->name and it->name->namespaces == name->namespaces)
         {
             return it->target;
         }

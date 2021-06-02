@@ -106,6 +106,7 @@ private:
     nodeh<entry_decl> get_entry();
     nodeh<import_decl> get_import();
     nodeh<extern_decl> get_extern();
+    nodeh<namespace_decl> get_namespace();
 
     nodeh<var_decl> get_var_decl();
     nodeh<var_decl> get_parameter();

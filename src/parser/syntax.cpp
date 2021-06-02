@@ -97,6 +97,43 @@ nodeh<import_decl> parser::get_import()
     return node;
 }
 
+nodeh<namespace_decl> parser::get_namespace()
+{
+    auto node = new_node<namespace_decl>();
+    node->loc = loc_peekb();
+    node->ident = get_identifier();
+
+    expect(tkn_type::lbrace);
+
+    while(this->ok && !match(tkn_type::rbrace) && !match(tkn_type::eof))
+    {
+        switch(peek().type)
+        {
+            case tkn_type::kw_func:
+            {
+                skip();
+                auto f = get_func_decl();
+                if(f->kind == decl_kind::fdef)
+                    node->fdefs.push_back(std::unique_ptr<func_def>(static_cast<func_def*>(f.release())));
+                else
+                    node->fdecls.push_back(std::move(f));
+                break;
+            }
+            default:
+            {
+                this->ok = false;
+                diagnostic e;
+                e.type = diagnostic_type::location_err;
+                e.l = loc_peek();
+                e.msg = "Invalid declaration in namespace";
+                this->diagnostics.show(e);
+            }
+        }
+    }
+    
+    return node;
+}
+
 nodeh<ret_stmt> parser::get_ret()
 {
     auto node = new_node<ret_stmt>();
@@ -125,6 +162,7 @@ nodeh<extern_decl> parser::get_extern()
     {
         node->inner_decl = get_var_decl();
     }
+    
     node->loc.end = loc_peekb();
     return node;
 }

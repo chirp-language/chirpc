@@ -12,6 +12,7 @@ since it's not an ast_node, I prefer having it here
 enum class dtypename
 {
     _int,
+    _long,
     _float,
     _double,
     _char,

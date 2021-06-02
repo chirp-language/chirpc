@@ -189,9 +189,21 @@ void text_ast_dumper::dump_ast(ast_root const& root)
         }
     }
 
+    if(root.nspaces.empty())
+    {
+        write_color("-- No namespaces --\n", c_color_top_level_unavail);
+    }
+    else
+    {
+        for(auto& node : root.nspaces)
+        {
+            dump_namespace_decl(*node);
+        }
+    }
+
     if (root.fdecls.empty())
     {
-        write_color("-- No function declarations on top-level --\n", c_color_top_level_unavail);
+        write_color("-- No function declarations --\n", c_color_top_level_unavail);
     }
     else
     {
@@ -203,7 +215,7 @@ void text_ast_dumper::dump_ast(ast_root const& root)
 
     if (root.fdefs.empty())
     {
-        write_color("-- No function definitions on top-level --\n", c_color_top_level_unavail);
+        write_color("-- No function definitions --\n", c_color_top_level_unavail);
     }
     else
     {
@@ -532,6 +544,26 @@ void text_ast_dumper::dump_extern_decl(extern_decl const& n)
     write_color(n.real_name, c_color_identifier);
     std::cout << "\"\n";
     dump_decl(*n.inner_decl);
+    --depth;
+}
+
+void text_ast_dumper::dump_namespace_decl(namespace_decl const& n)
+{
+    std::cout << indent(depth);
+    write_color("namespace_declaration ", c_color_decl);
+    print_location(n.loc);
+    std::cout << '\n';
+
+    ++depth;
+    for(auto& node : n.fdecls)
+    {
+        dump_func_decl(*node);
+    }
+
+    for(auto& node : n.fdefs)
+    {
+        dump_func_def(*node);
+    }
     --depth;
 }
 

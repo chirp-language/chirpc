@@ -8,6 +8,7 @@ enum class tkn_type
 
     kw_entry, // entry
     kw_import, kw_export, // import export
+    kw_namespace,
     kw_if, kw_else, kw_elif, // if else
     kw_and, kw_or, // and or (should be operators)
     kw_func, // func
@@ -26,6 +27,7 @@ enum class tkn_type
     dt_double,
     dt_byte,
     dt_bool,
+    dt_long,
     dt_none,
     datatype_S = dt_int,
     datatype_E = dt_none,

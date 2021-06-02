@@ -8,6 +8,8 @@ void analyser::analyse()
 		visit_import_decl(*d);
 	for (auto& d : root.externs)
 		visit_extern_decl(*d);
+	for (auto& d : root.nspaces)
+		visit_namespace_decl(*d);
 	for (auto& d : root.fdecls)
 		visit_func_decl(*d);
 	for (auto& d : root.fdefs)
@@ -47,6 +49,8 @@ void analyser::visit_decl(decl& node)
 			return visit_entry_decl(static_cast<entry_decl&>(node));
 		case decl_kind::import:
 			return visit_import_decl(static_cast<import_decl&>(node));
+		case decl_kind::nspace:
+			return visit_namespace_decl(static_cast<namespace_decl&>(node));
 		case decl_kind::fdecl:
 			return visit_func_decl(static_cast<func_decl&>(node));
 		case decl_kind::fdef:
@@ -265,6 +269,21 @@ void analyser::visit_import_decl(import_decl& node)
 void analyser::visit_extern_decl(extern_decl& node)
 {
 	// TODO: Bind name
+}
+
+void analyser::visit_namespace_decl(namespace_decl& node)
+{
+	// This is even more hacky beyond any belief (pt. 1)
+	for (auto& d : node.fdecls)
+	{
+		d->ident.namespaces.insert(d->ident.namespaces.begin(), node.ident.name);
+		visit_func_decl(*d);
+	}
+	for (auto& d : node.fdefs)
+	{
+		d->ident.namespaces.insert(d->ident.namespaces.begin(), node.ident.name);
+		visit_func_def(*d);
+	}
 }
 
 void analyser::visit_parameters(parameters& node)

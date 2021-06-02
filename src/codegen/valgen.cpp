@@ -6,7 +6,11 @@ std::string codegen::emit_identifier(identifier const& ident)
 {
     std::string result;
 
-    // Namespaces are complicated and need more tracking, so they aren't generated yet
+    // This is even more hacky beyond any belief (pt. 2)
+    for(std::string n : ident.namespaces)
+    {
+        result += n + "$";
+    }
 
     result += ident.name;
 
@@ -25,6 +29,8 @@ std::string codegen::emit_datatype(basic_type const& type)
     std::string result;
 
     int ptr_depth = 0;
+    bool is_signed = false;
+    bool is_unsigned = false;
     bool is_const = false;
 
     for (std::byte d : type.exttp)
@@ -33,6 +39,14 @@ std::string codegen::emit_datatype(basic_type const& type)
         if (mod == dtypemod::_ptr)
         {
             ptr_depth++;
+        }
+        else if(mod == dtypemod::_signed)
+        {
+            is_signed = true;
+        }
+        else if(mod == dtypemod::_unsigned)
+        {
+            is_unsigned = true;
         }
         else if (mod == dtypemod::_const)
         {
@@ -45,11 +59,22 @@ std::string codegen::emit_datatype(basic_type const& type)
     {
         result += "const ";
     }
+    if (is_signed)
+    {
+        result += "signed ";
+    }
+    if (is_unsigned)
+    {
+        result += "unsigned ";
+    }
 
     switch (type.basetp)
     {
         case dtypename::_int:
             result += "int";
+            break;
+        case dtypename::_long:
+            result += "long";
             break;
         case dtypename::_float:
             result += "float";

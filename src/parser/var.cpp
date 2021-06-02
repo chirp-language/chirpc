@@ -8,6 +8,10 @@ dtypename parser::get_dtypename(std::string const& txt)
     {
         return dtypename::_int;
     }
+    else if (txt == "long")
+    {
+        return dtypename::_long;
+    }
     else if (txt == "float")
     {
         return dtypename::_float;
