@@ -29,7 +29,7 @@ The datatypes in Chirp are very similar to those in C.
 | ``double`` | 8 bytes |
 | ``char`` | 1 byte |
 | ``byte`` | 1 byte |
-| ``bool`` | 1 byte |
+| ``bool`` | 1 byte (2 values only) |
 | ``none`` | 0 byte |
 
 The none datatype is used to represent that there is no datatype, it cannot be used alone. It has to be used with either the ``func`` or ``ptr`` keyword.
@@ -44,31 +44,33 @@ The modifiers are the following. Some of these modifiers can be used alone
 | ``const`` | No | Makes the variable unmodifiable |
 | ``func`` | No | Is used both to declare a function, and when declaring a function pointer|
 
-*The type specifiers can be written in any order without changing the semantics. So ``char ptr`` is a valid as ``ptr char``.
+*The type specifiers cannot be written in arbitrary order without changing the semantics. So ``ptr char`` is valid, while ``char ptr`` is not.
 
-Values in Chirps are as follow
+Values in Chirps are as follows
 
-| Keyword | Description |
+| Syntax | Description |
 | --- | --- |
-|``false``|Boolean value equivalent to 0|
-|``true``|Boolean value equivalent to 1|
-| ``'some string'`` | Either a character or a string |
-| ``"some string"`` | Either a character or a string |
+| ``false`` | Literal value (of type `bool`) equivalent to 0 |
+| ``true`` | Literal value (of type `bool`) equivalent to 1 |
+| ``null`` | Null pointer literal (of type `ptr`, convertible to any pointer value) |
+| ``'c'`` | Character literal (of type `char`) |
+| ``"some string"`` | String literal (of type `ptr const char` to null-terminated string; no arrays yet) |
 
 
 # Variables
 
 Declaring a variable in Chirp is done like this:
-``datatype: identifier``
+``datatype: identifier [= initializer]``
+Initializer is optional
 
-Defining on the other hand is done like this
+Assigning on the other hand is done like this
 ``identifier = value``
 
 Example: 
 ```
-int: a = 123
-char: b = 'b'
-char ptr: c = "chirp" # C-Style string
+int: a = 123;
+char: b = 'b';
+ptr const char: c = "chirp"; # C-Style string
 ```
 
 ### Pointers
@@ -80,9 +82,9 @@ Chirp is very verbose, and so are pointers. When declaring a pointer in chirp, y
 Pointer reference and dereferencing is very verbose. It is done using the ``ref`` and ``deref`` keyword.
 
 ```ch
-int: a = 123
-int ptr: b = ref a
-int: c = deref b
+int: a = 123;
+ptr int: b = ref a;
+int: c = deref b;
 ```
 
 ### Casting
@@ -90,8 +92,8 @@ int: c = deref b
 Casting is done using the ``as`` keyword.
 
 ```ch
-ptr: data = mem.alloc(4)
-int: a = deref(data) as(int)
+ptr: data = mem.alloc(4);
+int: a = deref(data) as(int);
 ```
 
 > On the ``ref``,``deref``, and ``as``, and be used with or without a ``()`` as they are operators, not functions.
@@ -107,7 +109,7 @@ Unlike with variables, the datatype in the function is **NOT** followed by a ``:
 ```
 func int foo(int: a, int: b)
 {
-    ret a + b
+    ret a + b;
 }
 ```
 
@@ -127,9 +129,11 @@ func int foo()
 
 entry
 {
-    func int ptr: fun = ref foo
-    deref fun()
+    ptr func int: fun = ref foo;
+    (deref fun)();
 }
 ```
+
+Plain ``func type`` type is only allowed in expressions (it's the type of a function reference expression)
 
 A function ptr needs to have a ``func`` keyword, which in this case acts as a datatype instead of a keyword (subject to change).
