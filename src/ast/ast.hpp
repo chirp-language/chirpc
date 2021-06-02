@@ -320,7 +320,7 @@ class entry_decl : public decl
 class import_decl : public decl
 {
     public:
-    txt_literal filename;
+    std::string filename;
 
     import_decl() : decl(decl_kind::import) {}
 };
@@ -328,7 +328,7 @@ class import_decl : public decl
 class extern_decl : public decl
 {
     public:
-    txt_literal real_name;
+    std::string real_name;
     declh inner_decl;
 
     extern_decl() : decl(decl_kind::external) {}
@@ -408,9 +408,10 @@ class decl_stmt : public stmt
 class assign_stmt : public stmt
 {
     public:
-    identifier ident;
-    var_decl const* target = nullptr;
+    exprh target;
     exprh value;
+    tkn_type assign_op; // Type of assignment
+    token_location assign_loc; // location of '=', or compound assignment token
 
     assign_stmt() : stmt(stmt_kind::assign) {}
 };

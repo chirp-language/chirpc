@@ -53,6 +53,17 @@ num_literal parser::get_bool_lit()
     return node;
 }
 
+num_literal parser::get_null_ptr_lit()
+{
+    num_literal node;
+    node.type.basetp = dtypename::_none;
+    node.type.exttp.push_back(static_cast<std::byte>(dtypemod::_ptr));
+    node.cat = exprcat::rval;
+    node.loc = loc_peekb();
+    node.value = "null";
+    return node;
+}
+
 exprh parser::get_literal()
 {
     auto const& val = peek().value;
@@ -78,8 +89,11 @@ nodeh<import_decl> parser::get_import()
 {
     auto node = new_node<import_decl>();
     node->loc = loc_peekb();
-    node->filename = get_txt_lit();
-    node->loc = loc_peekb();
+    expect(tkn_type::literal);
+    node->filename = peekb().value;
+    node->filename.erase(0, 1);
+    node->filename.pop_back();
+    node->loc.end = loc_peekb();
     return node;
 }
 
@@ -97,7 +111,11 @@ nodeh<extern_decl> parser::get_extern()
 {
     auto node = new_node<extern_decl>();
     node->loc = loc_peekb();
-    node->real_name = get_txt_lit();
+    expect(tkn_type::literal);
+    node->real_name = peekb().value;
+    node->real_name.erase(0, 1);
+    node->real_name.pop_back();
+    node->loc.end = loc_peekb();
    
     if (match(tkn_type::kw_func))
     {
@@ -134,10 +152,6 @@ stmth parser::get_stmt()
     {
         return decl_stmt::from(get_var_decl());
     }
-    else if (is_var_assign())
-    {
-        return get_assign_stmt();
-    }
     else if (match(tkn_type::semi))
     {
         // Null statement
@@ -145,6 +159,11 @@ stmth parser::get_stmt()
     }
     else if (auto expr = get_expr(true))
     {
+        // Hacky, but works :^)
+        if (match(tkn_type::assign_op))
+        {
+            return get_assign_stmt(std::move(expr));
+        }
         expect(tkn_type::semi);
         return expr_stmt::from(std::move(expr));
     }

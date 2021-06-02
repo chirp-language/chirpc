@@ -30,6 +30,8 @@ void analyser::visit_expr(expr& node)
 			return visit_txt_literal(static_cast<txt_literal&>(node));
 		case expr_kind::numlit:
 			return visit_num_literal(static_cast<num_literal&>(node));
+		case expr_kind::cast:
+			return visit_cast_expr(static_cast<cast_expr&>(node));
 		default:
 			return;
 	}
@@ -201,6 +203,12 @@ void analyser::visit_num_literal(num_literal& node)
 		node.cat = exprcat::error;
 }
 
+void analyser::visit_cast_expr(cast_expr& node)
+{
+	// Category & type already set
+	visit_expr(*node.operand);
+}
+
 // Declarations
 
 void analyser::visit_var_decl(var_decl& node)
@@ -328,29 +336,28 @@ void analyser::visit_decl_stmt(decl_stmt& node)
 void analyser::visit_assign_stmt(assign_stmt& node)
 {
 	//! Point of interest
-	if (auto var = sym_tracker.lookup_sym(&node.ident))
-	{
-		if (var->kind == decl_kind::var)
-		{
-			node.target = static_cast<var_decl const*>(var);
-			// TODO: Convert from expression type to variable type
-		}
-		else
-		{
-			diagnostic d;
-			d.type = diagnostic_type::location_err;
-			d.l = node.loc;
-			d.msg = "Assigning to a non-variable";
-			diagnostics.show(d);
-		}
-	}
-	else
+	visit_expr(*node.target);
+	if (node.target->cat != exprcat::lval)
 	{
 		diagnostic d;
 		d.type = diagnostic_type::location_err;
 		d.l = node.loc;
-		d.msg = "Assigning to an undefined variable";
+		d.msg = "Assigning to a non-object value";
 		diagnostics.show(d);
+	}
+	// I'll make it better, I swear
+	else if (node.target->type.exttp.size() > 0
+		and node.target->type.exttp[0] == static_cast<std::byte>(dtypemod::_const))
+	{
+		diagnostic d;
+		d.type = diagnostic_type::location_err;
+		d.l = node.loc;
+		d.msg = "Assigning to a constant value";
+		diagnostics.show(d);
+	}
+	else
+	{
+		// TODO: Convert from expression type to variable type
 	}
 
 	visit_expr(*node.value);

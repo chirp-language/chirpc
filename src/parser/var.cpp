@@ -174,13 +174,13 @@ nodeh<var_decl> parser::get_parameter()
     return node;
 }
 
-nodeh<assign_stmt> parser::get_assign_stmt()
+nodeh<assign_stmt> parser::get_assign_stmt(exprh target)
 {
     auto node = new_node<assign_stmt>();
-    node->loc = loc_peek();
-    node->ident = get_identifier();
-    expect(tkn_type::assign_op);
-
+    node->loc = target->loc;
+    node->target = std::move(target);
+    node->assign_op = peekb().type;
+    node->assign_loc = loc_peekb();
     if (!this->ok)
         return node;
 

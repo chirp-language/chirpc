@@ -148,6 +148,12 @@ std::string exprop_id(tkn_type op)
         return "ref";
     case tkn_type::deref_op:
         return "deref";
+    // Assignments
+    case tkn_type::assign_op:
+        return "=";
+    case tkn_type::compassign_op:
+        // Placeholder
+        return "@=";
     default:
         return "invalid";
     }
@@ -311,28 +317,15 @@ void text_ast_dumper::dump_stmt(stmt const& node)
 void text_ast_dumper::dump_basic_type(basic_type const& type)
 {
     std::cout << indent(depth);
-    std::cout << "basic_type\n";
-    std::cout << indent(depth + 1);
-    std::cout << "typename ";
+    std::cout << "basic_type ";
+    for (std::byte x : type.exttp)
+    {
+        dtypemod w = static_cast<dtypemod>(x);
+        write_color(dump_dtmod(w), c_color_type);
+        std::cout << ' ';
+    }
     write_color(dump_dtname(type.basetp), c_color_type);
     std::cout << ";\n";
-    std::cout << indent(depth + 1);
-    if (type.exttp.empty())
-    {
-        std::cout << "(no type modifiers)\n";
-    }
-    else
-    {
-        std::cout << "type modifiers:\n";
-        // I really gave up on naming thing well there
-        for (std::byte x : type.exttp)
-        {
-            dtypemod w = static_cast<dtypemod>(x);
-            std::cout << indent(depth + 2);
-            std::cout << dump_dtmod(w);
-            std::cout << '\n';
-        }
-    }
 }
 
 void text_ast_dumper::dump_expr_type(basic_type const& type, exprcat cat)
@@ -340,28 +333,15 @@ void text_ast_dumper::dump_expr_type(basic_type const& type, exprcat cat)
     std::cout << indent(depth);
     std::cout << "expr_type ";
     write_color(dump_exprcat(cat), c_color_type_cat);
-    std::cout << '\n';
-    std::cout << indent(depth + 1);
-    std::cout << "typename ";
+    std::cout << ' ';
+    for (std::byte x : type.exttp)
+    {
+        dtypemod w = static_cast<dtypemod>(x);
+        write_color(dump_dtmod(w), c_color_type);
+        std::cout << ' ';
+    }
     write_color(dump_dtname(type.basetp), c_color_type);
     std::cout << ";\n";
-    std::cout << indent(depth + 1);
-    if (type.exttp.empty())
-    {
-        std::cout << "(no type modifiers)\n";
-    }
-    else
-    {
-        std::cout << "type modifiers:\n";
-        // I really gave up on naming thing well there
-        for (std::byte x : type.exttp)
-        {
-            dtypemod w = static_cast<dtypemod>(x);
-            std::cout << indent(depth + 2);
-            std::cout << dump_dtmod(w);
-            std::cout << '\n';
-        }
-    }
 }
 
 void text_ast_dumper::dump_binop(binop const& n)
@@ -534,7 +514,9 @@ void text_ast_dumper::dump_import_decl(import_decl const& n)
     print_location(n.loc);
     std::cout << '\n';
     ++depth;
-    dump_txt_literal(n.filename);
+    std::cout << indent(depth) << "filename: \"";
+    write_color(n.filename, c_color_identifier);
+    std::cout << "\"\n";
     --depth;
 }
 
@@ -546,6 +528,9 @@ void text_ast_dumper::dump_extern_decl(extern_decl const& n)
     std::cout << '\n';
 
     ++depth;
+    std::cout << indent(depth) << "real name: \"";
+    write_color(n.real_name, c_color_identifier);
+    std::cout << "\"\n";
     dump_decl(*n.inner_decl);
     --depth;
 }
@@ -609,10 +594,13 @@ void text_ast_dumper::dump_assign_stmt(assign_stmt const& n)
     std::cout << indent(depth);
     write_color("assign_statement ", c_color_stmt);
     print_location(n.loc);
-    std::cout << '\n';
+    std::cout << " (";
+    std::cout << exprop_id(n.assign_op);
+    std::cout << ' ';
+    print_location(n.assign_loc);
+    std::cout << ")\n";
     ++depth;
-    dump_identifier(n.ident);
-    // TODO: Print variable after analysis
+    dump_expr(*n.target);
     dump_expr(*n.value);
     --depth;
 }

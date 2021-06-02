@@ -83,7 +83,10 @@ exprh parser::get_subexpr_op(exprh lhs, int max_prec)
         if (optype == tkn_type::as_op)
         {
             // Cast to new type
+            bool has_paren = match(tkn_type::lparen);
             basic_type newtp = get_datatype();
+            if (has_paren)
+                expect(tkn_type::rparen);
             auto ecast = new_node<cast_expr>();
             ecast->operand = std::move(lhs);
             ecast->type = std::move(newtp);
@@ -121,6 +124,10 @@ exprh parser::get_primary_expr()
     else if (probe(tkn_type::kw_true) or probe(tkn_type::kw_false))
     {
         return new_node<num_literal>(get_bool_lit());
+    }
+    else if (match(tkn_type::kw_null))
+    {
+        return new_node<num_literal>(get_null_ptr_lit());
     }
     else if (match(tkn_type::lparen))
     {

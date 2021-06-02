@@ -23,6 +23,7 @@ std::string token::util_dump(){
         tknstr(kw_extern  )
         tknstr(kw_true    )
         tknstr(kw_false   )
+        tknstr(kw_null    )
         tknstr(dt_int     )
         tknstr(dt_char    )
         tknstr(dt_float   )

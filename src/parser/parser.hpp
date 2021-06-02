@@ -92,6 +92,7 @@ private:
     txt_literal get_txt_lit();
     num_literal get_num_lit();
     num_literal get_bool_lit();
+    num_literal get_null_ptr_lit();
     exprh get_literal();
 
     exprh get_subexpr_op(exprh lhs, int min_prec);
@@ -117,7 +118,7 @@ private:
     nodeh<compound_stmt> get_compound_stmt();
 
     nodeh<decl_stmt> get_decl_stmt();
-    nodeh<assign_stmt> get_assign_stmt();
+    nodeh<assign_stmt> get_assign_stmt(exprh target);
     nodeh<ret_stmt> get_ret();
     nodeh<conditional_stmt> get_cond(); // 420 NoScope!
     nodeh<iteration_stmt> get_iter();

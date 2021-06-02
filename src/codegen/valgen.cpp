@@ -97,6 +97,11 @@ std::string codegen::emit_txt_literal(txt_literal const& node)
 
 std::string codegen::emit_num_literal(num_literal const& node)
 {
+    // Technically UB if exttp is empty, oops...
+    if (node.type.basetp == dtypename::_none
+        and node.type.exttp[0] == static_cast<std::byte>(dtypemod::_ptr))
+        // Null pointer
+        return "(void*)0";
     return node.value;
 }
 

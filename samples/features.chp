@@ -45,7 +45,7 @@ func ptr const char find_cstr_end(ptr const char: s)
 {
 	# While statements, assignment, pointer increment (TODO: type-check)
 	#while deref s != 0
-	while s != 0 as ptr const char
+	while s != null
 	{
 		s = s + 1;
 	}

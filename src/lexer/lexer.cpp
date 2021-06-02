@@ -383,6 +383,7 @@ std::vector<token> lexer::lex(std::vector<location> const& src)
         MATCH_KW(extern)
         MATCH_KW(true)
         MATCH_KW(false)
+        MATCH_KW(null)
         #undef MATCH_KW
         // Types
         #define MATCH_DT(v) MATCH(#v, tkn_type::dt_##v)

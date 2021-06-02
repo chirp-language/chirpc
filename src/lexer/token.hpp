@@ -16,6 +16,7 @@ enum class tkn_type
     kw_extern, // extern
     kw_true, // true
     kw_false, // false
+    kw_null, // null
 
     // Tokens with multiple keywords
     // Types

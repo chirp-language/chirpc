@@ -33,6 +33,7 @@ class analyser
 	void visit_loperand(loperand&) = delete;
 	void visit_txt_literal(txt_literal&);
 	void visit_num_literal(num_literal&);
+	void visit_cast_expr(cast_expr&);
 	// Declarations
 	void visit_var_decl(var_decl&);
 	void visit_entry_decl(entry_decl&);

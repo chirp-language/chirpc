@@ -42,8 +42,10 @@ std::string codegen::emit_var_decl(var_decl const& node)
 std::string codegen::emit_assign_stmt(assign_stmt const& node)
 {
     std::string result;
-    result += emit_identifier(node.ident);
-    result += " = ";
+    result += emit_expr(*node.target);
+    result += ' ';
+    result += exprop_id(node.assign_op);
+    result += ' ';
     result += emit_expr(*node.value);
     result += ";\n";
     return result;
