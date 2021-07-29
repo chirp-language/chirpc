@@ -19,6 +19,7 @@ class text_ast_dumper {
 
     void dump_ast(ast_root const& root);
     void dump_identifier(identifier const&);
+    void dump_qual_identifier(qual_identifier const&);
     void dump_expr(expr const& node);
     void dump_decl(decl const& node);
     void dump_stmt(stmt const& node);

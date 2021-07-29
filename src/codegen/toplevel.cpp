@@ -9,18 +9,13 @@ std::string codegen::emit_entry_decl(entry_decl const& e)
     return result;
 }
 
-std::string codegen::emit_namespace(namespace_decl const& e)
+std::string codegen::emit_namespace_decl(namespace_decl const& e)
 {
     std::string result;
 
-    for(auto const& d : e.fdecls)
+    for(auto const& d : e.decls)
     {
-        result += emit_func_decl(*d);
-    }
-
-    for(auto const& d : e.fdefs)
-    {
-        result += emit_func_def(*d);
+        result += emit_decl(*d);
     }
 
     return result;
@@ -28,13 +23,6 @@ std::string codegen::emit_namespace(namespace_decl const& e)
 
 void codegen::gen_toplevel()
 {
-    for(auto const& d: m_tree->nspaces)
-        result += emit_namespace(*d);
-    for (auto const& d : m_tree->fdecls)
-        result += emit_func_decl(*d);
-    for (auto const& d : m_tree->fdefs)
-        result += emit_func_def(*d);
-    // The entry point will always be the last thing
-    if (m_tree->entry)
-        result += emit_entry_decl(*m_tree->entry);
+    for (auto const& d : m_tree->top_decls)
+        result += emit_decl(*d);
 }

@@ -1,19 +1,10 @@
 #pragma once
 
 #include <string>
-#include <vector>
+#include <list>
 
 #include "../ast/ast.hpp"
 #include "../shared/diagnostic.hpp"
-
-// Tracked symbol, can go out of scope
-class tracked_sym
-{
-    public:
-    identifier const* name;
-    decl const* target;
-    unsigned int depth;
-};
 
 /*
 Semantics tracker, is used to get the states of variables
@@ -24,27 +15,54 @@ which means it also tracks imports.
 class tracker
 {
     public:
+
+    // Tracked symbol, can go out of scope
+    class tracked_sym
+    {
+        public:
+        identifier name;
+        decl const* target;
+        unsigned int depth;
+    };
+
+    using symlist = std::list<tracked_sym>;
+    using symiter = symlist::iterator;
+
+    struct tracked_scope
+    {
+        symiter begin;
+        identifier const* scope_name;
+        decl const* scope_target;
+    };
+
     tracker(diagnostic_manager& diag)
         : diagnostics(diag) {}
 
-    // Returns true if a symbol with same name DOESN'T exist
+    void set_root(ast_root const* root) {
+        top_scope = root;
+    }
+
+    // Returns true if a symbol with same name in current scope DOESN'T exist
     // Return false otherwise
-    bool bind_sym(identifier const* name, decl const* target);
+    bool bind_sym(identifier const& name, decl const& target);
 
     // Binds a new symbol regardless of whether it's present in the current scope
-    void push_sym_unsafe(identifier const* name, decl const* target);
+    void push_sym_unsafe(identifier const& name, decl const& target);
 
     // Searches a symbol with the same name in current scope only
     // Returns nullptr if symbol is not found
-    tracked_sym* find_sym_cur(identifier const* name);
+    tracked_sym* find_sym_cur(identifier const& name);
 
     // If symbol doesn't exist, returns nullptr
-    decl const* lookup_sym(identifier const* name) const;
+    decl const* lookup_sym(identifier const& name) const;
+    decl const* lookup_sym_qual(qual_identifier const& name) const;
 
-    // Get's deeper in the scope
-    void push_scope();
+    decl const* lookup_decl_sym(decl const& decl_scope, identifier const& name) const;
 
-    // Get's out of the current scope
+    // Gets deeper in the scope
+    void push_scope(identifier const* name = nullptr, decl const* owner = nullptr);
+
+    // Gets out of the current scope
     // and check for variabless that are deeper then
     // current scope, and deletes them.
     void pop_scope();
@@ -56,7 +74,9 @@ class tracker
     bool entry_set = false;
 
     // Keeps track of all the variables
-    std::vector<tracked_sym> syms;
+    symlist syms;
+    std::list<tracked_scope> scopes;
+    ast_root const* top_scope = nullptr;
 
     diagnostic_manager& diagnostics;
 };

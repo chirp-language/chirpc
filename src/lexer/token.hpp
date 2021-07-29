@@ -82,3 +82,4 @@ class token
 };
 
 std::string exprop_id(tkn_type op);
+extern char const* token_names[];

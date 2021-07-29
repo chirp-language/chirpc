@@ -81,7 +81,7 @@ int main(int argc, char** argv)
     parser p(diagnostics);
     p.load_tokens(options.filename, std::move(tkns));
     diagnostics.loc_prov = &p;
-    p.parse();
+    p.parse_top_level();
 
     // Semantic analysis
     analyser seman(p.get_ast(), diagnostics);

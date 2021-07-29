@@ -2,24 +2,28 @@
 
 #include "../ast/types.hpp"
 
-std::string codegen::emit_identifier(identifier const& ident)
+std::string codegen::emit_qual_identifier(qual_identifier const& ident)
 {
     std::string result;
 
     // This is even more hacky beyond any belief (pt. 2)
-    for(std::string n : ident.namespaces)
+    // Should probably (definitely) normalize access path first
+    for (auto id = ident.parts.cbegin(), end = ident.parts.cend() - 1; id != end; ++id)
     {
-        result += n + "$";
+        result += emit_identifier(*id) + "$";
     }
-
-    result += ident.name;
-
+    result += ident.parts.back().name;
     return result;
+}
+
+std::string codegen::emit_identifier(identifier const& ident)
+{
+    return ident.name;
 }
 
 std::string codegen::emit_id_ref_expr(id_ref_expr const& node)
 {
-    return emit_identifier(node.ident);
+    return emit_qual_identifier(node.ident);
 }
 
 // This is not finished
@@ -174,7 +178,10 @@ std::string codegen::emit_expr(expr const& node)
             return emit_num_literal(static_cast<num_literal const&>(node));
         case expr_kind::cast:
             return emit_cast_expr(static_cast<cast_expr const&>(node));
-        default:
-            return "\n#error Bad operand, This is a bug\n";
     }
+    #ifndef NDEBUG
+    return "\n#error Bad expression, this is a bug\n";
+    #else
+    __builtin_unreachable();
+    #endif
 }

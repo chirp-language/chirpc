@@ -20,6 +20,7 @@ public:
 // Forward declarations
 class ast_root;
 class identifier;
+class qual_identifier;
 class expr;
 class binop;
 class arguments;
@@ -110,25 +111,26 @@ using stmth = std::unique_ptr<stmt, stmt_node_deleter>;
 
 // === Top level / Common ===
 
-class ast_root
-{
-public:
-    // Vectors are in order
-    std::vector<std::unique_ptr<import_decl>> imports;
-    std::vector<std::unique_ptr<extern_decl>> externs;
-    std::vector<std::unique_ptr<namespace_decl>> nspaces;
-    std::vector<std::unique_ptr<func_decl>> fdecls;
-    std::vector<std::unique_ptr<func_def>> fdefs;
-    std::unique_ptr<entry_decl> entry;
-};
-
 class identifier : public ast_node
 {
-public:
-    // The namespace vector for a.b.c.foo() would be like:
-    // {"a","b","c"}.. Further in vector => More nested
-    std::vector<std::string> namespaces;
+    public:
     std::string name;
+
+    static identifier from(std::string&& name, token_location loc = token_location()) {
+        identifier i;
+        i.name = std::move(name);
+        i.loc = loc;
+        return i;
+    }
+};
+
+class qual_identifier : public ast_node
+{
+    public:
+    // The parts vector for a.b.c.foo() would be:
+    // {"a","b","c","foo"}.. Further in vector => More nested
+    std::vector<identifier> parts;
+    bool is_global = false; // Start at global namespace
 };
 
 // === Expressions ===
@@ -228,16 +230,16 @@ enum class loptype
 class id_ref_expr : public expr
 {
     public:
-    identifier ident;
+    qual_identifier ident;
     decl const* target = nullptr;
 
-    id_ref_expr(identifier ident)
+    id_ref_expr(qual_identifier ident)
         : expr(expr_kind::ident), ident(std::move(ident))
     {
         loc = ident.loc;
     }
 
-    static nodeh<id_ref_expr> from(identifier ident)
+    static nodeh<id_ref_expr> from(qual_identifier ident)
     {
         return new_node<id_ref_expr>(std::move(ident));
     }
@@ -282,6 +284,7 @@ class cast_expr : public expr
 
 enum class decl_kind
 {
+    root,
     var,
     entry,
     import,
@@ -300,6 +303,24 @@ class decl : public ast_node
 
     protected:
     decl(decl_kind kind) : kind(kind) {}
+};
+
+class ast_root : public decl
+{
+public:
+    #if 0
+    // Vectors are in order
+    std::vector<std::unique_ptr<import_decl>> imports;
+    std::vector<std::unique_ptr<extern_decl>> externs;
+    std::vector<std::unique_ptr<namespace_decl>> nspaces;
+    std::vector<std::unique_ptr<func_decl>> fdecls;
+    std::vector<std::unique_ptr<func_def>> fdefs;
+    std::unique_ptr<entry_decl> entry;
+    #endif
+    std::vector<declh> top_decls;
+    entry_decl* entry = nullptr;
+
+    ast_root() : decl(decl_kind::root) {}
 };
 
 class var_decl : public decl
@@ -342,8 +363,7 @@ class namespace_decl : public decl
     public:
     identifier ident;
 
-    std::vector<std::shared_ptr<func_decl>> fdecls;
-    std::vector<std::shared_ptr<func_def>> fdefs;
+    std::vector<declh> decls;
 
     namespace_decl() : decl(decl_kind::nspace) {}
 };

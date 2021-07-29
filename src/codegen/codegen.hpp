@@ -23,6 +23,7 @@ class codegen
     diagnostic_manager& diagnostics;
 
     std::string emit_identifier(identifier const&);
+    std::string emit_qual_identifier(qual_identifier const&);
     std::string emit_datatype(basic_type const&);
     std::string emit_expr(expr const&);
     std::string emit_binop(binop const&);
@@ -36,10 +37,12 @@ class codegen
     std::string emit_decl(decl const&);
     std::string emit_var_decl(var_decl const&);
     std::string emit_entry_decl(entry_decl const&);
+    std::string emit_import_decl(import_decl const&);
+    std::string emit_namespace_decl(namespace_decl const&);
     std::string emit_parameters(parameters const&);
     std::string emit_func_decl(func_decl const&);
     std::string emit_func_def(func_def const&);
-    std::string emit_namespace(namespace_decl const&);
+    std::string emit_extern_decl(extern_decl const&);
 
     std::string emit_stmt(stmt const&);
     std::string emit_assign_stmt(assign_stmt const&);

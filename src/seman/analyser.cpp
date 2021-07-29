@@ -1,9 +1,11 @@
 #include "analyser.hpp"
+#include "tracker.hpp"
 
 // Dispatch functions
 
 void analyser::analyse()
 {
+	#if 0
 	for (auto& d : root.imports)
 		visit_import_decl(*d);
 	for (auto& d : root.externs)
@@ -14,8 +16,12 @@ void analyser::analyse()
 		visit_func_decl(*d);
 	for (auto& d : root.fdefs)
 		visit_func_def(*d);
-	if (root.entry)
-		visit_entry_decl(*root.entry);
+	#endif
+	// Top scope
+	sym_tracker.push_scope();
+	for (auto& d : root.top_decls)
+		visit_decl(*d);
+	sym_tracker.pop_scope();
 }
 
 void analyser::visit_expr(expr& node)
@@ -41,6 +47,9 @@ void analyser::visit_decl(decl& node)
 {
 	switch (node.kind)
 	{
+		case decl_kind::root:
+			// Shouldn't happen
+			break;
 		case decl_kind::var:
 			return visit_var_decl(static_cast<var_decl&>(node));
 		case decl_kind::entry:
@@ -145,23 +154,25 @@ void analyser::visit_func_call(func_call& node)
 void analyser::visit_id_ref_expr(id_ref_expr& node)
 {
 	//! Point of interest
-	if (auto sym = sym_tracker.lookup_sym(&node.ident))
+	if (auto sym = sym_tracker.lookup_sym_qual(node.ident))
 	{
+		while (sym->kind == decl_kind::external)
+			sym = static_cast<extern_decl const*>(sym)->inner_decl.get();
 		node.target = sym;
-		if (sym->kind == decl_kind::var)
+		switch (sym->kind)
 		{
-			node.type = static_cast<var_decl const&>(*sym).type;
-			node.cat = exprcat::lval;
-		}
-		else if (sym->kind == decl_kind::fdecl or sym->kind == decl_kind::fdef)
-		{
-			node.type = static_cast<func_decl const&>(*sym).result_type;
-			node.cat = exprcat::rval;
-			node.type.exttp.push_back(static_cast<std::byte>(dtypemod::_func));
-		}
-		else
-		{
-			node.cat = exprcat::error;
+			case decl_kind::var:
+				node.type = static_cast<var_decl const&>(*sym).type;
+				node.cat = exprcat::lval;
+				break;
+			case decl_kind::fdecl:
+			case decl_kind::fdef:
+				node.type = static_cast<func_decl const&>(*sym).result_type;
+				node.cat = exprcat::rval;
+				node.type.exttp.push_back(static_cast<std::byte>(dtypemod::_func));
+				break;
+			default:
+				node.cat = exprcat::error;
 				diagnostic(diagnostic_type::location_err)
 					.at(node.loc)
 					.reason("Unknown declaration type")
@@ -202,7 +213,7 @@ void analyser::visit_cast_expr(cast_expr& node)
 void analyser::visit_var_decl(var_decl& node)
 {
 	//! Point of interest
-	if (!sym_tracker.bind_sym(&node.ident, &node))
+	if (!sym_tracker.bind_sym(node.ident, node))
 	{
 		diagnostic(diagnostic_type::location_err)
 			.at(node.loc)
@@ -256,6 +267,7 @@ void analyser::visit_extern_decl(extern_decl& node)
 void analyser::visit_namespace_decl(namespace_decl& node)
 {
 	// This is even more hacky beyond any belief (pt. 1)
+	#if 0
 	for (auto& d : node.fdecls)
 	{
 		d->ident.namespaces.insert(d->ident.namespaces.begin(), node.ident.name);
@@ -266,6 +278,15 @@ void analyser::visit_namespace_decl(namespace_decl& node)
 		d->ident.namespaces.insert(d->ident.namespaces.begin(), node.ident.name);
 		visit_func_def(*d);
 	}
+	#endif
+	sym_tracker.bind_sym(node.ident, node);
+	sym_tracker.push_scope(&node.ident, &node);
+	for (auto& d : node.decls)
+	{
+		// Push namespace context
+		visit_decl(*d);
+	}
+	sym_tracker.pop_scope();
 }
 
 void analyser::visit_parameters(parameters& node)
@@ -280,7 +301,7 @@ void analyser::visit_func_decl(func_decl& node)
 {
 	//! Point of interest
 
-	if (!sym_tracker.bind_sym(&node.ident, &node))
+	if (!sym_tracker.bind_sym(node.ident, node))
 	{
 		// TODO: Check if declarations match
 		diagnostic(diagnostic_type::location_err)
@@ -298,7 +319,7 @@ void analyser::visit_func_def(func_def& node)
 {
 	//! Point of interest
 
-	if (auto sym = sym_tracker.find_sym_cur(&node.ident))
+	if (auto sym = sym_tracker.find_sym_cur(node.ident))
 	{
 		// TODO: Check if declarations match
 		if (sym->target->kind == decl_kind::fdecl)
@@ -316,7 +337,7 @@ void analyser::visit_func_def(func_def& node)
 	}
 	else
 	{
-		sym_tracker.push_sym_unsafe(&node.ident, &node);
+		sym_tracker.push_sym_unsafe(node.ident, node);
 	}
 
 	sym_tracker.push_scope();

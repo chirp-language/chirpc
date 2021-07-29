@@ -1,61 +1,45 @@
 #include "parser.hpp"
 
-bool parser::is_params()
-{
-    bool result = false;
-    int op = this->cursor;
-
-    if (match(tkn_type::lparen))
-    {
-        while (is_var_decl() && match(tkn_type::comma));
-        
-        if (probe(tkn_type::rparen))
-        {
-            result = true;
-        }
-    }
-    cursor = op;
-    return result;
-}
-
-parameters parser::get_parameters()
+parameters parser::parse_parameters()
 {
     parameters node;
+    node.loc.begin = loc_peek();
     expect(tkn_type::lparen);
 
     if (!match(tkn_type::rparen))
     {
         do
         {
-            node.body.push_back(static_cast<std::unique_ptr<var_decl>>(get_parameter()));
+            node.body.push_back(static_cast<std::unique_ptr<var_decl>>(parse_parameter()));
         } while (match(tkn_type::comma));
 
         expect(tkn_type::rparen);
     }
+    node.loc.end = loc_peekb();
     return node;
 }
 
-nodeh<func_decl> parser::get_func_decl()
+nodeh<func_decl> parser::parse_func_decl()
 {
     // Inherited stuff
     auto loc = loc_peekb();
 
     if (!this->ok)
         return nullptr;
-    auto data_type = get_datatype();
+    auto data_type = parse_datatype();
     if (!this->ok)
         return nullptr;
-    auto ident = get_identifier();
+    auto ident = parse_identifier();
     if (!this->ok)
         return nullptr;
-    auto params = get_parameters();
+    auto params = parse_parameters();
     if (!this->ok)
         return nullptr;
     nodeh<func_decl> node;
     if (match(tkn_type::lbrace))
     {
         node = new_node<func_def>();
-        static_cast<func_def&>(*node).body = get_compound_stmt();
+        static_cast<func_def&>(*node).body = parse_compound_stmt();
     }
     else
     {
@@ -71,7 +55,7 @@ nodeh<func_decl> parser::get_func_decl()
     return node;
 }
 
-arguments parser::get_arguments()
+arguments parser::parse_arguments()
 {
     arguments node;
     node.loc = loc_peekb();
@@ -93,7 +77,7 @@ arguments parser::get_arguments()
                 while (match(tkn_type::comma))
                     ;
             }
-            node.body.push_back(get_expr(false));
+            node.body.push_back(parse_expr(false));
             if (match(tkn_type::comma))
                 continue;
             else if (match(tkn_type::rparen))
@@ -115,10 +99,10 @@ arguments parser::get_arguments()
     return node;
 }
 
-nodeh<func_call> parser::get_fcall(exprh callee)
+nodeh<func_call> parser::parse_fcall(exprh callee)
 {
     auto lbeg = callee->loc.begin;
-    auto node = new_node<func_call>(std::move(callee), get_arguments());
+    auto node = new_node<func_call>(std::move(callee), parse_arguments());
     node->loc = location_range(lbeg, loc_peekb());
     return node;
 }

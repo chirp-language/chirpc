@@ -2,7 +2,7 @@
 // DeKrain's Improved Expression Parsing "Algorithm"® a.k.a. Operator-precedence parser
 #include "parser.hpp"
 
-bool parser::is_binop()
+/*bool parser::is_binop()
 {
     return (
         is_identifier()            ||
@@ -11,7 +11,7 @@ bool parser::is_binop()
             tkn_type::binop_E)     ||
         probe(tkn_type::lparen)    ||
         probe(tkn_type::rparen));
-}
+}*/
 
 enum class precedence_class {
     group,
@@ -63,7 +63,7 @@ static bool is_operator(tkn_type t)
     );
 }
 
-exprh parser::get_subexpr_op(exprh lhs, int max_prec)
+exprh parser::parse_subexpr_op(exprh lhs, int max_prec)
 {
     tkn_type optype;
 
@@ -77,14 +77,14 @@ exprh parser::get_subexpr_op(exprh lhs, int max_prec)
         if (optype == tkn_type::lparen)
         {
             // Parse arguments and combine
-            lhs = get_fcall(std::move(lhs));
+            lhs = parse_fcall(std::move(lhs));
             continue;
         }
         if (optype == tkn_type::as_op)
         {
             // Cast to new type
             bool has_paren = match(tkn_type::lparen);
-            basic_type newtp = get_datatype();
+            basic_type newtp = parse_datatype();
             if (has_paren)
                 expect(tkn_type::rparen);
             auto ecast = new_node<cast_expr>();
@@ -94,11 +94,11 @@ exprh parser::get_subexpr_op(exprh lhs, int max_prec)
             lhs = std::move(ecast);
             continue;
         }
-        exprh rhs = get_primary_expr();
+        exprh rhs = parse_primary_expr();
         tkn_type tmpop;
         while (is_operator(tmpop = peek().type) and get_operator_precedence(tmpop) < pr)
         {
-            rhs = get_subexpr_op(std::move(rhs), max_prec - 1);
+            rhs = parse_subexpr_op(std::move(rhs), max_prec - 1);
         }
         auto lbeg = lhs->loc.begin;
         auto lend = rhs->loc.end;
@@ -109,34 +109,37 @@ exprh parser::get_subexpr_op(exprh lhs, int max_prec)
     return lhs;
 }
 
-exprh parser::get_primary_expr()
+exprh parser::parse_primary_expr()
 {
     using namespace std::string_literals;
 
-    if (is_identifier())
+    switch (peek().type)
     {
-        return id_ref_expr::from(get_identifier());
-    }
-    else if (probe(tkn_type::literal))
-    {
-        return get_literal();
-    }
-    else if (probe(tkn_type::kw_true) or probe(tkn_type::kw_false))
-    {
-        return new_node<num_literal>(get_bool_lit());
-    }
-    else if (match(tkn_type::kw_null))
-    {
-        return new_node<num_literal>(get_null_ptr_lit());
-    }
-    else if (match(tkn_type::lparen))
-    {
-        // Parenthesis are special, as they aren't considered as operations, but as sub_expressions
-        // Because of this, the location of the parenthesis is not stored in the tree
-        exprh result = get_expr(true);
-        expect(tkn_type::rparen);
-        return result;
-    }
+        case tkn_type::identifer:
+            return id_ref_expr::from(parse_qual_identifier());
+        case tkn_type::literal:
+            return parse_literal();
+        case tkn_type::kw_true:
+        case tkn_type::kw_false:
+        {
+            token_location l = loc_peek();
+            bool v = probe(tkn_type::kw_true);
+            skip();
+            return new_node<num_literal>(build_bool_lit(l, v));
+        }
+        case tkn_type::kw_null:
+            skip();
+            return new_node<num_literal>(build_null_ptr_lit(loc_peekb()));
+        case tkn_type::lparen:
+        {
+            // Parenthesis are special, as they aren't considered as operations, but as sub_expressions
+            // Because of this, the location of the parenthesis is not stored in the tree
+            skip();
+            exprh result = parse_expr(true);
+            expect(tkn_type::rparen);
+            return result;
+        }
+        default:
             this->ok = false;
             diagnostic(diagnostic_type::location_err)
                 .at(loc_peek())
@@ -146,9 +149,9 @@ exprh parser::get_primary_expr()
     }
 }
 
-exprh parser::get_expr(bool comma_allowed)
+exprh parser::parse_expr(bool comma_allowed)
 {
-    if (exprh lhs = get_primary_expr())
-        return get_subexpr_op(std::move(lhs), comma_allowed ? static_cast<int>(precedence_class::comma) : static_cast<int>(precedence_class::comma) - 1);
+    if (exprh lhs = parse_primary_expr())
+        return parse_subexpr_op(std::move(lhs), comma_allowed ? static_cast<int>(precedence_class::comma) : static_cast<int>(precedence_class::comma) - 1);
     return nullptr;
 }

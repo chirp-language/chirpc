@@ -9,7 +9,10 @@ class analyser
 {
 	public:
 	analyser(ast_root& root, diagnostic_manager& diag)
-		: root(root), sym_tracker(diag), diagnostics(diag) {}
+		: root(root), sym_tracker(diag), diagnostics(diag)
+	{
+		sym_tracker.set_root(&root);
+	}
 
 	void analyse();
 

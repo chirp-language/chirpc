@@ -1,5 +1,6 @@
 #include "ast_dumper.hpp"
 #include "../color.hpp"
+#include "ast.hpp"
 
 #include <iostream>
 #include <queue>
@@ -165,6 +166,7 @@ void text_ast_dumper::dump_ast(ast_root const& root)
 {
     write_color("Top Level:\n", c_color_top_level);
 
+    #if 0
     if (root.imports.empty())
     {
         write_color("-- No imports --\n", c_color_top_level_unavail);
@@ -233,6 +235,23 @@ void text_ast_dumper::dump_ast(ast_root const& root)
     {
         write_color("-- No entry --\n", c_color_top_level_unavail);
     }
+    #endif
+    for (auto& node : root.top_decls)
+    {
+        dump_decl(*node);
+    }
+    if (root.top_decls.empty())
+    {
+        write_color("-- No declarations --\n", c_color_top_level_unavail);
+    }
+
+    if (root.entry)
+    {
+        write_color("-- Entry available --\n", c_color_top_level);
+    }
+    else {
+        write_color("-- No entry --\n", c_color_top_level_unavail);
+    }
 }
 
 void text_ast_dumper::dump_identifier(identifier const& n)
@@ -240,18 +259,25 @@ void text_ast_dumper::dump_identifier(identifier const& n)
     std::cout << indent(depth);
     write_color("identifier ", c_color_identifier);
     print_location(n.loc);
-    std::cout << " <";
+    std::cout << ' ' << n.name;
+    std::cout << '\n';
+}
+
+void text_ast_dumper::dump_qual_identifier(qual_identifier const& n)
+{
+    std::cout << indent(depth);
+    write_color("qual_identifier ", c_color_identifier);
+    print_location(n.loc);
+    std::cout << ' ';
     int i = 0;
-    for (std::string const& wot : n.namespaces)
+    for (auto const& id : n.parts)
     {
-        std::cout << wot;
-        if (i != n.namespaces.size() - 1)
+        std::cout << id.name;
+        if (++i != n.parts.size())
         {
             std::cout << ".";
         }
     }
-    std::cout << "> ";
-    std::cout << n.name;
     std::cout << '\n';
 }
 
@@ -273,8 +299,6 @@ void text_ast_dumper::dump_expr(expr const& node)
             return dump_num_literal(static_cast<num_literal const&>(node));
         case expr_kind::cast:
             return dump_cast_expr(static_cast<cast_expr const&>(node));
-        default:
-            return;
     }
 }
 
@@ -282,20 +306,22 @@ void text_ast_dumper::dump_decl(decl const& node)
 {
     switch (node.kind)
     {
+        case decl_kind::root:
+            return dump_ast(static_cast<ast_root const&>(node));
         case decl_kind::var:
             return dump_var_decl(static_cast<var_decl const&>(node));
         case decl_kind::entry:
             return dump_entry_decl(static_cast<entry_decl const&>(node));
         case decl_kind::import:
             return dump_import_decl(static_cast<import_decl const&>(node));
+        case decl_kind::nspace:
+            return dump_namespace_decl(static_cast<namespace_decl const&>(node));
         case decl_kind::fdecl:
             return dump_func_decl(static_cast<func_decl const&>(node));
         case decl_kind::fdef:
             return dump_func_def(static_cast<func_def const&>(node));
         case decl_kind::external:
             return dump_extern_decl(static_cast<extern_decl const&>(node));
-        default:
-            return;
     }
 }
 
@@ -319,8 +345,6 @@ void text_ast_dumper::dump_stmt(stmt const& node)
             return dump_expr_stmt(static_cast<expr_stmt const&>(node));
         case stmt_kind::null:
             return dump_null_stmt(node);
-        default:
-            return;
     }
 }
 
@@ -407,18 +431,16 @@ void text_ast_dumper::dump_id_ref_expr(id_ref_expr const& n)
     std::cout << indent(depth);
     write_color("id_ref_expr ", c_color_expr);
     print_location(n.loc);
-    std::cout << " <";
+    std::cout << ' ';
     int i = 0;
-    for (std::string const& wot : n.ident.namespaces)
+    for (auto const& id : n.ident.parts)
     {
-        std::cout << wot;
-        if (i != n.ident.namespaces.size() - 1)
+        std::cout << id.name;
+        if (++i != n.ident.parts.size())
         {
             std::cout << ".";
         }
     }
-    std::cout << "> ";
-    std::cout << n.ident.name;
     std::cout << '\n';
     if (show_expr_types)
     {
@@ -555,14 +577,9 @@ void text_ast_dumper::dump_namespace_decl(namespace_decl const& n)
     std::cout << '\n';
 
     ++depth;
-    for(auto& node : n.fdecls)
+    for(auto& node : n.decls)
     {
-        dump_func_decl(*node);
-    }
-
-    for(auto& node : n.fdefs)
-    {
-        dump_func_def(*node);
+        dump_decl(*node);
     }
     --depth;
 }

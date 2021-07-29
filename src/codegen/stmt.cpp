@@ -8,14 +8,18 @@ std::string codegen::emit_decl(decl const& node)
             return emit_var_decl(static_cast<var_decl const&>(node));
         case decl_kind::entry:
             return emit_entry_decl(static_cast<entry_decl const&>(node));
-        /*case decl_kind::import:
+        case decl_kind::import:
             return emit_import_decl(static_cast<import_decl const&>(node));
+        case decl_kind::nspace:
+            return emit_namespace_decl(static_cast<namespace_decl const&>(node));
         case decl_kind::fdecl:
             return emit_func_decl(static_cast<func_decl const&>(node));
         case decl_kind::fdef:
             return emit_func_def(static_cast<func_def const&>(node));
         case decl_kind::external:
-            return emit_extern_decl(static_cast<extern_decl const&>(node));*/
+            return emit_extern_decl(static_cast<extern_decl const&>(node));
+        case decl_kind::root:
+            break;
     }
     #ifndef NDEBUG
     return "\n#error Bad declaration, this is a bug\n";
@@ -37,6 +41,18 @@ std::string codegen::emit_var_decl(var_decl const& node)
     }
     result += ";\n";
     return result;
+}
+
+std::string codegen::emit_extern_decl(extern_decl const& node)
+{
+    // TODO-Maybe: Add support for asm() attributes after declarator to support this
+    return "extern " + emit_decl(*node.inner_decl);
+}
+
+std::string codegen::emit_import_decl(import_decl const& node)
+{
+    // Import nodes should be only processed by the previous phases of translation
+    return std::string();
 }
 
 std::string codegen::emit_assign_stmt(assign_stmt const& node)
@@ -67,7 +83,7 @@ std::string codegen::emit_stmt(stmt const& s)
     switch (s.kind)
     {
         case stmt_kind::compound:
-            result += emit_compound_stmt(static_cast<compound_stmt const&>(s));
+            return emit_compound_stmt(static_cast<compound_stmt const&>(s));
             break;
         case stmt_kind::expr:
             result += emit_expr(*static_cast<expr_stmt const&>(s).node);
@@ -90,6 +106,12 @@ std::string codegen::emit_stmt(stmt const& s)
             break;
         case stmt_kind::null:
             break; // emit nothing
+        default:
+            #ifndef NDEBUG
+            return "\n#error Bad statement, this is a bug\n";
+            #else
+            __builtin_unreachable();
+            #endif
     }
     return result;
 }

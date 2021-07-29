@@ -12,7 +12,7 @@ Parses tokens into an AST
 class parser : public location_provider
 {
 public:
-    void parse();
+    void parse_top_level();
 
     void load_tokens(std::string, std::vector<token>&&);
     ast_root& get_ast()
@@ -69,60 +69,52 @@ private:
 
     // Actual parser stuff
 
-    bool is_binop();
-    bool is_identifier();
-    bool is_lop(); // left operand
-    bool is_lvalue();
     bool is_datatype();
     bool is_datamod();
     bool is_type();
-
-    bool is_params();
-
     bool is_var_decl(); // (data specifiers) (:) (identifier)
-    bool is_var_assign();  // (identifier) (=) (value)
 
     // Expression stuff
-    dtypename get_dtypename(std::string const&);
-    dtypemod get_dtypemod(std::string const&);
-    basic_type get_datatype();
+    basic_type parse_datatype();
 
-    identifier get_identifier();
+    identifier parse_identifier();
+    qual_identifier parse_qual_identifier();
 
-    txt_literal get_txt_lit();
-    num_literal get_num_lit();
-    num_literal get_bool_lit();
-    num_literal get_null_ptr_lit();
-    exprh get_literal();
+    txt_literal build_txt_lit(token_location loc, std::string&& value, bool is_char);
+    num_literal build_num_lit(token_location loc, std::string const& value);
+    num_literal build_bool_lit(token_location loc, bool value);
+    num_literal build_null_ptr_lit(token_location loc);
+    nodeh<txt_literal> parse_txt_lit(token_location loc, std::string const& tok_value);
+    exprh parse_literal();
 
-    exprh get_subexpr_op(exprh lhs, int min_prec);
-    exprh get_primary_expr();
-    exprh get_expr(bool comma_allowed);
+    exprh parse_subexpr_op(exprh lhs, int min_prec);
+    exprh parse_primary_expr();
+    exprh parse_expr(bool comma_allowed);
 
-    arguments get_arguments();
-    nodeh<func_call> get_fcall(exprh callee); // function call
+    arguments parse_arguments();
+    nodeh<func_call> parse_fcall(exprh callee); // function call
 
     // Declaration stuff
-    nodeh<entry_decl> get_entry();
-    nodeh<import_decl> get_import();
-    nodeh<extern_decl> get_extern();
-    nodeh<namespace_decl> get_namespace();
+    nodeh<entry_decl> parse_entry();
+    nodeh<import_decl> parse_import();
+    nodeh<extern_decl> parse_extern();
+    nodeh<namespace_decl> parse_namespace();
 
-    nodeh<var_decl> get_var_decl();
-    nodeh<var_decl> get_parameter();
+    nodeh<var_decl> parse_var_decl();
+    nodeh<var_decl> parse_parameter();
 
-    nodeh<func_decl> get_func_decl();
-    parameters get_parameters();
+    nodeh<func_decl> parse_func_decl();
+    parameters parse_parameters();
 
     // Statement stuff
-    nodeh<stmt> get_stmt();
-    nodeh<compound_stmt> get_compound_stmt();
+    nodeh<stmt> parse_stmt();
+    nodeh<compound_stmt> parse_compound_stmt();
 
-    nodeh<decl_stmt> get_decl_stmt();
-    nodeh<assign_stmt> get_assign_stmt(exprh target);
-    nodeh<ret_stmt> get_ret();
-    nodeh<conditional_stmt> get_cond(); // 420 NoScope!
-    nodeh<iteration_stmt> get_iter();
+    nodeh<decl_stmt> parse_decl_stmt();
+    nodeh<assign_stmt> parse_assign_stmt(exprh target);
+    nodeh<ret_stmt> parse_ret();
+    nodeh<conditional_stmt> parse_cond(); // 420 NoScope!
+    nodeh<iteration_stmt> parse_iter();
 
     bool ok = false;
     std::string filename;
