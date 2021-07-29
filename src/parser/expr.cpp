@@ -137,15 +137,12 @@ exprh parser::get_primary_expr()
         expect(tkn_type::rparen);
         return result;
     }
-    else
-    {
-        diagnostic e;
-        e.l = loc_peek();
-        e.msg = "Expected expression";
-        e.type = diagnostic_type::location_err;
-        this->ok = false;
-        this->diagnostics.show(e);
-        return nullptr;
+            this->ok = false;
+            diagnostic(diagnostic_type::location_err)
+                .at(loc_peek())
+                .reason("Expected expression")
+                .report(this->diagnostics);
+            return nullptr;
     }
 }
 

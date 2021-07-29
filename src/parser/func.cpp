@@ -85,12 +85,11 @@ arguments parser::get_arguments()
             if (match(tkn_type::comma))
             {
                 // QoL thing
-                diagnostic e;
-                e.l = loc_peekb();
-                e.msg = "Missing an argument before comma";
-                e.type = diagnostic_type::location_err;
-                this->diagnostics.show(e);
                 this->ok = false;
+                diagnostic(diagnostic_type::location_err)
+                    .at(loc_peekb())
+                    .reason("Missing an argument before comma")
+                    .report(this->diagnostics);
                 while (match(tkn_type::comma))
                     ;
             }
@@ -101,12 +100,11 @@ arguments parser::get_arguments()
                 break;
             else
             {
-                diagnostic e;
-                e.l = loc_peekb();
-                e.msg = "Expected ')' or ','";
-                e.type = diagnostic_type::location_err;
-                this->diagnostics.show(e);
                 this->ok = false;
+                diagnostic(diagnostic_type::location_err)
+                    .at(loc_peekb())
+                    .reason("Expected ')' or ','")
+                    .report(this->diagnostics);
                 break;
             }
         }

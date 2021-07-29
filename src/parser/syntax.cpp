@@ -122,11 +122,10 @@ nodeh<namespace_decl> parser::get_namespace()
             default:
             {
                 this->ok = false;
-                diagnostic e;
-                e.type = diagnostic_type::location_err;
-                e.l = loc_peek();
-                e.msg = "Invalid declaration in namespace";
-                this->diagnostics.show(e);
+                diagnostic(diagnostic_type::location_err)
+                    .at(loc_peek())
+                    .reason("Invalid declaration in namespace")
+                    .report(this->diagnostics);
             }
         }
     }

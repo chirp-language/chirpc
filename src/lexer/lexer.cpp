@@ -199,11 +199,10 @@ std::vector<location> lexer::preprocess(std::vector<location> const& raw_tokens)
                         continue;
                     if (i == end_dir)
                     {
-                        diagnostic d;
-                        d.type = diagnostic_type::location_err;
-                        d.l = token_location(i - 1);
-                        d.msg = "Incomplete preprocessor directive";
-                        diagnostics.show(d);
+                        diagnostic(diagnostic_type::location_err)
+                            .at(token_location(i - 1))
+                            .reason("Incomplete preprocessor directive")
+                            .report(diagnostics);
                     }
                     else
                     {
@@ -254,20 +253,18 @@ std::vector<location> lexer::preprocess(std::vector<location> const& raw_tokens)
                     }
                     else
                     {
-                        diagnostic d;
-                        d.type = diagnostic_type::location_warning;
-                        d.l = token_location(i - 1);
-                        d.msg = "Unmached end directive";
-                        diagnostics.show(d);
+                        diagnostic(diagnostic_type::location_warning)
+                            .at(token_location(i - 1))
+                            .reason("Unmached end directive")
+                            .report(diagnostics);
                     }
                 }
                 else if (!raw_depth)
                 {
-                    diagnostic d;
-                    d.type = diagnostic_type::location_err;
-                    d.l = token_location(i - 1);
-                    d.msg = "Unknown preprocessor directive";
-                    diagnostics.show(d);
+                    diagnostic(diagnostic_type::location_err)
+                        .at(token_location(i - 1))
+                        .reason("Unknown preprocessor directive")
+                        .report(diagnostics);
                 }
             }
         }

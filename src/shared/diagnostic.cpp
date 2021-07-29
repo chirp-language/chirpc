@@ -83,15 +83,15 @@ void diagnostic_manager::show(diagnostic const& d)
     {
         if (loc_prov && current_source)
         {
-            location const& tloc = loc_prov->get_loc(d.l.begin);
-            location tloce = loc_prov->get_loc(d.l.end);
+            location const& tloc = loc_prov->get_loc(d.loc.begin);
+            location tloce = loc_prov->get_loc(d.loc.end);
             if (tloce.line != tloc.line)
             {
                 tloce = tloc;
                 tloce.len = current_source->at(tloce.line).size() - tloce.start;
             }
             os << "In ";
-            os << loc_prov->print_loc(d.l);
+            os << loc_prov->print_loc(d.loc);
 
             os << '\n';
             

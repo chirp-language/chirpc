@@ -7,18 +7,16 @@ bool tracker::bind_sym(identifier const* name, decl const* target)
     {
         // Found a collision
         {
-            diagnostic d;
-            d.type = diagnostic_type::location_err;
-            d.l = target->loc;
-            d.msg = "Redefinition of a variable/function";
-            diagnostics.show(d);
+            diagnostic(diagnostic_type::location_err)
+                .at(target.loc)
+                .reason("Redefinition of a variable/function")
+                .report(diagnostics);
         }
         {
-            diagnostic d;
-            d.type = diagnostic_type::location_note;
-            d.l = prev->target->loc;
-            d.msg = "Previous declaration here";
-            diagnostics.show(d);
+            diagnostic(diagnostic_type::location_note)
+                .at(prev->target->loc)
+                .reason("Previous declaration here")
+                .report(diagnostics);
         }
         return false;
     }

@@ -58,11 +58,10 @@ void parser::parse()
         default:
         {
             this->ok = false;
-            diagnostic e;
-            e.type = diagnostic_type::location_err;
-            e.l = loc_peek();
-            e.msg = "Invalid top-level declaration";
-            this->diagnostics.show(e);
+            diagnostic(diagnostic_type::location_err)
+                .at(loc_peek())
+                .reason("Invalid top-level declaration")
+                .report(this->diagnostics);
         }
         }
     }

@@ -96,11 +96,10 @@ void analyser::visit_binop(binop& node)
 	{
 		node.cat = exprcat::error;
 
-		diagnostic d;
-		d.type = diagnostic_type::location_err;
-		d.l = node.op_loc;
-		d.msg = "Operand types don't match";
-		diagnostics.show(d);
+		diagnostic(diagnostic_type::location_err)
+			.at(node.op_loc)
+			.reason("Operand types don't match")
+			.report(diagnostics);
 	}
 	else
 	{
@@ -163,11 +162,10 @@ void analyser::visit_id_ref_expr(id_ref_expr& node)
 		else
 		{
 			node.cat = exprcat::error;
-			diagnostic d;
-			d.type = diagnostic_type::location_err;
-			d.l = node.loc;
-			d.msg = "Unknown declaration type";
-			diagnostics.show(d);
+				diagnostic(diagnostic_type::location_err)
+					.at(node.loc)
+					.reason("Unknown declaration type")
+					.report(diagnostics);
 		}
 	}
 	else
@@ -206,11 +204,10 @@ void analyser::visit_var_decl(var_decl& node)
 	//! Point of interest
 	if (!sym_tracker.bind_sym(&node.ident, &node))
 	{
-		diagnostic e;
-		e.l = node.loc;
-		e.msg = "A variable with the same name already exists";
-		e.type = diagnostic_type::location_err;
-		this->diagnostics.show(e);
+		diagnostic(diagnostic_type::location_err)
+			.at(node.loc)
+			.reason("A variable with the same name already exists")
+			.report(this->diagnostics);
 		return;
 	}
 
@@ -230,11 +227,10 @@ void analyser::visit_var_decl(var_decl& node)
 
 		if (!is_ptr)
 		{
-			diagnostic e;
-			e.msg = "Variable cannot be of type `none`, unless it's a pointer";
-			e.type = diagnostic_type::location_err;
-			e.l = node.loc;
-			this->diagnostics.show(e);
+			diagnostic(diagnostic_type::location_err)
+				.at(node.loc)
+				.reason("Variable cannot be of type `none`, unless it's a pointer")
+				.report(this->diagnostics);
 		}
 	}
 	// TODO: Convert from initializer type (if any) to variable type
@@ -287,11 +283,10 @@ void analyser::visit_func_decl(func_decl& node)
 	if (!sym_tracker.bind_sym(&node.ident, &node))
 	{
 		// TODO: Check if declarations match
-		diagnostic d;
-		d.type = diagnostic_type::location_err;
-		d.l = node.loc;
-		d.msg = "A symbol with that name already exists";
-		diagnostics.show(d);
+		diagnostic(diagnostic_type::location_err)
+			.at(node.loc)
+			.reason("A symbol with that name already exists")
+			.report(diagnostics);
 	}
 
 	sym_tracker.push_scope();
@@ -313,11 +308,10 @@ void analyser::visit_func_def(func_def& node)
 		}
 		else
 		{
-			diagnostic d;
-			d.type = diagnostic_type::location_err;
-			d.l = node.loc;
-			d.msg = "A symbol with that name already exists";
-			diagnostics.show(d);
+			diagnostic(diagnostic_type::location_err)
+				.at(node.loc)
+				.reason("A symbol with that name already exists")
+				.report(diagnostics);
 		}
 	}
 	else
@@ -344,21 +338,19 @@ void analyser::visit_assign_stmt(assign_stmt& node)
 	visit_expr(*node.target);
 	if (node.target->cat != exprcat::lval)
 	{
-		diagnostic d;
-		d.type = diagnostic_type::location_err;
-		d.l = node.loc;
-		d.msg = "Assigning to a non-object value";
-		diagnostics.show(d);
+		diagnostic(diagnostic_type::location_err)
+			.at(node.loc)
+			.reason("Assigning to a non-object value")
+			.report(diagnostics);
 	}
 	// I'll make it better, I swear
 	else if (node.target->type.exttp.size() > 0
 		and node.target->type.exttp[0] == static_cast<std::byte>(dtypemod::_const))
 	{
-		diagnostic d;
-		d.type = diagnostic_type::location_err;
-		d.l = node.loc;
-		d.msg = "Assigning to a constant value";
-		diagnostics.show(d);
+		diagnostic(diagnostic_type::location_err)
+			.at(node.loc)
+			.reason("Assigning to a constant value")
+			.report(diagnostics);
 	}
 	else
 	{
