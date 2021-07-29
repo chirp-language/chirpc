@@ -34,8 +34,6 @@ void analyser::visit_expr(expr& node)
 			return visit_num_literal(static_cast<num_literal&>(node));
 		case expr_kind::cast:
 			return visit_cast_expr(static_cast<cast_expr&>(node));
-		default:
-			return;
 	}
 }
 
@@ -57,8 +55,6 @@ void analyser::visit_decl(decl& node)
 			return visit_func_def(static_cast<func_def&>(node));
 		case decl_kind::external:
 			return visit_extern_decl(static_cast<extern_decl&>(node));
-		default:
-			return;
 	}
 }
 
@@ -82,8 +78,6 @@ void analyser::visit_stmt(stmt& node)
 			return visit_expr_stmt(static_cast<expr_stmt&>(node));
 		case stmt_kind::null:
 			return visit_null_stmt(node);
-		default:
-			return;
 	}
 }
 
@@ -179,14 +173,6 @@ void analyser::visit_id_ref_expr(id_ref_expr& node)
 	else
 	{
 		node.cat = exprcat::error;
-		if (!ignore_unresolved_refs)
-		{
-			diagnostic d;
-			d.type = diagnostic_type::location_warning;
-			d.l = node.loc;
-			d.msg = "Referenced an undefined variable or a global function/variable (TODO)";
-			diagnostics.show(d);
-		}
 	}
 }
 

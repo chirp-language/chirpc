@@ -85,7 +85,6 @@ int main(int argc, char** argv)
 
     // Semantic analysis
     analyser seman(p.get_ast(), diagnostics);
-    seman.ignore_unresolved_refs = options.ignore_unresolved_refs;
     seman.analyse();
 
     if (options.dump_ast)

@@ -17,7 +17,8 @@ void cmd::write_help()
         "\t-dump-tokens\tDumps the lexer tokens of the source file\n"
         "\t-dump-ast\tDumps the AST in a human readable view\n"
         "\t-keep-tmp\tKeeps the temporary folder, instead of deleting it after compiling\n"
-        "\t-show-unresolved-refs\tShow warnings whether an undefined symbol is referenced\n"
+        "\t-show-unresolved-refs\tShow warnings whether an undefined symbol is referenced"
+            "(no longer needed since semantic analysis already reports errors; currently no-op)\n"
         "\t-show-expr-types\tShow types in expressions (effective during an AST dump)\n"
     ;
 }

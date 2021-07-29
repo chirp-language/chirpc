@@ -13,8 +13,6 @@ class analyser
 
 	void analyse();
 
-	bool ignore_unresolved_refs = false;
-
 	protected:
 	ast_root& root;
 	tracker sym_tracker;
