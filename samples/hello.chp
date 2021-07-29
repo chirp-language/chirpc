@@ -1,7 +1,14 @@
 import "io"
 
-func int util.getrandom();
-func none io.print(char const ptr: msg);
+namespace util
+{
+	func int getrandom();
+	func int add(int: a, int: b);
+}
+namespace io
+{
+	func none print(char const ptr: msg);
+}
 
 extern "dlopen" func none ptr dlopen(char const ptr: filename, int: flags);
 extern "stdout" ptr: stdout;
@@ -15,14 +22,14 @@ entry
 	a = 5; ; # Null statement
 	if a + c
 	{
-		print("Yes");
+		io.print("Yes");
 	}
 	elif a - c
 	{
-		print("Maybe");
+		io.print("Maybe");
 	}
 	else
 	{
-		print("No.");
+		io.print("No.");
 	}
 }

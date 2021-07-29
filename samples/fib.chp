@@ -13,7 +13,10 @@ func int fib(int: n)
 }
 
 import "io"
-func none io.print(char const ptr: msg, int: param);
+namespace io
+{
+	func none print(char const ptr: msg, int: param);
+}
 
 entry
 {

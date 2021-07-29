@@ -1,17 +1,30 @@
 # This file demonstrates various features of the language
 # and it's intended to analyse and debug compiler behaviour.
 
-# Import declarations
+# Import declarations (imports don't work yet)
 import "io";
 import "mem";
 import "math.trig";
 
-# External declarations
-extern "dlopen"
-	func ptr oslib.open_library(ptr const char: name);
+namespace mem
+{
+	extern "malloc"
+		func ptr alloc(long: size);
+}
 
-extern "stdout"
-	ptr: oslib.stream_stdout; # No custom types yet, have to use untyped pointer
+namespace io
+{
+	func none print(ptr const char: string);
+}
+
+# External declarations
+namespace oslib
+{
+	extern "dlopen"
+		func ptr open_library(ptr const char: name);
+	extern "stdout"
+		ptr: stream_stdout; # No custom types yet, have to use untyped pointer
+}
 
 # Forward function declarations
 func ptr const char type_name(int: id);
