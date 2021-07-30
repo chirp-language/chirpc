@@ -2,36 +2,32 @@
 
 #include "../ast/types.hpp"
 
-std::string codegen::emit_identifier(identifier const& ident)
+std::string codegen::emit_qual_identifier(qual_identifier const& ident)
 {
     std::string result;
 
-    // Namespaces aren't tracked
-    for(std::string n : ident.namespaces)
+    // This is even more hacky beyond any belief (pt. 2)
+    // Should probably (definitely) normalize access path first
+    for (auto id = ident.parts.cbegin(), end = ident.parts.cend() - 1; id != end; ++id)
     {
-        result += n + "_";
+        result += emit_identifier(*id) + "$";
     }
-
-    result += ident.name;
-
+    result += ident.parts.back().name;
     return result;
 }
 
-std::string codegen::emit_id_ref_expr(identifier const& ident)
+std::string codegen::emit_identifier(identifier const& ident)
 {
-    if (!ignore_unresolved_refs && !m_tracker->lookup_var(&ident))
-    {
-        diagnostic d;
-        d.type = diagnostic_type::location_warning;
-        d.l = ident.loc;
-        d.msg = "Referenced an undefined variable or a global function/variable (TODO)";
-        diagnostics.show(d);
-    }
-    return emit_identifier(ident);
+    return ident.name;
+}
+
+std::string codegen::emit_id_ref_expr(id_ref_expr const& node)
+{
+    return emit_qual_identifier(node.ident);
 }
 
 // This is not finished
-std::string codegen::emit_datatype(exprtype const& t)
+std::string codegen::emit_datatype(basic_type const& type)
 {
     // Doesn't do function pointery things
     std::string result;
@@ -41,7 +37,7 @@ std::string codegen::emit_datatype(exprtype const& t)
     bool is_unsigned = false;
     bool is_const = false;
 
-    for (std::byte d : t.exttp)
+    for (std::byte d : type.exttp)
     {
         dtypemod mod = static_cast<dtypemod>(d);
         if (mod == dtypemod::_ptr)
@@ -71,12 +67,12 @@ std::string codegen::emit_datatype(exprtype const& t)
     {
         result += "signed ";
     }
-    if(is_unsigned)
+    if (is_unsigned)
     {
         result += "unsigned ";
     }
 
-    switch (t.basetp)
+    switch (type.basetp)
     {
         case dtypename::_int:
             result += "int";
@@ -105,40 +101,37 @@ std::string codegen::emit_datatype(exprtype const& t)
     }
 
     for (int i = 0; i < ptr_depth; i++)
-        result += "*";
+        result += '*';
 
     return result;
 }
 
-std::string codegen::emit_literal(literal_node const& node)
+std::string codegen::emit_txt_literal(txt_literal const& node)
 {
     std::string result;
-    if (node.ltype == littype::num)
+    if (node.is_character)
     {
-        num_literal lit = static_cast<num_literal const&>(node);
-        result = lit.value;
-    }
-    else if (node.ltype == littype::txt)
-    {
-        txt_literal lit = static_cast<txt_literal const&>(node);
-        if (lit.is_character)
-        {
-            result += '\'';
-            result += lit.value;
-            result += '\'';
-        }
-        else
-        {
-            result += '"';
-            result += lit.value;
-            result += '"';
-        }
+        result += '\'';
+        result += node.value;
+        result += '\'';
     }
     else
     {
-        result = "\n#error litteral has undefined type\n";
+        result += '"';
+        result += node.value;
+        result += '"';
     }
     return result;
+}
+
+std::string codegen::emit_num_literal(num_literal const& node)
+{
+    // Technically UB if exttp is empty, oops...
+    if (node.type.basetp == dtypename::_none
+        and node.type.exttp[0] == static_cast<std::byte>(dtypemod::_ptr))
+        // Null pointer
+        return "(void*)0";
+    return node.value;
 }
 
 std::string codegen::emit_binop(binop const& node)
@@ -149,18 +142,7 @@ std::string codegen::emit_binop(binop const& node)
     result += emit_expr(*node.left);
     result += ") ";
 
-    if (node.op == exprop::none)
-    {
-        result += "\n#error invalid operator\n";
-    }
-    if (static_cast<short>(node.op) < 0)
-    {
-        result += "\n#error special operators don't work yet\n";
-    }
-    else
-    {
-        result += static_cast<unsigned char>(node.op);
-    }
+    result += exprop_id(node.op);
 
     result += " (";
     result += emit_expr(*node.right);
@@ -169,20 +151,37 @@ std::string codegen::emit_binop(binop const& node)
     return result;
 }
 
+std::string codegen::emit_cast_expr(cast_expr const& node)
+{
+    std::string result;
+    result += "(";
+    result += emit_datatype(node.type);
+    result += ") (";
+    result += emit_expr(*node.operand);
+    result += ")";
+    return result;
+}
+
 std::string codegen::emit_expr(expr const& node)
 {
     switch (node.kind)
     {
-        case optype::lit:
-            return emit_literal(static_cast<literal_node const&>(node));
-        case optype::ident:
-            return emit_id_ref_expr(static_cast<identifier const&>(node));
-        case optype::call:
-            return emit_func_call(static_cast<func_call const&>(node));
-        case optype::op:
+        case expr_kind::binop:
             return emit_binop(static_cast<binop const&>(node));
-        case optype::invalid:
-        default:
-            return "\n#error Bad operand, This is a bug\n";
+        case expr_kind::call:
+            return emit_func_call(static_cast<func_call const&>(node));
+        case expr_kind::ident:
+            return emit_id_ref_expr(static_cast<id_ref_expr const&>(node));
+        case expr_kind::txtlit:
+            return emit_txt_literal(static_cast<txt_literal const&>(node));
+        case expr_kind::numlit:
+            return emit_num_literal(static_cast<num_literal const&>(node));
+        case expr_kind::cast:
+            return emit_cast_expr(static_cast<cast_expr const&>(node));
     }
+    #ifndef NDEBUG
+    return "\n#error Bad expression, this is a bug\n";
+    #else
+    __builtin_unreachable();
+    #endif
 }

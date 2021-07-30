@@ -6,7 +6,7 @@ void parser::load_tokens(std::string fn, std::vector<token>&& t)
     this->tkns = std::move(t);
 }
 
-void parser::parse()
+void parser::parse_top_level()
 {
     this->ok = true;
 
@@ -18,35 +18,40 @@ void parser::parse()
         case tkn_type::kw_entry:
         {
             skip();
-            this->tree.entry = get_entry();
+            if (this->tree.entry) {
+                this->ok = false;
+                diagnostic(diagnostic_type::location_err)
+                    .at(loc_peekb())
+                    .reason("Multiple definitions of entry point")
+                    .report(this->diagnostics);
+            }
+            auto entry = parse_entry();
+            this->tree.entry = entry.get();
+            this->tree.top_decls.push_back(std::move(entry));
             break;
         }
         case tkn_type::kw_import:
         {
             skip();
-            this->tree.imports.push_back(get_import());
+            this->tree.top_decls.push_back(parse_import());
             break;
         }
         case tkn_type::kw_extern:
         {
             skip();
-            this->tree.externs.push_back(get_extern());
+            this->tree.top_decls.push_back(parse_extern());
             break;
         }
         case tkn_type::kw_namespace:
         {
             skip();
-            this->tree.nspaces.push_back(get_namespace());
+            this->tree.top_decls.push_back(parse_namespace());
             break;
         }
         case tkn_type::kw_func:
         {
             skip();
-            auto f = get_func_decl();
-            if (f->type == decl_type::fdef)
-                this->tree.fdefs.push_back(std::shared_ptr<func_def>(std::move(f), static_cast<func_def*>(f.get())));
-            else
-                this->tree.fdecls.push_back(std::move(f));
+            this->tree.top_decls.push_back(parse_func_decl());
             break;
         }
         case tkn_type::semi:
@@ -58,11 +63,10 @@ void parser::parse()
         default:
         {
             this->ok = false;
-            diagnostic e;
-            e.type = diagnostic_type::location_err;
-            e.l = loc_peek();
-            e.msg = "Invalid top-level declaration";
-            this->diagnostics.show(e);
+            diagnostic(diagnostic_type::location_err)
+                .at(loc_peek())
+                .reason("Invalid top-level declaration")
+                .report(this->diagnostics);
         }
         }
     }
@@ -86,13 +90,12 @@ bool parser::match(tkn_type v)
 
 bool parser::probe(tkn_type v)
 {
-    // Probably good enough to stop like 99% of bad behaviour
-    if (!this->ok)
-    {
-        return false;
-    }
+    return peek().type == v;
+}
 
-    return this->peek().type == v;
+bool parser::probe_range(tkn_type begin, tkn_type end)
+{
+    return peek().type >= begin and peek().type <= end;
 }
 
 bool parser::expect(tkn_type v)
@@ -103,13 +106,14 @@ bool parser::expect(tkn_type v)
         e.type = diagnostic_type::location_err;
         if (cursor >= this->tkns.size())
         {
-            e.l = loc_eof();
+            e.loc = loc_eof();
             e.msg = "Unexpected end of file.";
         }
         else
         {
-            e.l = loc_peek();
-            e.msg = "Unexpected token";
+            e.loc = loc_peek();
+            e.msg = "Unexpected token, expected: ";
+            e.msg += token_names[static_cast<int>(v)];
         }
         this->diagnostics.show(e);
         return false;

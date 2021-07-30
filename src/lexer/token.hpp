@@ -10,32 +10,57 @@ enum class tkn_type
     kw_import, kw_export, // import export
     kw_namespace,
     kw_if, kw_else, kw_elif, // if else
-    kw_and, kw_or,
+    kw_and, kw_or, // and or (should be operators)
     kw_func, // func
     kw_while, kw_for, // while for
     kw_ret, // ret
-    kw_extern,
+    kw_extern, // extern
+    kw_true, // true
+    kw_false, // false
+    kw_null, // null
 
-    // Tokens with multiple keywords 
-    datatype, // int,char,float,double,bool..
-    datamod, // ptr,signed,unsigned..
-    
+    // Tokens with multiple keywords
+    // Types
+    dt_int,
+    dt_char,
+    dt_float,
+    dt_double,
+    dt_byte,
+    dt_bool,
+    dt_long,
+    dt_none,
+    datatype_S = dt_int,
+    datatype_E = dt_none,
+    dm_ptr,
+    dm_signed,
+    dm_unsigned,
+    dm_const,
+    datamod_S = dm_ptr,
+    datamod_E = dm_const,
+
     // SYMBOLS
 
     period, // .
     colon, // :
     comma, // ,
     assign_op, // =
-    cmp_op, // > < <= >= !=
-    math_op, // + - * /
-    ref_op, deref_op, as_op, // Should probably all be the same token (or all different)
+    compassign_op, // #= where the next token corresponds to the operation
+    lt_op, gt_op, lteq_op, gteq_op, eqeq_op, noteq_op, // > < <= >= == !=
+    plus_op, minus_op, star_op, slash_op, perc_op, // + - * / %
+    as_op, // as
+    cmp_S = lt_op,
+    cmd_E = noteq_op,
+    binop_S = lt_op,
+    binop_E = as_op,
+    ref_op, deref_op, // ref deref (unary)
+    // + & - can be unary
     lparen, rparen, // ( )
-    lbrace, rbrace, // { } 
+    lbrace, rbrace, // { }
     lbracket, rbracket, // [ ]
     semi, // ;
 
-    
-    // HELPER(best name I could)
+
+    // MISC
     
     identifer,
     literal,
@@ -55,3 +80,6 @@ class token
     // Utility Function
     std::string util_dump();
 };
+
+std::string exprop_id(tkn_type op);
+extern char const* token_names[];

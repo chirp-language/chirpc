@@ -18,18 +18,23 @@ public:
 };
 
 // Forward declarations
+class ast_root;
+class identifier;
+class qual_identifier;
 class expr;
 class binop;
 class arguments;
 class func_call;
-class identifier;
+class id_ref_expr;
 class loperand;
-class literal_node;
 class txt_literal;
 class num_literal;
+class cast_expr;
 class decl;
 class var_decl;
 class entry_decl;
+class import_decl;
+class extern_decl;
 class namespace_decl;
 class parameters;
 class func_decl;
@@ -43,72 +48,156 @@ class conditional_stmt;
 class iteration_stmt;
 class expr_stmt;
 class null_stmt;
-class ast_root;
+
+// Node deleters
+struct expr_node_deleter {
+    void operator()(expr*) const;
+
+    template <typename T, typename = std::enable_if_t<std::is_same_v<typename T::node_base, expr>>>
+    operator std::default_delete<T>() const
+    { return {}; }
+};
+
+struct decl_node_deleter {
+    void operator()(decl*) const;
+
+    template <typename T, typename = std::enable_if_t<std::is_same_v<typename T::node_base, decl>>>
+    operator std::default_delete<T>() const
+    { return {}; }
+};
+
+struct stmt_node_deleter {
+    void operator()(stmt*) const;
+
+    template <typename T, typename = std::enable_if_t<std::is_same_v<typename T::node_base, stmt>>>
+    operator std::default_delete<T>() const
+    { return {}; }
+};
+
+template <typename T>
+struct node_deleter_for_
+{
+    template <typename>
+    constexpr static bool dependent_false = false;
+    static_assert(dependent_false<T>, "Generic handle cannot be used for other node types");
+};
+
+template <>
+struct node_deleter_for_<expr> { using type = expr_node_deleter; };
+
+template <>
+struct node_deleter_for_<decl> { using type = decl_node_deleter; };
+
+template <>
+struct node_deleter_for_<stmt> { using type = stmt_node_deleter; };
+
+// Generic node handle
+template <typename T>
+using generic_node_deleter = typename node_deleter_for_<typename T::node_base>::type;
+
+template <typename T>
+using nodeh = std::unique_ptr<T, generic_node_deleter<T>>;
+
+template <typename T, typename... Args>
+inline nodeh<T> new_node(Args&&... args)
+{
+    return nodeh<T>(new T(std::forward<Args>(args)...));
+}
 
 // Node handles (shorthands)
-using exprh = std::shared_ptr<expr>;
-using declh = std::shared_ptr<decl>;
-using stmth = std::shared_ptr<stmt>;
+using exprh = std::unique_ptr<expr, expr_node_deleter>;
+using declh = std::unique_ptr<decl, decl_node_deleter>;
+using stmth = std::unique_ptr<stmt, stmt_node_deleter>;
+
+// === Top level / Common ===
+
+class identifier : public ast_node
+{
+    public:
+    std::string name;
+
+    static identifier from(std::string&& name, token_location loc = token_location()) {
+        identifier i;
+        i.name = std::move(name);
+        i.loc = loc;
+        return i;
+    }
+};
+
+class qual_identifier : public ast_node
+{
+    public:
+    // The parts vector for a.b.c.foo() would be:
+    // {"a","b","c","foo"}.. Further in vector => More nested
+    std::vector<identifier> parts;
+    bool is_global = false; // Start at global namespace
+};
 
 // === Expressions ===
 // They take values and spit out other values.
 
-// Operand type
-enum class optype
+enum class expr_kind
 {
-    lit,
-    ident,
+    binop,
     call,
-    op,
-    invalid,
+    ident,
+    txtlit,
+    numlit,
+    cast,
 };
 
-enum class opcat
+enum class exprcat
 {
-    unset = 1, // unknown/unassigned type
-    lval = 2, // lvalue, i.e. has location
-    pval = 4, // pvalue, i.e. a loose value (not tied to any object)
+    unset, // unknown/unassigned type
+    lval, // lvalue, i.e. has memory location
+    rval, // rvalue, i.e. a pure value (not tied to any object, can be used as an operand)
+    error, // result of an invalid operation
 };
 
-struct exprtype
+struct basic_type
 {
-    dtypename basetp;
-    opcat cattp;
+    dtypename basetp; // The basic type specifier
     std::vector<std::byte> exttp; // Enums are cast to/from a byte bc why not
+
+    basic_type()
+        : basetp(dtypename::_none) {}
+    
+    bool operator==(basic_type const& o) const
+    {
+        return basetp == o.basetp and exttp == o.exttp;
+    }
+
+    bool operator!=(basic_type const& o) const
+    {
+        return !operator==(o);
+    }
 };
 
 class expr : public ast_node
 {
     public:
-    exprtype type;
-    optype kind;
+    using node_base = expr; // For node type identification
 
-protected:
-    expr(optype kind)
-        : type{}, kind(kind) {}
+    expr_kind kind;
+    basic_type type;
+    exprcat cat;
+
+    protected:
+    expr(expr_kind kind)
+        : kind(kind), cat(exprcat::unset) {}
 };
 
 // Operator
-enum class exprop : short {
-    none = 0,
-    as = -1,
-    deref = -2,
-    ref = -3,
-    call = -4,
-};
-
-std::string exprop_id(exprop op);
-
 class binop : public expr
 {
     public:
-    exprop op;
+    tkn_type op;
     token_location op_loc;
     exprh left;
     exprh right;
 
-    binop(exprop op, exprh l, exprh r)
-        : expr(optype::op), op(op), left(std::move(l)), right(std::move(r)) {}
+    binop(tkn_type op, exprh l, exprh r)
+        : expr(expr_kind::binop), op(op), left(std::move(l)), right(std::move(r)) {}
 };
 
 class arguments : public ast_node
@@ -124,7 +213,7 @@ public:
     arguments args;
 
     func_call(exprh callee, arguments args)
-        : expr(optype::call), callee(std::move(callee)), args(std::move(args)) {}
+        : expr(expr_kind::call), callee(std::move(callee)), args(std::move(args)) {}
 };
 
 // Left-Side stuff
@@ -138,170 +227,200 @@ enum class loptype
     lunop, // left unary operator
 };
 
-class identifier : public expr
+class id_ref_expr : public expr
 {
-public:
-    // The namespace vector for a.b.c.foo() would be like:
-    // {"a","b","c"}.. Further in vector => More nested
-    std::vector<std::string> namespaces;
-    std::string name;
+    public:
+    qual_identifier ident;
+    decl const* target = nullptr;
 
-    identifier() : expr(optype::ident) {}
+    id_ref_expr(qual_identifier ident)
+        : expr(expr_kind::ident), ident(std::move(ident))
+    {
+        loc = ident.loc;
+    }
+
+    static nodeh<id_ref_expr> from(qual_identifier ident)
+    {
+        return new_node<id_ref_expr>(std::move(ident));
+    }
 };
 
+#if 0
 class loperand : public expr
 {
     public:
-    std::shared_ptr<ast_node> node;
+    std::unique_ptr<ast_node> node;
     loptype type;
 };
+#endif
 
-enum class littype
+class txt_literal : public expr
 {
-    txt,
-    num,
-};
-
-class literal_node : public expr
-{
-public:
-    littype ltype;
-
-protected:
-    literal_node(littype t) : expr(optype::lit), ltype(t) {}
-};
-
-class txt_literal : public literal_node
-{
-public:
+    public:
     bool is_character; // Single character/packed character constant
     std::string value;
 
-    txt_literal() : literal_node(littype::txt) {}
+    txt_literal() : expr(expr_kind::txtlit) {}
 };
 
-// Should be replaced by a different literal for each types
-class num_literal : public literal_node
+// Should be replaced by a different literal for each types (or not)
+class num_literal : public expr
 {
-public:
+    public:
     std::string value; // bruh
 
-    num_literal() : literal_node(littype::num) {}
+    num_literal() : expr(expr_kind::numlit) {}
+};
+
+class cast_expr : public expr
+{
+    public:
+    exprh operand;
+
+    cast_expr() : expr(expr_kind::cast) {}
 };
 
 // === Declarations ===
 
-enum class decl_type
+enum class decl_kind
 {
-    var, entry, import,
+    root,
+    var,
+    entry,
+    import,
     nspace,
-    fdecl, fdef,
+    fdecl,
+    fdef,
     external,
 };
 
 class decl : public ast_node
 {
-public:
-    decl_type type;
+    public:
+    using node_base = decl; // For node type identification
 
-protected:
-    decl(decl_type type) : type(type) {}
+    decl_kind kind;
+
+    protected:
+    decl(decl_kind kind) : kind(kind) {}
+};
+
+class ast_root : public decl
+{
+public:
+    #if 0
+    // Vectors are in order
+    std::vector<std::unique_ptr<import_decl>> imports;
+    std::vector<std::unique_ptr<extern_decl>> externs;
+    std::vector<std::unique_ptr<namespace_decl>> nspaces;
+    std::vector<std::unique_ptr<func_decl>> fdecls;
+    std::vector<std::unique_ptr<func_def>> fdefs;
+    std::unique_ptr<entry_decl> entry;
+    #endif
+    std::vector<declh> top_decls;
+    entry_decl* entry = nullptr;
+
+    ast_root() : decl(decl_kind::root) {}
 };
 
 class var_decl : public decl
 {
     public:
-    exprtype var_type;
-    std::shared_ptr<identifier> ident;
+    identifier ident;
+    basic_type type;
     exprh init; // Empty if not availible
 
-    var_decl() : decl(decl_type::var) {}
+    var_decl() : decl(decl_kind::var) {}
 };
 
 class entry_decl : public decl
 {
-public:
+    public:
     stmth code;
 
-    entry_decl() : decl(decl_type::entry) {}
-};
-
-class namespace_decl : public decl
-{
-    public:
-    std::shared_ptr<identifier> ident;
-
-    std::vector<std::shared_ptr<func_decl>> fdecls;
-    std::vector<std::shared_ptr<func_def>> fdefs;
-
-    namespace_decl() : decl(decl_type::nspace) {}
+    entry_decl() : decl(decl_kind::entry) {}
 };
 
 class import_decl : public decl
 {
-public:
-    txt_literal filename;
+    public:
+    std::string filename;
 
-    import_decl() : decl(decl_type::import) {}
+    import_decl() : decl(decl_kind::import) {}
 };
 
 class extern_decl : public decl
 {
     public:
-    txt_literal real_name;
+    std::string real_name;
     declh inner_decl;
 
-    extern_decl() : decl(decl_type::external) {}
+    extern_decl() : decl(decl_kind::external) {}
+};
+
+class namespace_decl : public decl
+{
+    public:
+    identifier ident;
+
+    std::vector<declh> decls;
+
+    namespace_decl() : decl(decl_kind::nspace) {}
 };
 
 class parameters : public ast_node
 {
     public:
-    std::vector<std::shared_ptr<var_decl>> body;
+    std::vector<std::unique_ptr<var_decl>> body;
 };
 
 // Like a function definition but without the code
 class func_decl : public decl
 {
     public:
-    exprtype data_type;
-    std::shared_ptr<identifier> ident;
+    identifier ident;
+    basic_type result_type;
     parameters params;
 
-    func_decl() : decl(decl_type::fdecl) {}
+    func_decl() : decl(decl_kind::fdecl) {}
 
     protected:
-    func_decl(decl_type t) : decl(t) {}
+    func_decl(decl_kind t) : decl(t) {}
 };
 
 // A function definition but with code
 class func_def : public func_decl
 {
     public:
-    std::shared_ptr<compound_stmt> body;
+    std::unique_ptr<compound_stmt> body;
 
-    func_def() : func_decl(decl_type::fdef) {}
+    func_def() : func_decl(decl_kind::fdef) {}
 };
 
 // === Statements ===
 
-enum class stmt_type
+enum class stmt_kind
 {
-    decl, assign,
-    compound, ret,
+    decl,
+    assign,
+    compound,
+    ret,
     conditional,
-    iteration, expr,
+    iteration,
+    expr,
     null,
 };
 
 class stmt : public ast_node
 {
-public:
-    // There's a bunch of them so gotta make another enum smh
-    stmt_type type;
+    public:
+    using node_base = stmt; // For node type identification
 
-protected:
-    stmt(stmt_type type) : type(type) {}
+    // There's a bunch of them so gotta make another enum smh
+    stmt_kind kind;
+
+    protected:
+    stmt(stmt_kind kind) : kind(kind) {}
 };
 
 class decl_stmt : public stmt
@@ -310,40 +429,41 @@ class decl_stmt : public stmt
     declh inner_decl;
 
     decl_stmt(declh inner)
-        : stmt(stmt_type::decl), inner_decl(std::move(inner))
+        : stmt(stmt_kind::decl), inner_decl(std::move(inner))
     {
         loc = inner_decl->loc;
     }
 
-    static std::shared_ptr<decl_stmt> from(declh decl) {
-        return std::make_shared<decl_stmt>(std::move(decl));
+    static nodeh<decl_stmt> from(declh decl) {
+        return new_node<decl_stmt>(std::move(decl));
     }
 };
 
 class assign_stmt : public stmt
 {
     public:
-    std::shared_ptr<identifier> ident;
-    var_decl* target = nullptr;
+    exprh target;
     exprh value;
+    tkn_type assign_op; // Type of assignment
+    token_location assign_loc; // location of '=', or compound assignment token
 
-    assign_stmt() : stmt(stmt_type::assign) {}
+    assign_stmt() : stmt(stmt_kind::assign) {}
 };
 
 class compound_stmt : public stmt
 {
-public:
+    public:
     std::vector<stmth> body;
 
-    compound_stmt() : stmt(stmt_type::compound) {}
+    compound_stmt() : stmt(stmt_kind::compound) {}
 };
 
 class ret_stmt : public stmt
 {
-public:
+    public:
     exprh val;
 
-    ret_stmt() : stmt(stmt_type::ret) {}
+    ret_stmt() : stmt(stmt_kind::ret) {}
 };
 
 class conditional_stmt : public stmt
@@ -353,7 +473,7 @@ class conditional_stmt : public stmt
     stmth true_branch;
     stmth false_branch; // Can be null
 
-    conditional_stmt() : stmt(stmt_type::conditional) {}
+    conditional_stmt() : stmt(stmt_kind::conditional) {}
 };
 
 class iteration_stmt : public stmt
@@ -362,7 +482,7 @@ class iteration_stmt : public stmt
     exprh cond;
     stmth loop_body;
 
-    iteration_stmt() : stmt(stmt_type::iteration) {}
+    iteration_stmt() : stmt(stmt_kind::iteration) {}
 };
 
 class expr_stmt : public stmt
@@ -371,13 +491,13 @@ class expr_stmt : public stmt
     exprh node;
 
     expr_stmt(exprh expr)
-        : stmt(stmt_type::expr), node(std::move(expr))
+        : stmt(stmt_kind::expr), node(std::move(expr))
     {
         loc = node->loc;
     }
 
-    static std::shared_ptr<expr_stmt> from(exprh expr) {
-        return std::make_shared<expr_stmt>(std::move(expr));
+    static nodeh<expr_stmt> from(exprh expr) {
+        return new_node<expr_stmt>(std::move(expr));
     }
 };
 
@@ -385,20 +505,8 @@ class null_stmt : public stmt
 {
     public:
     null_stmt(location_range loc)
-        : stmt(stmt_type::null)
+        : stmt(stmt_kind::null)
     {
         this->loc = loc;
     }
-};
-
-class ast_root
-{
-public:
-    // Vectors are in order
-    std::vector<std::shared_ptr<import_decl>> imports;
-    std::vector<std::shared_ptr<extern_decl>> externs;
-    std::vector<std::shared_ptr<namespace_decl>> nspaces;
-    std::vector<std::shared_ptr<func_decl>> fdecls;
-    std::vector<std::shared_ptr<func_def>> fdefs;
-    std::shared_ptr<entry_decl> entry;
 };

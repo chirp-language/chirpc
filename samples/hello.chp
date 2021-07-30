@@ -1,6 +1,14 @@
 import "io"
 
-func int util.getrandom();
+namespace util
+{
+	func int getrandom();
+	func int add(int: a, int: b);
+}
+namespace io
+{
+	func none print(char const ptr: msg);
+}
 
 extern "dlopen" func none ptr dlopen(char const ptr: filename, int: flags);
 extern "stdout" ptr: stdout;
@@ -10,20 +18,18 @@ entry
 	io.print("Hello, world %d", util.getrandom());
 	int: a = 123;
 	ptr: b;
-	int: c = 325 + 123213 / (1345 * 345 + add(2, 3));
-	ret 3
-	+ 4;
+	int: c = 325 + 123213 / (1345 * 345 + util.add(2, 3));
 	a = 5; ; # Null statement
 	if a + c
 	{
-		print("Yes");
+		io.print("Yes");
 	}
 	elif a - c
 	{
-		print("Maybe");
+		io.print("Maybe");
 	}
 	else
 	{
-		print("No.");
+		io.print("No.");
 	}
 }

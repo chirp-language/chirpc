@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "location.hpp"
 #include "location_provider.hpp"
 #include "../cmd.hpp"
 #include <vector>
@@ -55,18 +56,39 @@ struct diagnostic_type
     }
 };
 
-class diagnostic
+// Forward declaration
+class diagnostic_manager;
+
+class [[nodiscard]] diagnostic
 {
 public:
     diagnostic_type type;
-    location_range l;
+    location_range loc;
     std::string msg;
 
     diagnostic() = default;
+    diagnostic(diagnostic_type type) : type(type) {}
     diagnostic(diagnostic const&) = delete;
     diagnostic(diagnostic &&) = default;
     diagnostic& operator=(diagnostic const&) = delete;
     diagnostic& operator=(diagnostic &&) = default;
+
+    diagnostic&& of_type(diagnostic_type type) && {
+        this->type = type;
+        return std::move(*this);
+    }
+
+    diagnostic&& at(location_range loc) && {
+        this->loc = loc;
+        return std::move(*this);
+    }
+
+    diagnostic&& reason(std::string&& msg) && {
+        this->msg = std::move(msg);
+        return std::move(*this);
+    }
+
+    void report(diagnostic_manager& mng) &&;
 };
 
 class diagnostic_manager
@@ -87,3 +109,7 @@ public:
     location_provider const* loc_prov = nullptr;
     std::vector<std::string> const* current_source = nullptr;
 };
+
+inline void diagnostic::report(diagnostic_manager& mng) && {
+    mng.show(*this);
+}

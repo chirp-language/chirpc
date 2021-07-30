@@ -1,4 +1,9 @@
 chirpc
+.priv.*
+cmake_install.cmake
+CMakeCache.txt
+CMakeFiles
+Makefile
 bin/*
 test.ch
 tmp

@@ -1,49 +1,82 @@
 #include "token.hpp"
+#include <type_traits>
 
-#define tknstr(c, alias)\
-    case c : result += #alias;\
-    break;
+//#define tknstr(c)\
+//    case tkn_type::c : result += #c;\
+//    break;
+
+#define tknstr(c) #c,
+
+char const* token_names[] = {
+    tknstr(kw_entry   )
+    tknstr(kw_import  )
+    tknstr(kw_export  )
+    tknstr(kw_namespace)
+    tknstr(kw_if      )
+    tknstr(kw_else    )
+    tknstr(kw_elif    )
+    tknstr(kw_and     )
+    tknstr(kw_or      )
+    tknstr(kw_func    )
+    tknstr(kw_while   )
+    tknstr(kw_for     )
+    tknstr(kw_ret     )
+    tknstr(kw_extern  )
+    tknstr(kw_true    )
+    tknstr(kw_false   )
+    tknstr(kw_null    )
+    tknstr(dt_int     )
+    tknstr(dt_char    )
+    tknstr(dt_float   )
+    tknstr(dt_double  )
+    tknstr(dt_byte    )
+    tknstr(dt_bool    )
+    tknstr(dt_long    )
+    tknstr(dt_none    )
+    tknstr(dm_ptr     )
+    tknstr(dm_signed  )
+    tknstr(dm_unsigned)
+    tknstr(dm_const   )
+    tknstr(period     )
+    tknstr(colon      )
+    tknstr(comma      )
+    tknstr(assign_op  )
+    tknstr(compassign_op)
+    tknstr(lt_op      )
+    tknstr(gt_op      )
+    tknstr(lteq_op    )
+    tknstr(gteq_op    )
+    tknstr(eqeq_op    )
+    tknstr(noteq_op   )
+    tknstr(plus_op    )
+    tknstr(minus_op   )
+    tknstr(star_op    )
+    tknstr(slash_op   )
+    tknstr(perc_op    )
+    tknstr(as_op      )
+    tknstr(ref_op     )
+    tknstr(deref_op   )
+    tknstr(lparen     )
+    tknstr(rparen     )
+    tknstr(lbrace     )
+    tknstr(rbrace     )
+    tknstr(lbracket   )
+    tknstr(rbracket   )
+    tknstr(semi       )
+    tknstr(identifer  )
+    tknstr(literal    )
+    tknstr(unknown    )
+    tknstr(whitespace )
+    tknstr(newline    )
+    tknstr(eof        )
+};
+
+static_assert(std::size(token_names) == static_cast<int>(tkn_type::eof) + 1, "Size of token names array doesn't match number of tokens");
 
 std::string token::util_dump(){
     std::string result;
 
-    switch(this->type) {
-        tknstr(tkn_type::kw_entry  , kw_entry  )
-        tknstr(tkn_type::kw_import , kw_import )
-        tknstr(tkn_type::kw_export , kw_export )
-        tknstr(tkn_type::kw_namespace, kw_namespace )
-        tknstr(tkn_type::kw_if     , kw_if     )
-        tknstr(tkn_type::kw_else   , kw_else   )
-        tknstr(tkn_type::kw_elif   , kw_elif   )
-        tknstr(tkn_type::kw_and    , kw_and    )
-        tknstr(tkn_type::kw_or     , kw_or     )
-        tknstr(tkn_type::kw_func   , kw_func   )
-        tknstr(tkn_type::kw_while  , kw_while  )
-        tknstr(tkn_type::kw_for    , kw_for    )
-        tknstr(tkn_type::kw_ret    , kw_ret    )
-        tknstr(tkn_type::kw_extern , kw_extern )
-        tknstr(tkn_type::datatype  , datatype  )
-        tknstr(tkn_type::datamod   , datamod   )
-        tknstr(tkn_type::period    , period    )
-        tknstr(tkn_type::colon     , colon     )
-        tknstr(tkn_type::comma     , comma     )
-        tknstr(tkn_type::assign_op , assign_op )
-        tknstr(tkn_type::cmp_op    , cmp_op    )
-        tknstr(tkn_type::math_op   , math_op   )
-        tknstr(tkn_type::lparen    , lparen    )
-        tknstr(tkn_type::rparen    , rparen    )
-        tknstr(tkn_type::lbrace    , lbrace    )
-        tknstr(tkn_type::rbrace    , rbrace    )
-        tknstr(tkn_type::lbracket  , lbracket  )
-        tknstr(tkn_type::rbracket  , rbracket  )
-        tknstr(tkn_type::semi      , semi      )
-        tknstr(tkn_type::identifer , identifer )
-        tknstr(tkn_type::literal   , literal   )
-        tknstr(tkn_type::unknown   , unknown   )
-        tknstr(tkn_type::whitespace, whitespace)
-        tknstr(tkn_type::newline   , newline   )
-        tknstr(tkn_type::eof       , eof       )
-    }
+    result += token_names[static_cast<int>(this->type)];
     result += "   '";
     result += this->value;
 	result += "' <";

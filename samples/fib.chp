@@ -1,7 +1,8 @@
-func int fib(int: n) {
+func int fib(int: n)
+{
 	int: a = 0;
 	int: b = 1;
-	while n
+	while n != 0
 	{
 		const int: tmp = b;
 		n = n - 1;
@@ -9,4 +10,15 @@ func int fib(int: n) {
 		a = tmp;
 	}
 	ret a;
+}
+
+import "io"
+namespace io
+{
+	func none print(char const ptr: msg, int: param);
+}
+
+entry
+{
+	io.print("Result of fib(5): ", fib(5));
 }

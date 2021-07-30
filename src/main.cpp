@@ -2,11 +2,11 @@
 #include "cmd.hpp"
 #include "color.hpp"
 #include "lexer/lexer.hpp"
-#include "lexer/preproc.hpp"
 #include "parser/parser.hpp"
 #include "codegen/codegen.hpp"
 #include "frontend/frontend.hpp"
 #include "ast/ast_dumper.hpp"
+#include "seman/analyser.hpp"
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -63,8 +63,10 @@ int main(int argc, char** argv)
     diagnostic_manager diagnostics(std::cerr, options.has_color);
     diagnostics.current_source = &content;
 
-    auto proccesed = preprocess(options.filename, content);
-    auto tkns = lexe(proccesed, content);
+    lexer lex(content, options.filename, diagnostics);
+    auto raw = lex.lex_raw();
+    auto proccesed = lex.preprocess(raw);
+    auto tkns = lex.lex(proccesed);
 
     if (options.dump_tkns)
     {
@@ -79,7 +81,11 @@ int main(int argc, char** argv)
     parser p(diagnostics);
     p.load_tokens(options.filename, std::move(tkns));
     diagnostics.loc_prov = &p;
-    p.parse();
+    p.parse_top_level();
+
+    // Semantic analysis
+    analyser seman(p.get_ast(), diagnostics);
+    seman.analyse();
 
     if (options.dump_ast)
     {
@@ -88,7 +94,7 @@ int main(int argc, char** argv)
             std::cout << "--------------------" << '\n';
         }
 
-        text_ast_dumper dumper(options.has_color, &p);
+        text_ast_dumper dumper(options.has_color, options.show_expr_types, &p);
 
         dumper.dump_ast(p.get_ast());
         std::cout << '\n';
@@ -122,12 +128,10 @@ int main(int argc, char** argv)
 
     // Code Generation
     codegen generator(diagnostics);
-    generator.ignore_unresolved_refs = options.ignore_unresolved_refs;
 
     auto t = std::make_unique<tracker>(diagnostics);
 
     generator.set_tree(&p.get_ast(), options.filename);
-    generator.set_tracker(t.get());
     generator.gen();
 
     if (generator.errored)

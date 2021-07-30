@@ -16,7 +16,11 @@ void cmd::write_help()
         "--- Utility Options ---\n"
         "\t-dump-tokens\tDumps the lexer tokens of the source file\n"
         "\t-dump-ast\tDumps the AST in a human readable view\n"
-        "\t-keep-tmp\tKeeps the temporary folder, instead of deleting it after compiling.\n";
+        "\t-keep-tmp\tKeeps the temporary folder, instead of deleting it after compiling\n"
+        "\t-show-unresolved-refs\tShow warnings whether an undefined symbol is referenced"
+            "(no longer needed since semantic analysis already reports errors; currently no-op)\n"
+        "\t-show-expr-types\tShow types in expressions (effective during an AST dump)\n"
+    ;
 }
 
 void cmd::write_version()
@@ -72,6 +76,10 @@ cmd parse_cmd(int argc, char *argv[])
         else if (std::strcmp(argv[i], "-show-unresolved-refs") == 0)
         {
             c.ignore_unresolved_refs = false;
+        }
+        else if (std::strcmp(argv[i], "-show-expr-types") == 0)
+        {
+            c.show_expr_types = true;
         }
         else
         {

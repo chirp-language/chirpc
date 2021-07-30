@@ -1,181 +1,155 @@
 #include "parser.hpp"
 #include <string_view>
 
-dtypename parser::get_dtypename(std::string const& txt)
+static dtypename get_dtypename(tkn_type tok)
 {
-    // The else aren't really needed, cuz you're supposed to already return
-    if (txt == "int")
-    {
-        return dtypename::_int;
+    switch (tok) {
+        case tkn_type::dt_int:
+            return dtypename::_int;
+        case tkn_type::dt_long:
+            return dtypename::_long;
+        case tkn_type::dt_float:
+            return dtypename::_float;
+        case tkn_type::dt_double:
+            return dtypename::_double;
+        case tkn_type::dt_char:
+            return dtypename::_char;
+        case tkn_type::dt_byte:
+            return dtypename::_byte;
+        case tkn_type::dt_bool:
+            return dtypename::_bool;
+        case tkn_type::dt_none:
+            return dtypename::_none;
+        default: ;
     }
-    else if(txt == "long")
-    {
-        return dtypename::_long;
-    }
-    else if (txt == "float")
-    {
-        return dtypename::_float;
-    }
-    else if (txt == "double")
-    {
-        return dtypename::_double;
-    }
-    else if (txt == "char")
-    {
-        return dtypename::_char;
-    }
-    else if (txt == "byte")
-    {
-        return dtypename::_byte;
-    }
-    else if (txt == "bool")
-    {
-        return dtypename::_bool;
-    }
-    else if (txt == "none")
-    {
-        return dtypename::_none;
-    }
-
+    // Unknown type token
     #ifndef NDEBUG
-    {
-        // If this manages to reach here, then uhhh it's not supposed to happen
-        this->ok = false;
-        diagnostic e;
-        e.type = diagnostic_type::global_err;
-        e.msg = "Couldn't get typename from '" + txt + "', location unknown";
-        this->diagnostics.show(e);
-        return dtypename::_none;
-    }
+    std::abort();
     #else
     __builtin_unreachable();
     #endif
 }
 
-dtypemod parser::get_dtypemod(std::string const& txt)
+static dtypemod get_dtypemod(tkn_type tok)
 {
-    using namespace std::string_literals;
-    dtypemod mod;
-
-    if (txt == "ptr")
-    {
-        return dtypemod::_ptr;
+    switch (tok) {
+        case tkn_type::dm_ptr:
+            return dtypemod::_ptr;
+        case tkn_type::dm_signed:
+            return dtypemod::_signed;
+        case tkn_type::dm_unsigned:
+            return dtypemod::_unsigned;
+        case tkn_type::dm_const:
+            return dtypemod::_const;
+        case tkn_type::kw_func:
+            return dtypemod::_func;
+        default: ;
     }
-    else if (txt == "signed")
-    {
-        return dtypemod::_signed;
-    }
-    else if (txt == "unsigned")
-    {
-        return dtypemod::_unsigned;
-    }
-    else if (txt == "const")
-    {
-        return dtypemod::_const;
-    }
-    else if (txt == "func")
-    {
-        return dtypemod::_func;
-    }
-
-    this->ok = false;
-    diagnostic e;
-    e.type = diagnostic_type::global_err;
-    e.msg = "Couldn't get type modifier from '" + txt + "', location unknown";
-    this->diagnostics.show(e);
-    return mod;
+    // Unknown type token
+    #ifndef NDEBUG
+    std::abort();
+    #else
+    __builtin_unreachable();
+    #endif
 }
 
 bool parser::is_datatype()
 {
-    return probe(tkn_type::datamod) || probe(tkn_type::datatype);
+    return probe_range(tkn_type::datatype_S, tkn_type::datatype_E);
+}
+
+bool parser::is_datamod()
+{
+    return probe_range(tkn_type::datamod_S, tkn_type::datamod_E);
+}
+
+bool parser::is_type()
+{
+    return is_datatype() or is_datamod();
 }
 
 bool parser::is_var_decl()
 {
-    return is_datatype();
+    return is_type();
 }
 
-bool parser::is_var_assign()
+basic_type parser::parse_datatype()
 {
-    // Doesn't care about cast (yet)
-    return probe(tkn_type::identifer) && peekf().type == tkn_type::assign_op;
-}
-
-exprtype parser::get_datatype()
-{
-    exprtype type;
+    basic_type type;
     bool has_candidate = false;
     //  Mods before the typename
-    while (match(tkn_type::datamod))
+    while (is_datamod())
     {
-        type.exttp.push_back(static_cast<std::byte>(get_dtypemod(peekb().value)));
+        type.exttp.push_back(static_cast<std::byte>(get_dtypemod(peek().type)));
 
-        if (static_cast<dtypemod>(get_dtypemod(peekb().value)) == dtypemod::_ptr)
+        if (static_cast<dtypemod>(get_dtypemod(peek().type)) == dtypemod::_ptr)
             has_candidate = true;
+        skip();
     }
 
     // Could also be a token identifier, but we don't care about that yet
-    if (!match(tkn_type::datatype))
+    if (!is_datatype())
     {
         if (has_candidate)
             type.basetp = dtypename::_none;
     }
     else
     {
-        type.basetp = get_dtypename(this->peekb().value);
+        type.basetp = get_dtypename(peek().type);
+        skip();
     }
     if (!this->ok)
     {
         return type;
     }
     // Mods after the typename
-    while (match(tkn_type::datamod))
+    while (is_datamod())
     {
-        type.exttp.push_back(static_cast<std::byte>(get_dtypemod(peekb().value)));
+        type.exttp.push_back(static_cast<std::byte>(get_dtypemod(peek().type)));
+        skip();
     }
     // expect(tkn_type::colon);
     return type;
 }
 
-std::shared_ptr<var_decl> parser::get_var_decl()
+nodeh<var_decl> parser::parse_var_decl()
 {
-    auto node = std::make_shared<var_decl>();
+    auto node = new_node<var_decl>();
     node->loc = loc_peek();
-    node->var_type = get_datatype();
+    node->type = parse_datatype();
     expect(tkn_type::colon);
-    node->ident = get_identifier();
+    node->ident = parse_identifier();
     if (match(tkn_type::assign_op))
-        node->init = get_expr(false);
+        node->init = parse_expr(false);
     expect(tkn_type::semi);
     node->loc.end = loc_peekb();
     return node;
 }
 
-std::shared_ptr<var_decl> parser::get_parameter()
+nodeh<var_decl> parser::parse_parameter()
 {
-    auto node = std::make_shared<var_decl>();
+    auto node = new_node<var_decl>();
     node->loc = loc_peek();
-    node->var_type = get_datatype();
+    node->type = parse_datatype();
     if (match(tkn_type::colon))
     {
-        node->ident = get_identifier();
+        node->ident = parse_identifier();
     }
     node->loc.end = loc_peekb();
     return node;
 }
 
-std::shared_ptr<assign_stmt> parser::get_assign_stmt()
+nodeh<assign_stmt> parser::parse_assign_stmt(exprh target)
 {
-    auto node = std::make_shared<assign_stmt>();
-    node->loc = loc_peek();
-    node->ident = get_identifier();
-    expect(tkn_type::assign_op);
-
+    auto node = new_node<assign_stmt>();
+    node->loc = target->loc;
+    node->target = std::move(target);
+    node->assign_op = peekb().type;
+    node->assign_loc = loc_peekb();
     if (!this->ok)
         return node;
 
-    node->value = get_expr(false);
+    node->value = parse_expr(false);
     expect(tkn_type::semi);
     node->loc.end = loc_peekb();
     return node;

@@ -12,7 +12,7 @@ Parses tokens into an AST
 class parser : public location_provider
 {
 public:
-    void parse();
+    void parse_top_level();
 
     void load_tokens(std::string, std::vector<token>&&);
     ast_root& get_ast()
@@ -35,6 +35,7 @@ private:
 
     bool match(tkn_type);
     bool probe(tkn_type); // Like match, but not consuming
+    bool probe_range(tkn_type begin, tkn_type end); // begin <= probe() <= end
     bool expect(tkn_type);
 
     token_location loc_peek()
@@ -68,57 +69,52 @@ private:
 
     // Actual parser stuff
 
-    bool is_operand();
-
-    bool is_identifier();
-    bool is_lop(); // left operand
-    bool is_lvalue();
     bool is_datatype();
-
-    bool is_params();
-
+    bool is_datamod();
+    bool is_type();
     bool is_var_decl(); // (data specifiers) (:) (identifier)
-    bool is_var_assign();  // (identifier) (=) (value)
 
     // Expression stuff
-    dtypename get_dtypename(std::string const&);
-    dtypemod get_dtypemod(std::string const&);
-    exprtype get_datatype();
+    basic_type parse_datatype();
 
-    std::shared_ptr<identifier> get_identifier();
+    identifier parse_identifier();
+    qual_identifier parse_qual_identifier();
 
-    txt_literal get_txt_lit();
-    num_literal get_num_lit();
-    std::shared_ptr<literal_node> get_literal();
+    txt_literal build_txt_lit(token_location loc, std::string&& value, bool is_char);
+    num_literal build_num_lit(token_location loc, std::string const& value);
+    num_literal build_bool_lit(token_location loc, bool value);
+    num_literal build_null_ptr_lit(token_location loc);
+    nodeh<txt_literal> parse_txt_lit(token_location loc, std::string const& tok_value);
+    exprh parse_literal();
 
-    exprh get_subexpr_op(exprh lhs, int min_prec);
-    exprh get_primary_expr();
-    exprh get_expr(bool comma_allowed);
+    exprh parse_subexpr_op(exprh lhs, int min_prec);
+    exprh parse_primary_expr();
+    exprh parse_expr(bool comma_allowed);
 
-    arguments get_arguments();
-    std::shared_ptr<func_call> get_fcall(exprh callee); // function call
+    arguments parse_arguments();
+    nodeh<func_call> parse_fcall(exprh callee); // function call
 
     // Declaration stuff
-    std::shared_ptr<entry_decl> get_entry();
-    std::shared_ptr<import_decl> get_import();
-    std::shared_ptr<extern_decl> get_extern();
-    std::shared_ptr<namespace_decl> get_namespace();
+    nodeh<entry_decl> parse_entry();
+    nodeh<import_decl> parse_import();
+    nodeh<extern_decl> parse_extern();
+    nodeh<namespace_decl> parse_namespace();
 
-    std::shared_ptr<var_decl> get_var_decl();
-    std::shared_ptr<var_decl> get_parameter();
+    nodeh<var_decl> parse_var_decl();
+    nodeh<var_decl> parse_parameter();
 
-    std::shared_ptr<func_decl> get_func_decl();
-    parameters get_parameters();
+    nodeh<func_decl> parse_func_decl();
+    parameters parse_parameters();
 
     // Statement stuff
-    std::shared_ptr<stmt> get_stmt();
-    std::shared_ptr<compound_stmt> get_compound_stmt();
+    nodeh<stmt> parse_stmt();
+    nodeh<compound_stmt> parse_compound_stmt();
 
-    std::shared_ptr<decl_stmt> get_decl_stmt();
-    std::shared_ptr<assign_stmt> get_assign_stmt();
-    std::shared_ptr<ret_stmt> get_ret();
-    std::shared_ptr<conditional_stmt> get_cond(); // 420 NoScope!
-    std::shared_ptr<iteration_stmt> get_iter();
+    nodeh<decl_stmt> parse_decl_stmt();
+    nodeh<assign_stmt> parse_assign_stmt(exprh target);
+    nodeh<ret_stmt> parse_ret();
+    nodeh<conditional_stmt> parse_cond(); // 420 NoScope!
+    nodeh<iteration_stmt> parse_iter();
 
     bool ok = false;
     std::string filename;

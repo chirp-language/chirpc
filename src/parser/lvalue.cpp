@@ -1,42 +1,24 @@
 #include "parser.hpp"
 
-bool parser::is_identifier()
+identifier parser::parse_identifier()
 {
-    return probe(tkn_type::identifer);
+    identifier node;
+    node.loc = loc_peek();
+    node.name = peek().value;
+    expect(tkn_type::identifer);
+    return node;
 }
 
-bool parser::is_lop()
-{
-    return (
-        is_identifier()             ||
-        probe(tkn_type::ref_op)     ||
-        probe(tkn_type::deref_op)   ||
-        probe(tkn_type::as_op)
-    );
-}
-
-bool parser::is_lvalue()
-{
-    return is_lop();
-}
-
-std::shared_ptr<identifier> parser::get_identifier()
-{
-    auto node = std::make_shared<identifier>();
-    node->loc = loc_peek();
+qual_identifier parser::parse_qual_identifier() {
+    qual_identifier node;
+    node.loc = loc_peek();
     while (match(tkn_type::identifer))
     {
         token const& ns = peekb();
-        if (match(tkn_type::period))
-        {
-            node->namespaces.push_back(ns.value);
-        }
-        else
-        {
-            node->name = ns.value;
+        node.parts.push_back(identifier::from(std::string(ns.value), loc_peekb()));
+        if (!match(tkn_type::period))
             break;
-        }
     }
-    node->loc.end = loc_peekb();
+    node.loc.end = loc_peekb();
     return node;
 }

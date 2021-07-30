@@ -2,20 +2,24 @@
 
 std::string codegen::emit_decl(decl const& node)
 {
-    switch (node.type)
+    switch (node.kind)
     {
-        case decl_type::var:
+        case decl_kind::var:
             return emit_var_decl(static_cast<var_decl const&>(node));
-        case decl_type::entry:
+        case decl_kind::entry:
             return emit_entry_decl(static_cast<entry_decl const&>(node));
-        /*case decl_type::import:
+        case decl_kind::import:
             return emit_import_decl(static_cast<import_decl const&>(node));
-        case decl_type::fdecl:
+        case decl_kind::nspace:
+            return emit_namespace_decl(static_cast<namespace_decl const&>(node));
+        case decl_kind::fdecl:
             return emit_func_decl(static_cast<func_decl const&>(node));
-        case decl_type::fdef:
+        case decl_kind::fdef:
             return emit_func_def(static_cast<func_def const&>(node));
-        case decl_type::external:
-            return emit_extern_decl(static_cast<extern_decl const&>(node));*/
+        case decl_kind::external:
+            return emit_extern_decl(static_cast<extern_decl const&>(node));
+        case decl_kind::root:
+            break;
     }
     #ifndef NDEBUG
     return "\n#error Bad declaration, this is a bug\n";
@@ -27,48 +31,9 @@ std::string codegen::emit_decl(decl const& node)
 std::string codegen::emit_var_decl(var_decl const& node)
 {
     std::string result;
-
-    if (!m_tracker->bind_var(node.ident.get(), &node))
-    {
-        result = "// declaration error here\n";
-        diagnostic e;
-        e.l = node.loc;
-        e.msg = "A variable with the same name already exists";
-        e.type = diagnostic_type::location_err;
-        this->diagnostics.show(e);
-        this->errored = true;
-        return result;
-    }
-
-    // Check for invalid type
-    if(node.var_type.basetp == dtypename::_none)
-    {
-        // Checks if it's a pointer.
-        bool is_ptr = false;
-        for(std::byte d : node.var_type.exttp)
-        {
-            if(static_cast<dtypemod>(d) == dtypemod::_ptr)
-            {
-                is_ptr = true;
-                break;
-            }
-        }
-
-        if(!is_ptr)
-        {
-            diagnostic e;
-            e.msg = "Variable cannot be of type `none`, unless a pointer";
-            e.type = diagnostic_type::location_err;
-            e.l = node.loc;
-            this->diagnostics.show(e);
-            this->errored = true;
-            return "/*errored here*/";
-        }
-    }
-    
-    result += emit_datatype(node.var_type);
-    result += " ";
-    result += emit_identifier(*node.ident);
+    result += emit_datatype(node.type);
+    result += ' ';
+    result += emit_identifier(node.ident);
     if (node.init)
     {
         result += " = ";
@@ -78,26 +43,25 @@ std::string codegen::emit_var_decl(var_decl const& node)
     return result;
 }
 
+std::string codegen::emit_extern_decl(extern_decl const& node)
+{
+    // TODO-Maybe: Add support for asm() attributes after declarator to support this
+    return "extern " + emit_decl(*node.inner_decl);
+}
+
+std::string codegen::emit_import_decl(import_decl const& node)
+{
+    // Import nodes should be only processed by the previous phases of translation
+    return std::string();
+}
+
 std::string codegen::emit_assign_stmt(assign_stmt const& node)
 {
     std::string result;
-
-    auto var = m_tracker->lookup_var(node.ident.get());
-    if (!var)
-    {
-        this->errored = true;
-        result += "// error here\n";
-        diagnostic e;
-        e.l = node.loc;
-        e.msg = "Cannot assign to a non-existant variable";
-        e.type = diagnostic_type::location_err;
-        this->diagnostics.show(e);
-        return result;
-    }
-
-    const_cast<assign_stmt&>(node).target = const_cast<var_decl*>(var); // Keep track of the assigned variable (move to semantic analysis)
-    result += emit_identifier(*node.ident);
-    result += " = ";
+    result += emit_expr(*node.target);
+    result += ' ';
+    result += exprop_id(node.assign_op);
+    result += ' ';
     result += emit_expr(*node.value);
     result += ";\n";
     return result;
@@ -116,32 +80,38 @@ std::string codegen::emit_ret_stmt(ret_stmt const& node)
 std::string codegen::emit_stmt(stmt const& s)
 {
     std::string result;
-    switch (s.type)
+    switch (s.kind)
     {
-        case stmt_type::compound:
-            result += emit_compound_stmt(static_cast<compound_stmt const&>(s));
+        case stmt_kind::compound:
+            return emit_compound_stmt(static_cast<compound_stmt const&>(s));
             break;
-        case stmt_type::expr:
+        case stmt_kind::expr:
             result += emit_expr(*static_cast<expr_stmt const&>(s).node);
             result += ";\n"; // Because this is kindof an expression stuff
             break;
-        case stmt_type::decl:
+        case stmt_kind::decl:
             result += emit_decl(*static_cast<decl_stmt const&>(s).inner_decl);
             break;
-        case stmt_type::assign:
+        case stmt_kind::assign:
             result += emit_assign_stmt(static_cast<assign_stmt const&>(s));
             break;
-        case stmt_type::ret:
+        case stmt_kind::ret:
             result += emit_ret_stmt(static_cast<ret_stmt const&>(s));
             break;
-        case stmt_type::conditional:
+        case stmt_kind::conditional:
             result += emit_conditional_stmt(static_cast<conditional_stmt const&>(s));
             break;
-        case stmt_type::iteration:
+        case stmt_kind::iteration:
             result += emit_iteration_stmt(static_cast<iteration_stmt const&>(s));
             break;
-        case stmt_type::null:
+        case stmt_kind::null:
             break; // emit nothing
+        default:
+            #ifndef NDEBUG
+            return "\n#error Bad statement, this is a bug\n";
+            #else
+            __builtin_unreachable();
+            #endif
     }
     return result;
 }
@@ -150,14 +120,12 @@ std::string codegen::emit_compound_stmt(compound_stmt const& cstmt)
 {
     std::string result;
     result += "{\n";
-    this->m_tracker->push_scope();
-    
+
     for (auto& s : cstmt.body)
     {
         result += emit_stmt(*s);
     }
-    
-    this->m_tracker->pop_scope();
+
     result += "}\n";
     return result;
 }
