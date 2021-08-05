@@ -1,6 +1,7 @@
 #include "codegen.hpp"
 
 #include "../ast/types.hpp"
+#include <string>
 
 std::string codegen::emit_qual_identifier(qual_identifier const& ident)
 {
@@ -106,32 +107,19 @@ std::string codegen::emit_datatype(basic_type const& type)
     return result;
 }
 
-std::string codegen::emit_txt_literal(txt_literal const& node)
+std::string codegen::emit_string_literal(string_literal const& node)
 {
-    std::string result;
-    if (node.is_character)
-    {
-        result += '\'';
-        result += node.value;
-        result += '\'';
-    }
-    else
-    {
-        result += '"';
-        result += node.value;
-        result += '"';
-    }
-    return result;
+    return "\"" + /*escape*/node.value + "\"";
 }
 
-std::string codegen::emit_num_literal(num_literal const& node)
+std::string codegen::emit_integral_literal(integral_literal const& node)
 {
-    // Technically UB if exttp is empty, oops...
-    if (node.type.basetp == dtypename::_none
-        and node.type.exttp[0] == static_cast<std::byte>(dtypemod::_ptr))
-        // Null pointer
-        return "(void*)0";
-    return node.value;
+    return "(" + std::to_string(node.value.val) + ")";
+}
+
+std::string codegen::emit_nullptr_literal(nullptr_literal const& node)
+{
+    return "((void*)0)";
 }
 
 std::string codegen::emit_binop(binop const& node)
@@ -172,10 +160,12 @@ std::string codegen::emit_expr(expr const& node)
             return emit_func_call(static_cast<func_call const&>(node));
         case expr_kind::ident:
             return emit_id_ref_expr(static_cast<id_ref_expr const&>(node));
-        case expr_kind::txtlit:
-            return emit_txt_literal(static_cast<txt_literal const&>(node));
-        case expr_kind::numlit:
-            return emit_num_literal(static_cast<num_literal const&>(node));
+        case expr_kind::strlit:
+            return emit_string_literal(static_cast<string_literal const&>(node));
+        case expr_kind::intlit:
+            return emit_integral_literal(static_cast<integral_literal const&>(node));
+        case expr_kind::nulllit:
+            return emit_nullptr_literal(static_cast<nullptr_literal const&>(node));
         case expr_kind::cast:
             return emit_cast_expr(static_cast<cast_expr const&>(node));
     }

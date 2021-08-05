@@ -1,4 +1,4 @@
-/// \file Abstract Spaghetti Noodles code representation
+/// \file AST Nodes - Abstract SpaghetTi Noodles code representation
 
 #pragma once
 /*
@@ -27,8 +27,9 @@ class arguments;
 class func_call;
 class id_ref_expr;
 class loperand;
-class txt_literal;
-class num_literal;
+class string_literal;
+class integral_literal;
+class nullptr_literal;
 class cast_expr;
 class decl;
 class var_decl;
@@ -141,8 +142,9 @@ enum class expr_kind
     binop,
     call,
     ident,
-    txtlit,
-    numlit,
+    strlit,
+    intlit,
+    nulllit,
     cast,
 };
 
@@ -254,22 +256,37 @@ class loperand : public expr
 };
 #endif
 
-class txt_literal : public expr
+class string_literal : public expr
 {
     public:
-    bool is_character; // Single character/packed character constant
     std::string value;
 
-    txt_literal() : expr(expr_kind::txtlit) {}
+    string_literal() : expr(expr_kind::strlit) {}
 };
 
-// Should be replaced by a different literal for each types (or not)
-class num_literal : public expr
+struct integer_value
+{
+    int64_t val;
+
+    integer_value() = default;
+    constexpr integer_value(int64_t v) : val(v) {}
+};
+
+class integral_literal : public expr
 {
     public:
-    std::string value; // bruh
+    integer_value value;
 
-    num_literal() : expr(expr_kind::numlit) {}
+    integral_literal() : expr(expr_kind::intlit) {}
+
+    protected:
+    integral_literal(expr_kind k) : expr(k) {}
+};
+
+class nullptr_literal : public expr
+{
+    public:
+    nullptr_literal() : expr(expr_kind::nulllit) {}
 };
 
 class cast_expr : public expr

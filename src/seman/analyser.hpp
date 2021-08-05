@@ -32,8 +32,9 @@ class analyser
 	void visit_func_call(func_call&);
 	void visit_id_ref_expr(id_ref_expr&);
 	void visit_loperand(loperand&) = delete;
-	void visit_txt_literal(txt_literal&);
-	void visit_num_literal(num_literal&);
+	void visit_string_literal(string_literal&);
+	void visit_integral_literal(integral_literal&);
+	void visit_nullptr_literal(nullptr_literal&);
 	void visit_cast_expr(cast_expr&);
 	// Declarations
 	void visit_var_decl(var_decl&);

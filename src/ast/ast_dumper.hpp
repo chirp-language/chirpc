@@ -32,8 +32,9 @@ class text_ast_dumper {
     void dump_func_call(func_call const&);
     void dump_id_ref_expr(id_ref_expr const&);
     void dump_loperand(loperand const&) = delete;
-    void dump_txt_literal(txt_literal const&);
-    void dump_num_literal(num_literal const&);
+    void dump_string_literal(string_literal const&);
+    void dump_integral_literal(integral_literal const&);
+    void dump_nullptr_literal(nullptr_literal const&);
     void dump_cast_expr(cast_expr const&);
     // Declarations
     void dump_var_decl(var_decl const&);

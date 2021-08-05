@@ -65,6 +65,8 @@ static std::string dump_dtname(dtypename n)
     {
     case dtypename::_int:
         return "int";
+    case dtypename::_long:
+        return "long";
     case dtypename::_float:
         return "float";
     case dtypename::_double:
@@ -293,10 +295,12 @@ void text_ast_dumper::dump_expr(expr const& node)
             return dump_func_call(static_cast<func_call const&>(node));
         case expr_kind::ident:
             return dump_id_ref_expr(static_cast<id_ref_expr const&>(node));
-        case expr_kind::txtlit:
-            return dump_txt_literal(static_cast<txt_literal const&>(node));
-        case expr_kind::numlit:
-            return dump_num_literal(static_cast<num_literal const&>(node));
+        case expr_kind::strlit:
+            return dump_string_literal(static_cast<string_literal const&>(node));
+        case expr_kind::intlit:
+            return dump_integral_literal(static_cast<integral_literal const&>(node));
+        case expr_kind::nulllit:
+            return dump_nullptr_literal(static_cast<nullptr_literal const&>(node));
         case expr_kind::cast:
             return dump_cast_expr(static_cast<cast_expr const&>(node));
     }
@@ -458,23 +462,15 @@ void text_ast_dumper::dump_id_ref_expr(id_ref_expr const& n)
     std::cout << '\n';
 }*/
 
-void text_ast_dumper::dump_txt_literal(txt_literal const& n)
+void text_ast_dumper::dump_string_literal(string_literal const& n)
 {
     std::cout << indent(depth);
-    write_color("text_literal ", c_color_expr);
+    write_color("string_literal ", c_color_expr);
     print_location(n.loc);
-    std::cout << ' ';
-    if (n.is_character)
-    {
-        write_color("(char) ", c_color_expr);
-    }
-    else
-    {
-        write_color("(string) ", c_color_expr);
-    }
-    std::cout << '"';
+    std::cout << " \"";
+    // Escape it?
     std::cout << n.value;
-    std::cout << "\";\n";
+    std::cout << "\"\n";
     if (show_expr_types)
     {
         ++depth;
@@ -483,14 +479,25 @@ void text_ast_dumper::dump_txt_literal(txt_literal const& n)
     }
 }
 
-void text_ast_dumper::dump_num_literal(num_literal const& n)
+void text_ast_dumper::dump_integral_literal(integral_literal const& n)
 {
     std::cout << indent(depth);
-    write_color("number_literal ", c_color_expr);
+    write_color("integral_literal ", c_color_expr);
     print_location(n.loc);
     std::cout << ' ';
-    std::cout << n.value;
-    std::cout << ";\n";
+    write_color(std::to_string(n.value.val), c_color_expr);
+    std::cout << '\n';
+    ++depth;
+    dump_expr_type(n.type, n.cat);
+    --depth;
+}
+
+void text_ast_dumper::dump_nullptr_literal(nullptr_literal const& n)
+{
+    std::cout << indent(depth);
+    write_color("nullptr_literal ", c_color_expr);
+    print_location(n.loc);
+    std::cout << '\n';
     if (show_expr_types)
     {
         ++depth;
@@ -577,6 +584,7 @@ void text_ast_dumper::dump_namespace_decl(namespace_decl const& n)
     std::cout << '\n';
 
     ++depth;
+    dump_identifier(n.ident);
     for(auto& node : n.decls)
     {
         dump_decl(*node);

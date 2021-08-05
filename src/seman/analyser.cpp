@@ -34,10 +34,12 @@ void analyser::visit_expr(expr& node)
 			return visit_func_call(static_cast<func_call&>(node));
 		case expr_kind::ident:
 			return visit_id_ref_expr(static_cast<id_ref_expr&>(node));
-		case expr_kind::txtlit:
-			return visit_txt_literal(static_cast<txt_literal&>(node));
-		case expr_kind::numlit:
-			return visit_num_literal(static_cast<num_literal&>(node));
+		case expr_kind::strlit:
+			return visit_string_literal(static_cast<string_literal&>(node));
+		case expr_kind::intlit:
+			return visit_integral_literal(static_cast<integral_literal&>(node));
+		case expr_kind::nulllit:
+			return visit_nullptr_literal(static_cast<nullptr_literal&>(node));
 		case expr_kind::cast:
 			return visit_cast_expr(static_cast<cast_expr&>(node));
 	}
@@ -185,7 +187,7 @@ void analyser::visit_id_ref_expr(id_ref_expr& node)
 	}
 }
 
-void analyser::visit_txt_literal(txt_literal& node)
+void analyser::visit_string_literal(string_literal& node)
 {
 	if (node.cat != exprcat::unset)
 		return;
@@ -195,11 +197,17 @@ void analyser::visit_txt_literal(txt_literal& node)
 	node.type.exttp.push_back(static_cast<std::byte>(dtypemod::_ptr));
 }
 
-void analyser::visit_num_literal(num_literal& node)
+void analyser::visit_integral_literal(integral_literal& node)
 {
 	// Category & type should've been set in the parser
 	if (node.cat == exprcat::unset)
 		node.cat = exprcat::error;
+}
+
+void analyser::visit_nullptr_literal(nullptr_literal& node)
+{
+	// Category & type already set in parser
+	// No need to do anything
 }
 
 void analyser::visit_cast_expr(cast_expr& node)

@@ -1,64 +1,96 @@
 #include "parser.hpp"
 
+#include <cstdlib>
 #include <string.h>
 #include <new>
 #include <iostream>
 #include <string>
 
-txt_literal parser::build_txt_lit(token_location loc, std::string&& value, bool is_character)
+// Returns true if character value overflows
+static inline bool parse_character_value(std::string const& value, integer_value& out)
 {
-    txt_literal node;
+    bool ovf = false;
+    out.val = 0;
+    for (auto ch : value)
+    {
+        if ( out.val & (0xFFUL << 56) )
+            ovf = true;
+        out.val <<= 8;
+        out.val |= static_cast<uint8_t>(ch);
+    }
+    return ovf;
+}
+
+// Returns true on error
+static inline bool parse_integer(std::string const& value, integer_value& out)
+{
+    char const* end = value.data() + value.size();
+    char const* oend = end;
+    out.val = std::strtoll(value.data(), const_cast<char**>(&end), 0);
+    return end != oend;
+}
+
+string_literal parser::build_string_lit(token_location loc, std::string&& value)
+{
+    string_literal node;
     node.loc = loc;
     node.value = std::move(value);
-    node.is_character = is_character;
-    if (is_character and node.value.size() != 1)
-    {
-        diagnostic(diagnostic_type::location_warning)
-            .at(loc)
-            .reason("Character value is not single-character")
-            .report(this->diagnostics);
-    }
     return node;
 }
 
-num_literal parser::build_num_lit(token_location loc, std::string const& value)
+integral_literal parser::build_integral_lit(token_location loc, integer_value value, dtypename type)
 {
-    num_literal node;
-    node.type.basetp = dtypename::_int;
+    integral_literal node;
+    node.type.basetp = type;
     node.cat = exprcat::rval;
     node.loc = loc;
     node.value = value;
     return node;
 }
 
-num_literal parser::build_bool_lit(token_location loc, bool value)
+integral_literal parser::build_bool_lit(token_location loc, bool value)
 {
-    num_literal node;
-    node.type.basetp = dtypename::_bool;
-    node.cat = exprcat::rval;
-    node.loc = loc;
-    node.value = value ? "1" : "0";
-    return node;
+    return build_integral_lit(loc, integer_value(static_cast<int64_t>(value)), dtypename::_bool);
 }
 
-num_literal parser::build_null_ptr_lit(token_location loc)
+nullptr_literal parser::build_null_ptr_lit(token_location loc)
 {
-    num_literal node;
+    nullptr_literal node;
     node.type.basetp = dtypename::_none;
     node.type.exttp.push_back(static_cast<std::byte>(dtypemod::_ptr));
     node.cat = exprcat::rval;
     node.loc = loc;
-    node.value = "null";
     return node;
 }
 
-nodeh<txt_literal> parser::parse_txt_lit(token_location loc, std::string const& tok_value)
+exprh parser::parse_str_or_char_lit(token_location loc, std::string const& tok_value)
 {
     bool is_character = tok_value.at(0) == '\'';
     std::string value(tok_value);
     value.pop_back();
     value.erase(0, 1);
-    return new_node<txt_literal>(build_txt_lit(loc, std::move(value), is_character));
+    if (is_character)
+    {
+        dtypename typ = dtypename::_char;
+        if (value.size() != 1)
+        {
+            typ = dtypename::_long;
+            diagnostic(diagnostic_type::location_warning)
+                .at(loc)
+                .reason("Character value is not single-character")
+                .report(this->diagnostics);
+        }
+        integer_value v;
+        if (parse_character_value(value, v))
+        {
+            diagnostic(diagnostic_type::location_warning)
+                .at(loc)
+                .reason("Character constant value overflows")
+                .report(this->diagnostics);
+        }
+        return new_node<integral_literal>(build_integral_lit(loc, v, typ));
+    }
+    return new_node<string_literal>(build_string_lit(loc, std::move(value)));
 }
 
 exprh parser::parse_literal()
@@ -68,9 +100,22 @@ exprh parser::parse_literal()
     skip();
 
     if (val.at(0) == '"' || val.at(0) == '\'')
-        return parse_txt_lit(loc, val);
+        return parse_str_or_char_lit(loc, val);
     else
-        return new_node<num_literal>(build_num_lit(loc, val));
+    {
+        integer_value v;
+        if (parse_integer(val, v))
+        {
+            diagnostic(diagnostic_type::location_err)
+                .at(loc)
+                .reason("Invalid integer literal")
+                .report(this->diagnostics);
+        }
+        int64_t ext_v = v.val & 0xFFFF'FFFF'0000'0000;
+        // This is bad, too bad
+        dtypename typ = (ext_v == 0 || ext_v == 0xFFFF'FFFF'0000'0000) ? dtypename::_int : dtypename::_long;
+        return new_node<integral_literal>(build_integral_lit(loc, v, typ));
+    }
     return nullptr;
 }
 

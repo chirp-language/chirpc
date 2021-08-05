@@ -80,11 +80,11 @@ private:
     identifier parse_identifier();
     qual_identifier parse_qual_identifier();
 
-    txt_literal build_txt_lit(token_location loc, std::string&& value, bool is_char);
-    num_literal build_num_lit(token_location loc, std::string const& value);
-    num_literal build_bool_lit(token_location loc, bool value);
-    num_literal build_null_ptr_lit(token_location loc);
-    nodeh<txt_literal> parse_txt_lit(token_location loc, std::string const& tok_value);
+    string_literal build_string_lit(token_location loc, std::string&& value);
+    integral_literal build_integral_lit(token_location loc, integer_value value, dtypename type);
+    integral_literal build_bool_lit(token_location loc, bool value);
+    nullptr_literal build_null_ptr_lit(token_location loc);
+    exprh parse_str_or_char_lit(token_location loc, std::string const& tok_value);
     exprh parse_literal();
 
     exprh parse_subexpr_op(exprh lhs, int min_prec);

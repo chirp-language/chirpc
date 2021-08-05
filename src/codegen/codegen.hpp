@@ -30,8 +30,9 @@ class codegen
     std::string emit_arguments(arguments const&);
     std::string emit_func_call(func_call const&);
     std::string emit_id_ref_expr(id_ref_expr const&);
-    std::string emit_txt_literal(txt_literal const&);
-    std::string emit_num_literal(num_literal const&);
+    std::string emit_string_literal(string_literal const&);
+    std::string emit_integral_literal(integral_literal const&);
+    std::string emit_nullptr_literal(nullptr_literal const&);
     std::string emit_cast_expr(cast_expr const&);
 
     std::string emit_decl(decl const&);

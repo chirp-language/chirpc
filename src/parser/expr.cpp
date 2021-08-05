@@ -125,11 +125,11 @@ exprh parser::parse_primary_expr()
             token_location l = loc_peek();
             bool v = probe(tkn_type::kw_true);
             skip();
-            return new_node<num_literal>(build_bool_lit(l, v));
+            return new_node<integral_literal>(build_bool_lit(l, v));
         }
         case tkn_type::kw_null:
             skip();
-            return new_node<num_literal>(build_null_ptr_lit(loc_peekb()));
+            return new_node<nullptr_literal>(build_null_ptr_lit(loc_peekb()));
         case tkn_type::lparen:
         {
             // Parenthesis are special, as they aren't considered as operations, but as sub_expressions
