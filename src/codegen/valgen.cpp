@@ -33,46 +33,6 @@ std::string codegen::emit_datatype(basic_type const& type)
     // Doesn't do function pointery things
     std::string result;
 
-    int ptr_depth = 0;
-    bool is_signed = false;
-    bool is_unsigned = false;
-    bool is_const = false;
-
-    for (std::byte d : type.exttp)
-    {
-        dtypemod mod = static_cast<dtypemod>(d);
-        if (mod == dtypemod::_ptr)
-        {
-            ptr_depth++;
-        }
-        else if(mod == dtypemod::_signed)
-        {
-            is_signed = true;
-        }
-        else if(mod == dtypemod::_unsigned)
-        {
-            is_unsigned = true;
-        }
-        else if (mod == dtypemod::_const)
-        {
-            // FIX THIS !!
-            is_const = true;
-        }
-    }
-
-    if (is_const)
-    {
-        result += "const ";
-    }
-    if (is_signed)
-    {
-        result += "signed ";
-    }
-    if (is_unsigned)
-    {
-        result += "unsigned ";
-    }
-
     switch (type.basetp)
     {
         case dtypename::_int:
@@ -91,18 +51,40 @@ std::string codegen::emit_datatype(basic_type const& type)
             result += "char";
             break;
         case dtypename::_byte:
-            result += "byte";
+            result += "char";
             break;
         case dtypename::_bool:
-            result += "bool";
+            result += "_Bool";
             break;
         case dtypename::_none:
             result += "void";
             break;
     }
 
-    for (int i = 0; i < ptr_depth; i++)
-        result += '*';
+    for (auto d : type.exttp)
+    {
+        switch (static_cast<dtypemod>(d))
+        {
+            case dtypemod::_ptr:
+                result += "*";
+                break;
+            case dtypemod::_signed:
+                result += " signed";
+                break;
+            case dtypemod::_unsigned:
+                result += " unsigned";
+                break;
+            case dtypemod::_const:
+                result += " const";
+                break;
+            case dtypemod::_func:
+                result += "/* function type not supported */";
+                diagnostic(diagnostic_type::global_err)
+                    .reason("Function types are not supported in codegen")
+                    .report(diagnostics);
+                break;
+        }
+    }
 
     return result;
 }
@@ -139,6 +121,29 @@ std::string codegen::emit_binop(binop const& node)
     return result;
 }
 
+std::string codegen::emit_unop(unop const& node)
+{
+    std::string result;
+
+    switch (node.op)
+    {
+        case tkn_type::ref_op:
+            result += "&";
+            break;
+        case tkn_type::deref_op:
+            result += "*";
+            break;
+        default:
+            result += exprop_id(node.op);
+    }
+
+    result += "(";
+    result += emit_expr(*node.operand);
+    result += ") ";
+
+    return result;
+}
+
 std::string codegen::emit_cast_expr(cast_expr const& node)
 {
     std::string result;
@@ -156,6 +161,8 @@ std::string codegen::emit_expr(expr const& node)
     {
         case expr_kind::binop:
             return emit_binop(static_cast<binop const&>(node));
+        case expr_kind::unop:
+            return emit_unop(static_cast<unop const&>(node));
         case expr_kind::call:
             return emit_func_call(static_cast<func_call const&>(node));
         case expr_kind::ident:

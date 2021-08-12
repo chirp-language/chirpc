@@ -23,6 +23,7 @@ class identifier;
 class qual_identifier;
 class expr;
 class binop;
+class unop;
 class arguments;
 class func_call;
 class id_ref_expr;
@@ -140,6 +141,7 @@ class qual_identifier : public ast_node
 enum class expr_kind
 {
     binop,
+    unop,
     call,
     ident,
     strlit,
@@ -158,6 +160,8 @@ enum class exprcat
 
 struct basic_type
 {
+    // Type modifiers 'exttp' are stored in reverse order of declaration, for easier manipulation
+    // For example, `ptr unsigned char` -> basic_type { .basetp = _char, .exttp = [_unsigned, _ptr] }
     dtypename basetp; // The basic type specifier
     std::vector<std::byte> exttp; // Enums are cast to/from a byte bc why not
 
@@ -200,6 +204,18 @@ class binop : public expr
 
     binop(tkn_type op, exprh l, exprh r)
         : expr(expr_kind::binop), op(op), left(std::move(l)), right(std::move(r)) {}
+};
+
+// (Prefix) unary operator
+class unop : public expr
+{
+    public:
+    tkn_type op;
+    token_location op_loc;
+    exprh operand;
+
+    unop(tkn_type op, exprh v)
+        : expr(expr_kind::unop), op(op), operand(std::move(v)) {}
 };
 
 class arguments : public ast_node

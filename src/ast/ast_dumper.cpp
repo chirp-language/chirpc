@@ -291,6 +291,8 @@ void text_ast_dumper::dump_expr(expr const& node)
     {
         case expr_kind::binop:
             return dump_binop(static_cast<binop const&>(node));
+        case expr_kind::unop:
+            return dump_unop(static_cast<unop const&>(node));
         case expr_kind::call:
             return dump_func_call(static_cast<func_call const&>(node));
         case expr_kind::ident:
@@ -358,9 +360,10 @@ void text_ast_dumper::dump_basic_type(basic_type const& type)
 {
     std::cout << indent(depth);
     std::cout << "basic_type ";
-    for (std::byte x : type.exttp)
+    // Remember that order is reversed
+    for (auto it = type.exttp.rbegin(), end = type.exttp.rend(); it != end; ++it)
     {
-        dtypemod w = static_cast<dtypemod>(x);
+        dtypemod w = static_cast<dtypemod>(*it);
         write_color(dump_dtmod(w), c_color_type);
         std::cout << ' ';
     }
@@ -374,9 +377,10 @@ void text_ast_dumper::dump_expr_type(basic_type const& type, exprcat cat)
     std::cout << "expr_type ";
     write_color(dump_exprcat(cat), c_color_type_cat);
     std::cout << ' ';
-    for (std::byte x : type.exttp)
+    // Remember that order is reversed
+    for (auto it = type.exttp.rbegin(), end = type.exttp.rend(); it != end; ++it)
     {
-        dtypemod w = static_cast<dtypemod>(x);
+        dtypemod w = static_cast<dtypemod>(*it);
         write_color(dump_dtmod(w), c_color_type);
         std::cout << ' ';
     }
@@ -399,6 +403,23 @@ void text_ast_dumper::dump_binop(binop const& n)
         dump_expr_type(n.type, n.cat);
     dump_expr(*n.left);
     dump_expr(*n.right);
+    --depth;
+}
+
+void text_ast_dumper::dump_unop(unop const& n)
+{
+    std::cout << indent(depth);
+    write_color("unop ", c_color_expr);
+    print_location(n.loc);
+    std::cout << " (";
+    std::cout << exprop_id(n.op);
+    std::cout << ' ';
+    print_location(n.op_loc);
+    std::cout << ")\n";
+    ++depth;
+    if (show_expr_types)
+        dump_expr_type(n.type, n.cat);
+    dump_expr(*n.operand);
     --depth;
 }
 

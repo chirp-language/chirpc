@@ -28,6 +28,7 @@ class text_ast_dumper {
     void dump_basic_type(basic_type const&);
     void dump_expr_type(basic_type const& type, exprcat cat);
     void dump_binop(binop const&);
+    void dump_unop(unop const&);
     void dump_arguments(arguments const&);
     void dump_func_call(func_call const&);
     void dump_id_ref_expr(id_ref_expr const&);

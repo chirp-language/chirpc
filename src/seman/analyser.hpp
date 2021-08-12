@@ -28,6 +28,7 @@ class analyser
 	// Expressions
 	void visit_basic_type(basic_type&) = delete;
 	void visit_binop(binop&);
+	void visit_unop(unop&);
 	void visit_arguments(arguments&);
 	void visit_func_call(func_call&);
 	void visit_id_ref_expr(id_ref_expr&);

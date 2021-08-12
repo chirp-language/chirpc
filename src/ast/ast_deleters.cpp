@@ -8,6 +8,8 @@ void expr_node_deleter::operator()(expr* node) const
 	{
 		case expr_kind::binop:
 			return delete static_cast<binop*>(node);
+		case expr_kind::unop:
+			return delete static_cast<unop*>(node);
 		case expr_kind::call:
 			return delete static_cast<func_call*>(node);
 		case expr_kind::ident:

@@ -1,5 +1,6 @@
 #include "analyser.hpp"
 #include "tracker.hpp"
+#include <cstdlib>
 
 // Dispatch functions
 
@@ -30,6 +31,8 @@ void analyser::visit_expr(expr& node)
 	{
 		case expr_kind::binop:
 			return visit_binop(static_cast<binop&>(node));
+		case expr_kind::unop:
+			return visit_unop(static_cast<unop&>(node));
 		case expr_kind::call:
 			return visit_func_call(static_cast<func_call&>(node));
 		case expr_kind::ident:
@@ -128,6 +131,61 @@ void analyser::visit_binop(binop& node)
 	}
 }
 
+void analyser::visit_unop(unop& node)
+{
+	visit_expr(*node.operand);
+
+	if (node.operand->cat == exprcat::error)
+	{
+		node.cat = exprcat::error;
+		return;
+	}
+
+	switch (node.op)
+	{
+		case tkn_type::plus_op:
+			node.cat = exprcat::rval;
+			node.type = node.operand->type;
+			// Do promotion
+			break;
+		case tkn_type::minus_op:
+			node.cat = exprcat::rval;
+			node.type = node.operand->type;
+			// TODO: Assert type is an integer, do promotion
+			break;
+		case tkn_type::ref_op:
+			if (node.operand->cat != exprcat::lval)
+			{
+				diagnostic(diagnostic_type::location_err)
+					.at(node.loc)
+					.reason("Cannot take address of a non-lvalue")
+					.report(diagnostics);
+				node.cat = exprcat::error;
+				return;
+			}
+			node.cat = exprcat::rval;
+			node.type = node.operand->type;
+			node.type.exttp.push_back(static_cast<std::byte>(dtypemod::_ptr));
+			break;
+		case tkn_type::deref_op:
+			if (node.operand->type.exttp.empty() or node.operand->type.exttp.back() != static_cast<std::byte>(dtypemod::_ptr))
+			{
+				diagnostic(diagnostic_type::location_err)
+					.at(node.loc)
+					.reason("Cannot dereference a non-pointer")
+					.report(diagnostics);
+				node.cat = exprcat::error;
+				return;
+			}
+			node.cat = exprcat::lval;
+			node.type = node.operand->type;
+			node.type.exttp.pop_back();
+			break;
+		default:
+			std::abort();
+	}
+}
+
 void analyser::visit_arguments(arguments& node)
 {
 	for (auto& e : node.body)
@@ -150,6 +208,10 @@ void analyser::visit_func_call(func_call& node)
 	else
 	{
 		node.cat = exprcat::error;
+		diagnostic(diagnostic_type::location_err)
+			.at(node.loc)
+			.reason("Cannot call non-function")
+			.report(diagnostics);
 	}
 }
 
@@ -373,8 +435,8 @@ void analyser::visit_assign_stmt(assign_stmt& node)
 			.report(diagnostics);
 	}
 	// I'll make it better, I swear
-	else if (node.target->type.exttp.size() > 0
-		and node.target->type.exttp[0] == static_cast<std::byte>(dtypemod::_const))
+	else if (!node.target->type.exttp.empty()
+		and node.target->type.exttp.back() == static_cast<std::byte>(dtypemod::_const))
 	{
 		diagnostic(diagnostic_type::location_err)
 			.at(node.loc)

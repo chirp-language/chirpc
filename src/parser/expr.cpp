@@ -54,11 +54,11 @@ static int get_operator_precedence(tkn_type op)
     }
 }
 
-static bool is_operator(tkn_type t)
+static bool is_binary_op(tkn_type t)
 {
     return (
         t >= tkn_type::binop_S and t <= tkn_type::binop_E or
-        t == tkn_type::as_op or t == tkn_type::ref_op or
+        t == tkn_type::as_op or
         t == tkn_type::lparen // func_call
     );
 }
@@ -67,7 +67,7 @@ exprh parser::parse_subexpr_op(exprh lhs, int max_prec)
 {
     tkn_type optype;
 
-    while (is_operator(optype = peek().type))
+    while (is_binary_op(optype = peek().type))
     {
         auto lop = loc_peek();
         skip();
@@ -94,9 +94,9 @@ exprh parser::parse_subexpr_op(exprh lhs, int max_prec)
             lhs = std::move(ecast);
             continue;
         }
-        exprh rhs = parse_primary_expr();
+        exprh rhs = parse_unary_expr();
         tkn_type tmpop;
-        while (is_operator(tmpop = peek().type) and get_operator_precedence(tmpop) < pr)
+        while (is_binary_op(tmpop = peek().type) and get_operator_precedence(tmpop) < pr)
         {
             rhs = parse_subexpr_op(std::move(rhs), max_prec - 1);
         }
@@ -109,10 +109,35 @@ exprh parser::parse_subexpr_op(exprh lhs, int max_prec)
     return lhs;
 }
 
+exprh parser::parse_unary_expr()
+{
+    switch (peek().type)
+    {
+        case tkn_type::plus_op:
+            // Integral promotion (for now, no-op)
+            skip();
+            return parse_unary_expr();
+        case tkn_type::minus_op: // Negation
+        case tkn_type::ref_op:   // Address-of
+        case tkn_type::deref_op: // Dereference
+        {
+            auto lop = loc_peek();
+            tkn_type optype = peek().type;
+            skip();
+            exprh operand = parse_unary_expr();
+            auto lend = operand->loc.end;
+            auto node = new_node<unop>(optype, std::move(operand));
+            node->loc = location_range(lop, lend);
+            node->op_loc = lop;
+            return node;
+        }
+        default:
+            return parse_primary_expr();
+    }
+}
+
 exprh parser::parse_primary_expr()
 {
-    using namespace std::string_literals;
-
     switch (peek().type)
     {
         case tkn_type::identifer:
@@ -151,7 +176,7 @@ exprh parser::parse_primary_expr()
 
 exprh parser::parse_expr(bool comma_allowed)
 {
-    if (exprh lhs = parse_primary_expr())
+    if (exprh lhs = parse_unary_expr())
         return parse_subexpr_op(std::move(lhs), comma_allowed ? static_cast<int>(precedence_class::comma) : static_cast<int>(precedence_class::comma) - 1);
     return nullptr;
 }

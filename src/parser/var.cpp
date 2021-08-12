@@ -1,5 +1,6 @@
 #include "parser.hpp"
 #include <string_view>
+#include <algorithm>
 
 static dtypename get_dtypename(tkn_type tok)
 {
@@ -77,7 +78,7 @@ basic_type parser::parse_datatype()
 {
     basic_type type;
     bool has_candidate = false;
-    //  Mods before the typename
+    // Mods before the typename
     while (is_datamod())
     {
         type.exttp.push_back(static_cast<std::byte>(get_dtypemod(peek().type)));
@@ -86,29 +87,29 @@ basic_type parser::parse_datatype()
             has_candidate = true;
         skip();
     }
+    // Keep the modifiers in reverse order for easier manipulation
+    std::reverse(type.exttp.begin(), type.exttp.end());
 
     // Could also be a token identifier, but we don't care about that yet
-    if (!is_datatype())
-    {
-        if (has_candidate)
-            type.basetp = dtypename::_none;
-    }
-    else
+    if (is_datatype())
     {
         type.basetp = get_dtypename(peek().type);
         skip();
     }
-    if (!this->ok)
+    else if (has_candidate)
     {
-        return type;
+        type.basetp = dtypename::_none;
     }
-    // Mods after the typename
-    while (is_datamod())
+    else
     {
-        type.exttp.push_back(static_cast<std::byte>(get_dtypemod(peek().type)));
-        skip();
+        type.basetp = dtypename::_none;
+        this->ok = false;
+        diagnostic(diagnostic_type::location_err)
+            .at(loc_peek())
+            .reason("Expected a data type")
+            .report(diagnostics);
     }
-    // expect(tkn_type::colon);
+
     return type;
 }
 

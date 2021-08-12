@@ -88,6 +88,7 @@ private:
     exprh parse_literal();
 
     exprh parse_subexpr_op(exprh lhs, int min_prec);
+    exprh parse_unary_expr();
     exprh parse_primary_expr();
     exprh parse_expr(bool comma_allowed);
 
