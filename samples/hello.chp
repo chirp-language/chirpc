@@ -7,10 +7,10 @@ namespace util
 }
 namespace io
 {
-	func none print(char const ptr: msg);
+	func none print(ptr const char: msg);
 }
 
-extern "dlopen" func none ptr dlopen(char const ptr: filename, int: flags);
+extern "dlopen" func ptr none dlopen(ptr const char: filename, int: flags);
 extern "stdout" ptr: stdout;
 
 entry

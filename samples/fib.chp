@@ -15,7 +15,7 @@ func int fib(int: n)
 import "io"
 namespace io
 {
-	func none print(char const ptr: msg, int: param);
+	func none print(ptr const char: msg, int: param);
 }
 
 entry

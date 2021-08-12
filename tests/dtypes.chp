@@ -1,0 +1,14 @@
+entry
+{
+	int: i32v = -2; # Negate operator
+	long: i64v;
+	float: f32v;
+	double: f64v;
+	unsigned int: u32v;
+	signed int: i32v2;
+	byte: u8v;
+	char: chv;
+	bool: i1v;
+	ptr: npv = ref chv;
+	ptr const ptr const unsigned byte: pcpcu8v;
+}

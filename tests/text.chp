@@ -1,0 +1,10 @@
+entry {
+  ptr const char: my_string = "Hello, world";
+  char: my_char = 'A';
+  char: dbl_char = 'XY';
+  ptr const char: quot_str = "Hello, 'Chirp'";
+  char: quot_chr = '"';
+  long: ovfl_chr = 'ABCDEFGH';
+  bool: trueval = true;
+  bool: falseval = false;
+}

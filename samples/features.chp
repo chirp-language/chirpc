@@ -57,8 +57,7 @@ func ptr const char type_name(int: id)
 func ptr const char find_cstr_end(ptr const char: s)
 {
 	# While statements, assignment, pointer increment (TODO: type-check)
-	#while deref s != 0
-	while s != null
+	while deref s != 0
 	{
 		s = s + 1;
 	}
@@ -74,7 +73,7 @@ func none memcpy(ptr: dest, ptr const: src, int: count)
 	while count
 	{
 		# lvalue assignment (TODO)
-		#deref _dest = deref _src;
+		deref _dest = deref _src;
 		count = count - 1;
 	}
 }
@@ -88,7 +87,9 @@ entry
 	const int: my_string_size = my_string_end - my_string + 2;
 	ptr char: my_heap_str = mem.alloc(my_string_size);
 	memcpy(my_heap_str, my_string, my_string_size);
+	const char: a = 0; # Empty string
 	io.print(my_heap_str);
 	io.print(" ");
 	io.print(type_name(1));
+	io.print(ref a);
 }
