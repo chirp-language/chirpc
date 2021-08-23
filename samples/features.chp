@@ -28,7 +28,7 @@ namespace oslib
 
 # Forward function declarations
 func ptr const char type_name(int: id);
-func ptr const char find_cstr_end(ptr const char); # Unnamed parameters (TODO)
+func ptr const char find_cstr_end(ptr const char); # Unnamed parameters
 func none memcpy(ptr: dest, ptr const: src, int: count);
 
 # Functions
@@ -87,9 +87,12 @@ entry
 	const int: my_string_size = my_string_end - my_string + 2;
 	ptr char: my_heap_str = mem.alloc(my_string_size);
 	memcpy(my_heap_str, my_string, my_string_size);
-	const char: a = 0; # Empty string
+	ptr char: a = alloca (3 as long) as(ptr char);
+	deref a = 'h';
+	deref (a + 1) = 'i';
+	deref (a + 2) = 0;
 	io.print(my_heap_str);
 	io.print(" ");
 	io.print(type_name(1));
-	io.print(ref a);
+	io.print(a);
 }
