@@ -35,3 +35,59 @@ When an unqualified lookup occurs, the following steps are taken. All scopes, st
 
 ### Qualified lookup
 Qualified lookup considers only the scope within it occurs. When no name is defined, lookup fails with no symbol. When a name is found, the result (a symbol or not) becomes the result of the lookup.
+
+# Tracker API
+The tracker tracks all symbols used in the file currently processed. The first symbol corresponds to the root of the program syntax tree.
+
+Creating and binding symbols is done with these instance methods:
+
+```c++
+symbol* decl_sym();
+symbol* decl_sym(identifier const& name, decl& target);
+```
+This method creates a new symbol, and optionally assigns a name (makes it named: see `has_name`) and a target node it.
+
+```c++
+bool bind_sym(symbol* sym);
+```
+This method binds a symbol to the current scope. It returns true on success. On failure, returns false & reports the proper diagnostics where appropiate.
+
+Looking up symbols is done through following instance methods:
+
+```c++
+symbol* find_sym_cur(identifier const& name);
+```
+This is a low-level function that only searches the current scope. If the symbol is not found within the current scope, returns null.
+
+```c++
+symbol* lookup_sym(identifier const& name);
+symbol* lookup_sym_qual(qual_identifier const& name);
+```
+These two methods perform unqualified and qualified lookup, respectively, on identifiers. The first one doesn't report diagnostics on failure, but the second one does.
+
+```c++
+symbol* lookup_decl_sym(decl const& decl_scope, identifier const& name);
+```
+This low-level function performs a qualified lookup inside the given symbol to find a name. It considers only the scope of provided symbol. It reports diagnostics on failure.
+
+These functions deal with scopes:
+
+```c++
+void push_scope(symbol* sym);
+```
+This method creates and enters a new scope, described by the provided symbol.
+
+```c++
+void pop_scope();
+```
+This method exits current nested scope and goes back to the one directly embedding it. Exiting the main program (global) scope is undefined.
+
+## Symbol attributes
+Each symbol has a following set of attributes
+| Name | Type | Default value | Description |
+| --- | --- | --- | :-- |
+| `has_name` | `bool` | `false` | Has a `name` |
+| `is_global` | `bool` | `true` | Lives in global scope (can be potentially exported) |
+| `has_storage` | `bool` | `false` | Defines a concrete entity that exists in produced object code (variables, functions) |
+| `is_entry` | `bool` | `false` | Is an entry declaration |
+| `is_scope` | `bool` | `false` | Defines a scope (see: [Scope](#scope)) |
