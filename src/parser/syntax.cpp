@@ -193,6 +193,11 @@ nodeh<namespace_decl> parser::parse_namespace()
             }
             default:
             {
+                if (is_type())
+                {
+                    node->decls.push_back(parse_var_decl());
+                    break;
+                }
                 this->ok = false;
                 diagnostic(diagnostic_type::location_err)
                     .at(loc_peek())
@@ -220,6 +225,7 @@ nodeh<extern_decl> parser::parse_extern()
     auto node = new_node<extern_decl>();
     node->loc = loc_peekb();
     expect(tkn_type::literal);
+    node->name_loc = loc_peekb();
     node->real_name = peekb().value;
     node->real_name.erase(0, 1);
     node->real_name.pop_back();

@@ -34,6 +34,7 @@ static int get_operator_precedence(tkn_type op)
         case tkn_type::deref_op:
             return static_cast<int>(precedence_class::ref);
         case tkn_type::as_op:
+        case tkn_type::kw_alloca:
             return static_cast<int>(precedence_class::as);
         case tkn_type::star_op:
         case tkn_type::slash_op:
@@ -120,6 +121,7 @@ exprh parser::parse_unary_expr()
         case tkn_type::minus_op: // Negation
         case tkn_type::ref_op:   // Address-of
         case tkn_type::deref_op: // Dereference
+        case tkn_type::kw_alloca: // Huehuehue
         {
             auto lop = loc_peek();
             tkn_type optype = peek().type;

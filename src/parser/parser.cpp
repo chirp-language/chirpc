@@ -62,6 +62,11 @@ void parser::parse_top_level()
         }
         default:
         {
+            if (is_type())
+            {
+                this->tree.top_decls.push_back(parse_var_decl());
+                break;
+            }
             this->ok = false;
             diagnostic(diagnostic_type::location_err)
                 .at(loc_peek())

@@ -25,6 +25,7 @@ char const* token_names[] = {
     tknstr(kw_true    )
     tknstr(kw_false   )
     tknstr(kw_null    )
+    tknstr(kw_alloca  )
     tknstr(dt_int     )
     tknstr(dt_char    )
     tknstr(dt_float   )

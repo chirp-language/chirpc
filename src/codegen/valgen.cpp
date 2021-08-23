@@ -3,12 +3,17 @@
 #include "../ast/types.hpp"
 #include <string>
 
-std::string codegen::emit_qual_identifier(qual_identifier const& ident)
+std::string codegen::emit_raw_qual_identifier(raw_qual_identifier const& ident)
 {
-    std::string result;
+    // Call this only on fully expanded identifiers
+    #ifndef NDEBUG
+    if (ident.parts.empty())
+    {
+        return "/* OH NO: Identifier not expanded */";
+    }
+    #endif
 
-    // This is even more hacky beyond any belief (pt. 2)
-    // Should probably (definitely) normalize access path first
+    std::string result;
     for (auto id = ident.parts.cbegin(), end = ident.parts.cend() - 1; id != end; ++id)
     {
         result += emit_identifier(*id) + "$";
@@ -22,9 +27,16 @@ std::string codegen::emit_identifier(identifier const& ident)
     return ident.name;
 }
 
+std::string codegen::emit_decl_symbol_name(decl const* node)
+{
+    if (node and node->symbol)
+        return emit_raw_qual_identifier(node->symbol->full_name);
+    return "/*! spotted unexpanded identifier */";
+}
+
 std::string codegen::emit_id_ref_expr(id_ref_expr const& node)
 {
-    return emit_qual_identifier(node.ident);
+    return emit_decl_symbol_name(node.target);
 }
 
 // This is not finished
@@ -96,7 +108,8 @@ std::string codegen::emit_string_literal(string_literal const& node)
 
 std::string codegen::emit_integral_literal(integral_literal const& node)
 {
-    return "(" + std::to_string(node.value.val) + ")";
+    // Negative values shouldn't cause much problems, so I'm not adding parens
+    return std::to_string(node.value.val);
 }
 
 std::string codegen::emit_nullptr_literal(nullptr_literal const& node)
@@ -133,13 +146,17 @@ std::string codegen::emit_unop(unop const& node)
         case tkn_type::deref_op:
             result += "*";
             break;
+        case tkn_type::kw_alloca:
+            // It just works, source: trust me
+            result += "__builtin_alloca";
+            break;
         default:
             result += exprop_id(node.op);
     }
 
     result += "(";
     result += emit_expr(*node.operand);
-    result += ") ";
+    result += ")";
 
     return result;
 }

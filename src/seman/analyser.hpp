@@ -9,12 +9,16 @@ class analyser
 {
 	public:
 	analyser(ast_root& root, diagnostic_manager& diag)
-		: root(root), sym_tracker(diag), diagnostics(diag)
-	{
-		sym_tracker.set_root(&root);
-	}
+		: root(root), sym_tracker(diag, &root), diagnostics(diag)
+	{}
 
 	void analyse();
+	tracker& get_tracker()
+	{
+		return sym_tracker;
+	}
+
+	bool soft_type_checks = false;
 
 	protected:
 	ast_root& root;

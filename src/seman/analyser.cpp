@@ -18,11 +18,9 @@ void analyser::analyse()
 	for (auto& d : root.fdefs)
 		visit_func_def(*d);
 	#endif
-	// Top scope
-	sym_tracker.push_scope();
+	// Top scope (already pushed)
 	for (auto& d : root.top_decls)
 		visit_decl(*d);
-	sym_tracker.pop_scope();
 }
 
 void analyser::visit_expr(expr& node)
@@ -110,7 +108,7 @@ void analyser::visit_binop(binop& node)
 	{
 		node.cat = exprcat::error;
 
-		diagnostic(diagnostic_type::location_err)
+		diagnostic(!soft_type_checks ? diagnostic_type::location_err : diagnostic_type::location_warning)
 			.at(node.op_loc)
 			.reason("Operand types don't match")
 			.report(diagnostics);
@@ -156,7 +154,7 @@ void analyser::visit_unop(unop& node)
 		case tkn_type::ref_op:
 			if (node.operand->cat != exprcat::lval)
 			{
-				diagnostic(diagnostic_type::location_err)
+				diagnostic(!soft_type_checks ? diagnostic_type::location_err : diagnostic_type::location_warning)
 					.at(node.loc)
 					.reason("Cannot take address of a non-lvalue")
 					.report(diagnostics);
@@ -170,7 +168,7 @@ void analyser::visit_unop(unop& node)
 		case tkn_type::deref_op:
 			if (node.operand->type.exttp.empty() or node.operand->type.exttp.back() != static_cast<std::byte>(dtypemod::_ptr))
 			{
-				diagnostic(diagnostic_type::location_err)
+				diagnostic(!soft_type_checks ? diagnostic_type::location_err : diagnostic_type::location_warning)
 					.at(node.loc)
 					.reason("Cannot dereference a non-pointer")
 					.report(diagnostics);
@@ -180,6 +178,22 @@ void analyser::visit_unop(unop& node)
 			node.cat = exprcat::lval;
 			node.type = node.operand->type;
 			node.type.exttp.pop_back();
+			break;
+		case tkn_type::kw_alloca:
+			// Type checking couldn't literally get more shitty lol, but not now
+			if (node.operand->type.basetp != dtypename::_long
+			    or !node.operand->type.exttp.empty())
+			{
+				diagnostic(!soft_type_checks ? diagnostic_type::location_err : diagnostic_type::location_warning)
+					.at(node.loc)
+					.reason("Alloca takes an integer argument")
+					.report(diagnostics);
+				node.cat = exprcat::error;
+				return;
+			}
+			node.cat = exprcat::rval;
+			node.type.basetp = dtypename::_none;
+			node.type.exttp.push_back(static_cast<std::byte>(dtypemod::_ptr));
 			break;
 		default:
 			std::abort();
@@ -208,7 +222,7 @@ void analyser::visit_func_call(func_call& node)
 	else
 	{
 		node.cat = exprcat::error;
-		diagnostic(diagnostic_type::location_err)
+		diagnostic(!soft_type_checks ? diagnostic_type::location_err : diagnostic_type::location_warning)
 			.at(node.loc)
 			.reason("Cannot call non-function")
 			.report(diagnostics);
@@ -218,26 +232,27 @@ void analyser::visit_func_call(func_call& node)
 void analyser::visit_id_ref_expr(id_ref_expr& node)
 {
 	//! Point of interest
-	if (auto sym = sym_tracker.lookup_sym_qual(node.ident))
+	if (auto* sym = sym_tracker.lookup_sym_qual(node.ident))
 	{
-		while (sym->kind == decl_kind::external)
-			sym = static_cast<extern_decl const*>(sym)->inner_decl.get();
-		node.target = sym;
-		switch (sym->kind)
+		auto const* decl = sym->target;
+		while (decl->kind == decl_kind::external)
+			decl = static_cast<extern_decl const*>(decl)->inner_decl.get();
+		node.target = decl;
+		switch (decl->kind)
 		{
 			case decl_kind::var:
-				node.type = static_cast<var_decl const&>(*sym).type;
+				node.type = static_cast<var_decl const&>(*decl).type;
 				node.cat = exprcat::lval;
 				break;
 			case decl_kind::fdecl:
 			case decl_kind::fdef:
-				node.type = static_cast<func_decl const&>(*sym).result_type;
+				node.type = static_cast<func_decl const&>(*decl).result_type;
 				node.cat = exprcat::rval;
 				node.type.exttp.push_back(static_cast<std::byte>(dtypemod::_func));
 				break;
 			default:
 				node.cat = exprcat::error;
-				diagnostic(diagnostic_type::location_err)
+				diagnostic(!soft_type_checks ? diagnostic_type::location_err : diagnostic_type::location_warning)
 					.at(node.loc)
 					.reason("Unknown declaration type")
 					.report(diagnostics);
@@ -283,7 +298,11 @@ void analyser::visit_cast_expr(cast_expr& node)
 void analyser::visit_var_decl(var_decl& node)
 {
 	//! Point of interest
-	if (!sym_tracker.bind_sym(node.ident, node))
+	auto* sym = sym_tracker.decl_sym(node.ident, node);
+	// Inherit from enclosing scope (parameter scope is private)
+	sym->is_global = sym_tracker.get_scope()->is_global;
+	sym->has_storage = true;
+	if (!sym_tracker.bind_sym(sym))
 	{
 		diagnostic(diagnostic_type::location_err)
 			.at(node.loc)
@@ -321,6 +340,11 @@ void analyser::visit_var_decl(var_decl& node)
 
 void analyser::visit_entry_decl(entry_decl& node)
 {
+	auto* sym = sym_tracker.decl_sym();
+	sym->has_storage = true;
+	sym->is_entry = true;
+	sym->target = &node;
+	node.symbol = sym;
 	visit_compound_stmt(static_cast<compound_stmt&>(*node.code));
 }
 
@@ -331,26 +355,31 @@ void analyser::visit_import_decl(import_decl& node)
 
 void analyser::visit_extern_decl(extern_decl& node)
 {
-	// TODO: Bind name
+	visit_decl(*node.inner_decl);
+	if (auto* sym = node.inner_decl->symbol)
+	{
+		node.symbol = sym;
+		sym->full_name.parts.clear();
+		sym->full_name.parts.push_back(identifier::from(std::string(node.real_name), node.name_loc));
+	}
+	else
+	{
+		diagnostic(diagnostic_type::location_err)
+			.at(node.loc)
+			.reason("Extern declaration doesn't declare a symbol")
+			.report(diagnostics);
+	}
 }
 
 void analyser::visit_namespace_decl(namespace_decl& node)
 {
 	// This is even more hacky beyond any belief (pt. 1)
-	#if 0
-	for (auto& d : node.fdecls)
-	{
-		d->ident.namespaces.insert(d->ident.namespaces.begin(), node.ident.name);
-		visit_func_decl(*d);
-	}
-	for (auto& d : node.fdefs)
-	{
-		d->ident.namespaces.insert(d->ident.namespaces.begin(), node.ident.name);
-		visit_func_def(*d);
-	}
-	#endif
-	sym_tracker.bind_sym(node.ident, node);
-	sym_tracker.push_scope(&node.ident, &node);
+	auto* sym = sym_tracker.decl_sym(node.ident, node);
+	sym->is_global = true;
+	sym->has_storage = false;
+	if (!sym_tracker.bind_sym(sym))
+		return;
+	sym_tracker.push_scope(sym);
 	for (auto& d : node.decls)
 	{
 		// Push namespace context
@@ -371,7 +400,10 @@ void analyser::visit_func_decl(func_decl& node)
 {
 	//! Point of interest
 
-	if (!sym_tracker.bind_sym(node.ident, node))
+	auto* sym = sym_tracker.decl_sym(node.ident, node);
+	sym->is_global = true;
+	sym->has_storage = false;
+	if (!sym_tracker.bind_sym(sym))
 	{
 		// TODO: Check if declarations match
 		diagnostic(diagnostic_type::location_err)
@@ -380,7 +412,9 @@ void analyser::visit_func_decl(func_decl& node)
 			.report(diagnostics);
 	}
 
-	sym_tracker.push_scope();
+	auto* body_scope = sym_tracker.decl_sym();
+	body_scope->is_global = false;
+	sym_tracker.push_scope(body_scope);
 	visit_parameters(node.params);
 	sym_tracker.pop_scope();
 }
@@ -389,13 +423,15 @@ void analyser::visit_func_def(func_def& node)
 {
 	//! Point of interest
 
-	if (auto sym = sym_tracker.find_sym_cur(node.ident))
+	tracker::symbol* sym;
+	if ((sym = sym_tracker.find_sym_cur(node.ident)))
 	{
 		// TODO: Check if declarations match
 		if (sym->target->kind == decl_kind::fdecl)
 		{
 			// Rebind the symbol to point to definition
 			sym->target = &node;
+			node.symbol = sym;
 		}
 		else
 		{
@@ -407,10 +443,15 @@ void analyser::visit_func_def(func_def& node)
 	}
 	else
 	{
-		sym_tracker.push_sym_unsafe(node.ident, node);
+		sym = sym_tracker.decl_sym(node.ident, node);
+		sym->is_global = true;
+		sym->has_storage = true;
+		sym_tracker.push_sym_unsafe(sym);
 	}
 
-	sym_tracker.push_scope();
+	auto* body_scope = sym_tracker.decl_sym();
+	body_scope->is_global = false;
+	sym_tracker.push_scope(body_scope);
 	visit_parameters(node.params);
 	visit_compound_stmt(*node.body);
 	sym_tracker.pop_scope();
@@ -429,7 +470,7 @@ void analyser::visit_assign_stmt(assign_stmt& node)
 	visit_expr(*node.target);
 	if (node.target->cat != exprcat::lval)
 	{
-		diagnostic(diagnostic_type::location_err)
+		diagnostic(!soft_type_checks ? diagnostic_type::location_err : diagnostic_type::location_warning)
 			.at(node.loc)
 			.reason("Assigning to a non-object value")
 			.report(diagnostics);
@@ -438,7 +479,7 @@ void analyser::visit_assign_stmt(assign_stmt& node)
 	else if (!node.target->type.exttp.empty()
 		and node.target->type.exttp.back() == static_cast<std::byte>(dtypemod::_const))
 	{
-		diagnostic(diagnostic_type::location_err)
+		diagnostic(!soft_type_checks ? diagnostic_type::location_err : diagnostic_type::location_warning)
 			.at(node.loc)
 			.reason("Assigning to a constant value")
 			.report(diagnostics);
@@ -453,7 +494,10 @@ void analyser::visit_assign_stmt(assign_stmt& node)
 
 void analyser::visit_compound_stmt(compound_stmt& node)
 {
-	sym_tracker.push_scope();
+	auto* sym = sym_tracker.decl_sym();
+	sym->is_global = false;
+	sym->has_storage = false;
+	sym_tracker.push_scope(sym);
 	for (auto& s : node.body)
 	{
 		visit_stmt(*s);

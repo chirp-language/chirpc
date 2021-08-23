@@ -7,6 +7,7 @@
 #include "frontend/frontend.hpp"
 #include "ast/ast_dumper.hpp"
 #include "seman/analyser.hpp"
+#include "seman/sym_dumper.hpp"
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -85,18 +86,32 @@ int main(int argc, char** argv)
 
     // Semantic analysis
     analyser seman(p.get_ast(), diagnostics);
+    seman.soft_type_checks = options.soft_type_checks;
     seman.analyse();
 
     if (options.dump_ast)
     {
         if (options.dump_tkns)
         {
-            std::cout << "--------------------" << '\n';
+            std::cout << "--------------------\n";
         }
 
         text_ast_dumper dumper(options.has_color, options.show_expr_types, &p);
 
         dumper.dump_ast(p.get_ast());
+        std::cout << '\n';
+    }
+
+    if (options.dump_syms)
+    {
+        if (options.dump_tkns or options.dump_ast)
+        {
+            std::cout << "--------------------\n";
+        }
+
+        text_symbol_dumper dumper(options.has_color, options.dump_syms_extra, seman.get_tracker());
+
+        dumper.dump_symbols();
         std::cout << '\n';
     }
 
@@ -106,6 +121,19 @@ int main(int argc, char** argv)
         return -1;
     }
 
+    // Code Generation
+    codegen generator(diagnostics);
+
+    generator.set_tree(&p.get_ast(), options.filename);
+    generator.gen();
+
+    if (generator.errored)
+    {
+        std::cerr << "Compilation aborted, because of error in codegen\n";
+        return -1;
+    }
+
+    // Outputting generated content
     frontend frontend;
 
     if (!frontend.find_compiler())
@@ -123,20 +151,6 @@ int main(int argc, char** argv)
         std::cerr << "Supported compilers are clang and gcc\n";
         std::cerr << "To specify C compiler use option -compiler-path, and then the path to the compiler.\n";
 
-        return -1;
-    }
-
-    // Code Generation
-    codegen generator(diagnostics);
-
-    auto t = std::make_unique<tracker>(diagnostics);
-
-    generator.set_tree(&p.get_ast(), options.filename);
-    generator.gen();
-
-    if (generator.errored)
-    {
-        std::cerr << "Compilation aborted, because of error in codegen\n";
         return -1;
     }
 

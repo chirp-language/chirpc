@@ -18,8 +18,11 @@ public:
 };
 
 // Forward declarations
+class tracker_symbol;
+
 class ast_root;
 class identifier;
+class raw_qual_identifier;
 class qual_identifier;
 class expr;
 class binop;
@@ -126,12 +129,17 @@ class identifier : public ast_node
     }
 };
 
-class qual_identifier : public ast_node
+class raw_qual_identifier
 {
     public:
     // The parts vector for a.b.c.foo() would be:
     // {"a","b","c","foo"}.. Further in vector => More nested
     std::vector<identifier> parts;
+};
+
+class qual_identifier : public ast_node, public raw_qual_identifier
+{
+    public:
     bool is_global = false; // Start at global namespace
 };
 
@@ -332,7 +340,11 @@ class decl : public ast_node
     public:
     using node_base = decl; // For node type identification
 
+    decl(decl const&) = delete;
+    decl& operator=(decl const&) = delete;
+
     decl_kind kind;
+    tracker_symbol* symbol = nullptr; // Assiociated symbol
 
     protected:
     decl(decl_kind kind) : kind(kind) {}
@@ -386,6 +398,7 @@ class extern_decl : public decl
 {
     public:
     std::string real_name;
+    token_location name_loc;
     declh inner_decl;
 
     extern_decl() : decl(decl_kind::external) {}
@@ -448,6 +461,9 @@ class stmt : public ast_node
 {
     public:
     using node_base = stmt; // For node type identification
+
+    stmt(stmt const&) = delete;
+    stmt& operator=(stmt const&) = delete;
 
     // There's a bunch of them so gotta make another enum smh
     stmt_kind kind;

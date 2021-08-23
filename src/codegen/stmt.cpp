@@ -33,7 +33,7 @@ std::string codegen::emit_var_decl(var_decl const& node)
     std::string result;
     result += emit_datatype(node.type);
     result += ' ';
-    result += emit_identifier(node.ident);
+    result += emit_decl_symbol_name(&node);
     if (node.init)
     {
         result += " = ";

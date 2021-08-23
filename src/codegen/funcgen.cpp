@@ -54,7 +54,7 @@ std::string codegen::emit_func_decl(func_decl const& node)
     std::string result;
     result += emit_datatype(node.result_type);
     result += ' ';
-    result += emit_identifier(node.ident);
+    result += emit_decl_symbol_name(&node);
     result += emit_parameters(node.params);
     result += ";\n";
     return result;
@@ -65,7 +65,7 @@ std::string codegen::emit_func_def(func_def const& node)
     std::string result;
     result += emit_datatype(node.result_type);
     result += ' ';
-    result += emit_identifier(node.ident);
+    result += emit_decl_symbol_name(&node);
     result += emit_parameters(node.params);
     result += '\n';
     result += emit_compound_stmt(*node.body);

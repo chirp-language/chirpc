@@ -18,6 +18,8 @@ enum class tkn_type
     kw_true, // true
     kw_false, // false
     kw_null, // null
+    // {:>>
+    kw_alloca, // alloca
 
     // Tokens with multiple keywords
     // Types

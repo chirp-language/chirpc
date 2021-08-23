@@ -23,7 +23,8 @@ class codegen
     diagnostic_manager& diagnostics;
 
     std::string emit_identifier(identifier const&);
-    std::string emit_qual_identifier(qual_identifier const&);
+    std::string emit_raw_qual_identifier(raw_qual_identifier const&);
+    std::string emit_decl_symbol_name(decl const*);
     std::string emit_datatype(basic_type const&);
     std::string emit_expr(expr const&);
     std::string emit_binop(binop const&);
