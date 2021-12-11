@@ -100,33 +100,145 @@ void analyser::visit_binop(binop& node)
 	visit_expr(*node.left);
 	visit_expr(*node.right);
 
+	if (node.left->has_error() or node.right->has_error())
+	{
+		node.cat = exprcat::error;
+		return;
+	}
+
+	node.left = convert_to_rvalue(std::move(node.left));
+	node.right = convert_to_rvalue(std::move(node.right));
 	if (node.left->cat == exprcat::error or node.right->cat == exprcat::error)
 	{
 		node.cat = exprcat::error;
+		return;
 	}
-	else if (node.left->type != node.right->type)
-	{
-		node.cat = exprcat::error;
 
-		diagnostic(!soft_type_checks ? diagnostic_type::location_err : diagnostic_type::location_warning)
-			.at(node.op_loc)
-			.reason("Operand types don't match")
-			.report(diagnostics);
+	if (node.op >= tkn_type::cmp_S and node.op <= tkn_type::cmp_E)
+	{
+		if (node.left->type != node.right->type)
+		{
+			auto& t_lhs = node.left->type;
+			auto& t_rhs = node.right->type;
+			dtypeclass c_lhs = t_lhs.to_class(), c_rhs = t_rhs.to_class();
+			if (c_lhs != c_rhs)
+				goto _bad_types;
+			else if (c_lhs == dtypeclass::_int)
+			{
+				basic_type common_type(dtypename::_int);
+				if (t_lhs.basetp == dtypename::_long or t_rhs.basetp == dtypename::_long)
+					common_type.basetp = dtypename::_long;
+				if (t_lhs.has_modifier_front(dtypemod::_unsigned) or t_rhs.has_modifier_front(dtypemod::_unsigned))
+					common_type.exttp.push_back(dtypemod::_unsigned);
+				else if (t_lhs.has_modifier_front(dtypemod::_signed) or t_rhs.has_modifier_front(dtypemod::_signed))
+					common_type.exttp.push_back(dtypemod::_signed);
+				node.left = perform_implicit_conversions(
+					std::move(node.left), common_type, exprcat::rval);
+				node.right = perform_implicit_conversions(
+					std::move(node.right), common_type, exprcat::rval);
+				if (node.left->has_error() or node.right->has_error())
+				{
+					node.cat = exprcat::error;
+					return;
+				}
+			}
+			else if (c_lhs == dtypeclass::_float)
+			{
+				if (t_lhs.basetp != dtypename::_double and t_rhs.basetp != dtypename::_double)
+					chirp_unreachable("Something's wrong, types don't match and neither value is a double");
+				basic_type common_type(dtypename::_double);
+				node.left = perform_implicit_conversions(
+					std::move(node.left), common_type, exprcat::rval);
+				node.right = perform_implicit_conversions(
+					std::move(node.right), common_type, exprcat::rval);
+				if (node.left->has_error() or node.right->has_error())
+				{
+					node.cat = exprcat::error;
+					return;
+				}
+			}
+			else if (c_lhs == dtypeclass::_ptr)
+			{
+				// For now, let them be
+				diagnostic(diagnostic_type::location_warning)
+					.at(node.loc)
+					.reason("Pointer operands have different types")
+					.report(diagnostics);
+			}
+		}
+		node.cat = exprcat::rval;
+		node.type.basetp = dtypename::_bool;
 	}
 	else
 	{
-		// TODO: Do deeper type analysis
+		// TODO: Support pointer arithmetic
+		if (node.left->type != node.right->type)
+		{
+			auto& t_lhs = node.left->type;
+			auto& t_rhs = node.right->type;
+			dtypeclass c_lhs = t_lhs.to_class(), c_rhs = t_rhs.to_class();
+			// Promote to int
+			if (c_lhs == dtypeclass::_bool)
+				c_lhs = dtypeclass::_int;
+			if (c_rhs == dtypeclass::_bool)
+				c_rhs = dtypeclass::_int;
+			if (c_lhs != c_rhs)
+				goto _bad_types;
+			else if (c_lhs == dtypeclass::_int)
+			{
+				basic_type common_type(dtypename::_int);
+				if (t_lhs.basetp == dtypename::_long or t_rhs.basetp == dtypename::_long)
+					common_type.basetp = dtypename::_long;
+				if (t_lhs.has_modifier_front(dtypemod::_unsigned) or t_rhs.has_modifier_front(dtypemod::_unsigned))
+					common_type.exttp.push_back(dtypemod::_unsigned);
+				else if (t_lhs.has_modifier_front(dtypemod::_signed) or t_rhs.has_modifier_front(dtypemod::_signed))
+					common_type.exttp.push_back(dtypemod::_signed);
+				node.left = perform_implicit_conversions(
+					std::move(node.left), common_type, exprcat::rval);
+				node.right = perform_implicit_conversions(
+					std::move(node.right), common_type, exprcat::rval);
+				if (node.left->has_error() or node.right->has_error())
+				{
+					node.cat = exprcat::error;
+					return;
+				}
+			}
+			else if (c_lhs == dtypeclass::_float)
+			{
+				if (t_lhs.basetp != dtypename::_double and t_rhs.basetp != dtypename::_double)
+					chirp_unreachable("Something's wrong, types don't match and neither value is a double");
+				basic_type common_type(dtypename::_double);
+				node.left = perform_implicit_conversions(
+					std::move(node.left), common_type, exprcat::rval);
+				node.right = perform_implicit_conversions(
+					std::move(node.right), common_type, exprcat::rval);
+				if (node.left->has_error() or node.right->has_error())
+				{
+					node.cat = exprcat::error;
+					return;
+				}
+			}
+			else if (c_lhs == dtypeclass::_ptr)
+			{
+				diagnostic(diagnostic_type::location_err)
+					.at(node.loc)
+					.reason("Arithmetic is not supported on pointers")
+					.report(diagnostics);
+				node.cat = exprcat::error;
+				return;
+			}
+		}
 		node.cat = exprcat::rval;
-		if (node.op >= tkn_type::cmp_S
-			and node.op <= tkn_type::cmd_E)
-		{
-			node.type.basetp = dtypename::_bool;
-		}
-		else
-		{
-			node.type = node.left->type;
-		}
+		node.type = node.left->type;
 	}
+	return;
+
+	_bad_types:
+	node.cat = exprcat::error;
+	diagnostic(!soft_type_checks ? diagnostic_type::location_err : diagnostic_type::location_warning)
+		.at(node.op_loc)
+		.reason("Operand types don't match")
+		.report(diagnostics);
 }
 
 void analyser::visit_unop(unop& node)
@@ -142,15 +254,39 @@ void analyser::visit_unop(unop& node)
 	switch (node.op)
 	{
 		case tkn_type::plus_op:
+		{
+			auto& operand = *node.operand;
 			node.cat = exprcat::rval;
-			node.type = node.operand->type;
 			// Do promotion
+			auto promoted_expr = promote_value(std::move(node.operand));
+			if (promoted_expr->has_error())
+				node.cat = exprcat::error;
+			node.type = promoted_expr->type;
+			node.operand = std::move(promoted_expr);
 			break;
+		}
 		case tkn_type::minus_op:
+		{
+			auto& operand = *node.operand;
 			node.cat = exprcat::rval;
-			node.type = node.operand->type;
-			// TODO: Assert type is an integer, do promotion
+			// Check that the type is an integer or a float, do promotion
+			auto promoted_expr = promote_value(std::move(node.operand));
+			if (promoted_expr->has_error())
+				node.cat = exprcat::error;
+			else if (promoted_expr->type.to_class() != dtypeclass::_int and
+				promoted_expr->type.to_class() != dtypeclass::_float)
+			{
+				diagnostic(diagnostic_type::location_err)
+					.at(node.loc)
+					.reason("Cannot negate a non-number")
+					.report(this->diagnostics);
+				node.cat = exprcat::error;
+				break;
+			}
+			node.type = promoted_expr->type;
+			node.operand = std::move(promoted_expr);
 			break;
+		}
 		case tkn_type::ref_op:
 			if (node.operand->cat != exprcat::lval)
 			{
@@ -163,10 +299,10 @@ void analyser::visit_unop(unop& node)
 			}
 			node.cat = exprcat::rval;
 			node.type = node.operand->type;
-			node.type.exttp.push_back(static_cast<std::byte>(dtypemod::_ptr));
+			node.type.exttp.push_back(dtypemod::_ptr);
 			break;
 		case tkn_type::deref_op:
-			if (node.operand->type.exttp.empty() or node.operand->type.exttp.back() != static_cast<std::byte>(dtypemod::_ptr))
+			if (node.operand->type.exttp.empty() or node.operand->type.exttp.back() != dtypemod::_ptr)
 			{
 				diagnostic(!soft_type_checks ? diagnostic_type::location_err : diagnostic_type::location_warning)
 					.at(node.loc)
@@ -180,23 +316,27 @@ void analyser::visit_unop(unop& node)
 			node.type.exttp.pop_back();
 			break;
 		case tkn_type::kw_alloca:
-			// Type checking couldn't literally get more shitty lol, but not now
-			if (node.operand->type.basetp != dtypename::_long
-			    or !node.operand->type.exttp.empty())
+		{
+			basic_type size_type(dtypename::_long);
+			size_type.exttp.push_back(dtypemod::_unsigned);
+			// Type checking finally is in place!
+			auto promoted_expr = perform_implicit_conversions(
+				std::move(node.operand), size_type, exprcat::rval);
+			if (promoted_expr->cat == exprcat::error)
 			{
-				diagnostic(!soft_type_checks ? diagnostic_type::location_err : diagnostic_type::location_warning)
-					.at(node.loc)
-					.reason("Alloca takes an integer argument")
-					.report(diagnostics);
 				node.cat = exprcat::error;
-				return;
 			}
-			node.cat = exprcat::rval;
-			node.type.basetp = dtypename::_none;
-			node.type.exttp.push_back(static_cast<std::byte>(dtypemod::_ptr));
+			else
+			{
+				node.cat = exprcat::rval;
+				node.type.basetp = dtypename::_none;
+				node.type.exttp.push_back(dtypemod::_ptr);
+			}
+			node.operand = std::move(promoted_expr);
 			break;
+		}
 		default:
-			std::abort();
+			chirp_unreachable("visit_unop");
 	}
 }
 
@@ -211,10 +351,9 @@ void analyser::visit_arguments(arguments& node)
 void analyser::visit_func_call(func_call& node)
 {
 	visit_expr(*node.callee);
-	visit_arguments(node.args);
 
 	node.type = node.callee->type;
-	if (!node.type.exttp.empty() and static_cast<dtypemod>(node.type.exttp.back()) == dtypemod::_func)
+	if (!node.type.exttp.empty() and node.type.exttp.back() == dtypemod::_func)
 	{
 		node.type.exttp.pop_back();
 		node.cat = exprcat::rval;
@@ -227,6 +366,8 @@ void analyser::visit_func_call(func_call& node)
 			.reason("Cannot call non-function")
 			.report(diagnostics);
 	}
+
+	visit_arguments(node.args);
 }
 
 void analyser::visit_id_ref_expr(id_ref_expr& node)
@@ -248,7 +389,7 @@ void analyser::visit_id_ref_expr(id_ref_expr& node)
 			case decl_kind::fdef:
 				node.type = static_cast<func_decl const&>(*decl).result_type;
 				node.cat = exprcat::rval;
-				node.type.exttp.push_back(static_cast<std::byte>(dtypemod::_func));
+				node.type.exttp.push_back(dtypemod::_func);
 				break;
 			default:
 				node.cat = exprcat::error;
@@ -270,8 +411,8 @@ void analyser::visit_string_literal(string_literal& node)
 		return;
 	node.cat = exprcat::rval;
 	node.type.basetp = dtypename::_char;
-	node.type.exttp.push_back(static_cast<std::byte>(dtypemod::_const));
-	node.type.exttp.push_back(static_cast<std::byte>(dtypemod::_ptr));
+	node.type.exttp.push_back(dtypemod::_const);
+	node.type.exttp.push_back(dtypemod::_ptr);
 }
 
 void analyser::visit_integral_literal(integral_literal& node)
@@ -291,6 +432,293 @@ void analyser::visit_cast_expr(cast_expr& node)
 {
 	// Category & type already set
 	visit_expr(*node.operand);
+}
+
+exprh analyser::convert_to_rvalue(exprh source)
+{
+	basic_type type = source->type;
+	if (type.has_modifier_back(dtypemod::_const))
+		type.exttp.pop_back();
+	return perform_implicit_conversions(
+		std::move(source), type, exprcat::rval);
+}
+
+exprh analyser::promote_value(exprh source)
+{
+	source = convert_to_rvalue(std::move(source));
+	if (source->has_error())
+		return source;
+
+	basic_type new_type = source->type;
+	if (new_type.to_class() == dtypeclass::_int)
+	{
+		if (new_type.basetp != dtypename::_long)
+			new_type.basetp = dtypename::_int;
+	}
+	else if (new_type.to_class() == dtypeclass::_float)
+	{
+		// Nothing to be done
+	}
+
+	return perform_implicit_conversions(
+		std::move(source), new_type, exprcat::rval);
+}
+
+// This function tries to perform implicit conversions to convert an expression to the desired type
+// On failure to do so, returns null
+exprh analyser::perform_implicit_conversions(exprh source, basic_type const& target_type, exprcat target_cat)
+{
+	dtypeclass cl_src = source->type.to_class(), cl_dst = target_type.to_class();
+	if (cl_src == cl_dst)
+	{
+		// Check if types are equal
+		if (target_type != source->type)
+		{
+			// First, remove const if necessary...
+			if (source->type.has_modifier_back(dtypemod::_const))
+			{
+				auto const_cast_ = new_node<cast_expr>(cast_kind::_const);
+				const_cast_->loc = source->loc;
+				const_cast_->type.basetp = source->type.basetp;
+				for (auto mod : source->type.exttp)
+					if (mod != dtypemod::_const)
+						const_cast_->type.exttp.push_back(mod);
+				const_cast_->cat = exprcat::rval;
+				const_cast_->operand = std::move(source);
+				source = std::move(const_cast_);
+			}
+
+			// Integral conversions
+			// Convert between different operand sizes
+			// dtypeclass none shouldn't be passed in the first place
+			if (cl_dst == dtypeclass::_int)
+			{
+				// For now, just convert directly to the target type, then match signedness
+
+				if (source->type.basetp != target_type.basetp)
+				{
+					auto grade_cast = new_node<cast_expr>(cast_kind::_grade);
+					grade_cast->loc = source->loc;
+					grade_cast->type.basetp = target_type.basetp;
+					for (auto mod : source->type.exttp)
+						grade_cast->type.exttp.push_back(mod);
+					grade_cast->cat = exprcat::rval;
+					grade_cast->operand = std::move(source);
+					source = std::move(grade_cast);
+				}
+
+				if (target_type.has_modifier_back(dtypemod::_signed) and !source->type.has_modifier_back(dtypemod::_signed))
+				{
+					auto sign_cast = new_node<cast_expr>(cast_kind::_sign);
+					sign_cast->loc = source->loc;
+					sign_cast->type.basetp = target_type.basetp;
+					sign_cast->type.exttp.push_back(dtypemod::_signed);
+					sign_cast->cat = exprcat::rval;
+					sign_cast->operand = std::move(source);
+					source = std::move(sign_cast);
+				}
+				else if (target_type.has_modifier_back(dtypemod::_unsigned) and !source->type.has_modifier_back(dtypemod::_unsigned))
+				{
+					auto sign_cast = new_node<cast_expr>(cast_kind::_sign);
+					sign_cast->loc = source->loc;
+					sign_cast->type.basetp = target_type.basetp;
+					sign_cast->type.exttp.push_back(dtypemod::_unsigned);
+					sign_cast->cat = exprcat::rval;
+					sign_cast->operand = std::move(source);
+					source = std::move(sign_cast);
+				}
+
+				// We're done
+			}
+			else if (cl_dst == dtypeclass::_float)
+			{
+				auto grade_cast = new_node<cast_expr>(cast_kind::_grade);
+				grade_cast->loc = source->loc;
+				grade_cast->type.basetp = target_type.basetp;
+				// No modifiers to add
+				grade_cast->cat = exprcat::rval;
+				grade_cast->operand = std::move(source);
+				source = std::move(grade_cast);
+			}
+			else if (cl_dst == dtypeclass::_bool)
+			{
+				// Shouldn't happen!
+				chirp_unreachable("Conversion from bool to bool not needed");
+			}
+			else if (cl_dst == dtypeclass::_ptr)
+			{
+				// TODO
+				diagnostic(!soft_type_checks ? diagnostic_type::location_err : diagnostic_type::location_warning)
+					.at(source->loc)
+					.reason("Cannot convert between pointer types (yet)")
+					.report(this->diagnostics);
+				goto _gen_error;
+			}
+			else if (cl_dst == dtypeclass::_func)
+			{
+				diagnostic(diagnostic_type::location_err)
+					.at(source->loc)
+					.reason("Cannot convert function types")
+					.report(this->diagnostics);
+				goto _gen_error;
+			}
+
+			// ...and add it back if required
+			if (target_type.has_modifier_back(dtypemod::_const))
+			{
+				auto const_cast_ = new_node<cast_expr>(cast_kind::_const);
+				const_cast_->loc = source->loc;
+				const_cast_->type.basetp = target_type.basetp;
+				for (auto mod : source->type.exttp)
+					const_cast_->type.exttp.push_back(mod);
+				const_cast_->type.exttp.push_back(dtypemod::_const);
+				const_cast_->cat = exprcat::rval;
+				const_cast_->operand = std::move(source);
+				source = std::move(const_cast_);
+			}
+		}
+		// No more conversions needed
+	}
+	// int <-> float conversions
+	else if (cl_dst == dtypeclass::_float and cl_src == dtypeclass::_int
+		or cl_dst == dtypeclass::_int and cl_src == dtypeclass::_float)
+	{
+		{
+			// First, convert to a signed value (if int) and remove const
+			basic_type clean_type = source->type;
+			if (clean_type.has_modifier_back(dtypemod::_const))
+				clean_type.exttp.pop_back();
+			if (cl_src == dtypeclass::_int)
+			{
+				if (clean_type.has_modifier_back(dtypemod::_unsigned))
+					clean_type.exttp.pop_back();
+				if (!clean_type.has_modifier_back(dtypemod::_signed))
+					clean_type.exttp.push_back(dtypemod::_signed);
+			}
+			auto clean_val = perform_implicit_conversions(
+				std::move(source), clean_type, exprcat::rval);
+			if (clean_val->cat == exprcat::error)
+				return clean_val;
+			source = std::move(clean_val);
+		}
+		// Next, perform the float conversion
+		{
+			auto float_cast = new_node<cast_expr>(cast_kind::_float);
+			float_cast->loc = source->loc;
+			float_cast->type = target_type;
+			if (target_type.has_modifier_back(dtypemod::_const))
+				float_cast->type.exttp.pop_back();
+			if (float_cast->type.has_modifier_back(dtypemod::_signed) or
+					float_cast->type.has_modifier_back(dtypemod::_unsigned))
+				float_cast->type.exttp.pop_back();
+			float_cast->cat = exprcat::rval;
+			float_cast->operand = std::move(source);
+			source = std::move(float_cast);
+		}
+		// Now, convert to the target type
+		return perform_implicit_conversions(
+			std::move(source), target_type, target_cat);
+	}
+	// boolean conversions
+	else if (cl_dst == dtypeclass::_bool)
+	{
+		location_range src_loc = source->loc;
+		switch (cl_src)
+		{
+			case dtypeclass::_int:
+			case dtypeclass::_float:
+			{
+				// TODO: Add float literals
+				exprh arg;
+				{
+					auto lit = new_node<integral_literal>();
+					lit->value = 0;
+					lit->cat = exprcat::rval;
+					lit->type.basetp = dtypename::_int;
+					lit->type.exttp.push_back(dtypemod::_signed);
+					arg = std::move(lit);
+				}
+
+				if (cl_src == dtypeclass::_float)
+					// Assume this doesn't fail
+					arg = perform_implicit_conversions(
+						std::move(arg), basic_type(dtypename::_float), exprcat::rval);
+
+				auto comp = new_node<binop>(tkn_type::noteq_op, std::move(source), std::move(arg));
+				comp->cat = exprcat::rval;
+				comp->type.basetp = dtypename::_bool;
+				source = std::move(comp);
+				break;
+			}
+			case dtypeclass::_ptr:
+			{
+				auto arg = new_node<nullptr_literal>();
+				arg->cat = exprcat::rval;
+				arg->type = source->type;
+				auto comp = new_node<binop>(tkn_type::noteq_op, std::move(source), std::move(arg));
+				comp->cat = exprcat::rval;
+				comp->type.basetp = dtypename::_bool;
+				source = std::move(comp);
+				break;
+			}
+			case dtypeclass::_bool:
+			case dtypeclass::_none:
+			case dtypeclass::_func:
+				goto _no_conv;
+		}
+		// Construct cast node
+		auto cast_node = new_node<cast_expr>(cast_kind::_bool);
+		cast_node->loc = src_loc;
+		cast_node->type = source->type;
+		cast_node->cat = source->cat;
+		cast_node->operand = std::move(source);
+		source = std::move(cast_node);
+	}
+	else
+	{
+		_no_conv:
+		diagnostic(!soft_type_checks ? diagnostic_type::location_err : diagnostic_type::location_warning)
+			.at(source->loc)
+			.reason("Cannot convert expression to expected type")
+			.report(this->diagnostics);
+		goto _gen_error;
+	}
+
+	// Perform value category conversions
+	if (target_cat == exprcat::lval and source->cat == exprcat::rval)
+	{
+		diagnostic(diagnostic_type::location_err)
+			.at(source->loc)
+			.reason("Cannot convert an rvalue to lvalue")
+			.report(this->diagnostics);
+
+		// Provide a placeholder expression for debugging purposes
+		_gen_error:
+		auto err_expr = new_node<cast_expr>(cast_kind::_invalid);
+		err_expr->loc = source->loc;
+		err_expr->type = target_type;
+		err_expr->cat = exprcat::error;
+		err_expr->operand = std::move(source);
+		return err_expr;
+	}
+	else if (target_cat == exprcat::rval and source->cat == exprcat::lval)
+	{
+		if (cl_src == dtypeclass::_func)
+		{
+			diagnostic(diagnostic_type::location_err)
+				.at(source->loc)
+				.reason("Cannot convert a function lvalue to rvalue")
+				.report(this->diagnostics);
+			goto _gen_error;
+		}
+		auto cat_cast = new_node<cast_expr>(cast_kind::_cat);
+		cat_cast->loc = source->loc;
+		cat_cast->type = target_type;
+		cat_cast->cat = exprcat::rval;
+		cat_cast->operand = std::move(source);
+		return cat_cast;
+	}
+	return source;
 }
 
 // Declarations
@@ -316,9 +744,9 @@ void analyser::visit_var_decl(var_decl& node)
 	{
 		// Checks if it's a pointer.
 		bool is_ptr = false;
-		for (std::byte d : node.type.exttp)
+		for (auto d : node.type.exttp)
 		{
-			if (static_cast<dtypemod>(d) == dtypemod::_ptr)
+			if (d == dtypemod::_ptr)
 			{
 				is_ptr = true;
 				break;
@@ -333,9 +761,14 @@ void analyser::visit_var_decl(var_decl& node)
 				.report(this->diagnostics);
 		}
 	}
-	// TODO: Convert from initializer type (if any) to variable type
 	if (node.init)
+	{
 		visit_expr(*node.init);
+		// Convert from initializer type (if any) to variable type
+		if (node.init->cat != exprcat::error)
+			node.init = perform_implicit_conversions(
+				std::move(node.init), node.type, exprcat::rval);
+	}
 }
 
 void analyser::visit_entry_decl(entry_decl& node)
@@ -468,6 +901,9 @@ void analyser::visit_assign_stmt(assign_stmt& node)
 {
 	//! Point of interest
 	visit_expr(*node.target);
+	visit_expr(*node.value);
+	if (node.target->has_error())
+		return;
 	if (node.target->cat != exprcat::lval)
 	{
 		diagnostic(!soft_type_checks ? diagnostic_type::location_err : diagnostic_type::location_warning)
@@ -477,19 +913,19 @@ void analyser::visit_assign_stmt(assign_stmt& node)
 	}
 	// I'll make it better, I swear
 	else if (!node.target->type.exttp.empty()
-		and node.target->type.exttp.back() == static_cast<std::byte>(dtypemod::_const))
+		and node.target->type.exttp.back() == dtypemod::_const)
 	{
 		diagnostic(!soft_type_checks ? diagnostic_type::location_err : diagnostic_type::location_warning)
 			.at(node.loc)
 			.reason("Assigning to a constant value")
 			.report(diagnostics);
 	}
-	else
+	else if (node.value->cat != exprcat::error)
 	{
-		// TODO: Convert from expression type to variable type
+		// Convert from expression type to variable type
+		node.value = perform_implicit_conversions(
+			std::move(node.value), node.target->type, exprcat::rval);
 	}
-
-	visit_expr(*node.value);
 }
 
 void analyser::visit_compound_stmt(compound_stmt& node)
@@ -514,6 +950,11 @@ void analyser::visit_ret_stmt(ret_stmt& node)
 void analyser::visit_conditional_stmt(conditional_stmt& node)
 {
 	visit_expr(*node.cond);
+	if (node.cond->cat != exprcat::error)
+	{
+		node.cond = perform_implicit_conversions(
+			std::move(node.cond), basic_type(dtypename::_bool), exprcat::rval);
+	}
 	visit_stmt(*node.true_branch);
 	if (node.false_branch)
 		visit_stmt(*node.false_branch);
@@ -522,6 +963,11 @@ void analyser::visit_conditional_stmt(conditional_stmt& node)
 void analyser::visit_iteration_stmt(iteration_stmt& node)
 {
 	visit_expr(*node.cond);
+	if (node.cond->cat != exprcat::error)
+	{
+		node.cond = perform_implicit_conversions(
+			std::move(node.cond), basic_type(dtypename::_bool), exprcat::rval);
+	}
 	visit_stmt(*node.loop_body);
 }
 

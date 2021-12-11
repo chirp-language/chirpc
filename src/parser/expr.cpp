@@ -88,7 +88,8 @@ exprh parser::parse_subexpr_op(exprh lhs, int max_prec)
             basic_type newtp = parse_datatype();
             if (has_paren)
                 expect(tkn_type::rparen);
-            auto ecast = new_node<cast_expr>();
+            auto ecast = new_node<cast_expr>(cast_kind::_explicit);
+            ecast->loc = location_range(lhs->loc.begin, loc_peekb());
             ecast->operand = std::move(lhs);
             ecast->type = std::move(newtp);
             ecast->cat = exprcat::rval;

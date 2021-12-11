@@ -51,7 +51,7 @@ enum class tkn_type
     plus_op, minus_op, star_op, slash_op, perc_op, // + - * / %
     as_op, // as
     cmp_S = lt_op,
-    cmd_E = noteq_op,
+    cmp_E = noteq_op,
     binop_S = lt_op,
     binop_E = as_op,
     ref_op, deref_op, // ref deref (unary)
@@ -83,5 +83,5 @@ class token
     std::string util_dump();
 };
 
-std::string exprop_id(tkn_type op);
+char const* exprop_id(tkn_type op);
 extern char const* token_names[];

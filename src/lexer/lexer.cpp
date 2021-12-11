@@ -403,7 +403,8 @@ std::vector<token> lexer::lex(std::vector<location> const& src)
         #undef MATCH_DM
         #undef MATCH
         // Symbols
-        /*else*/ if (t.loc.len == 1)
+        /* else */
+        if (t.loc.len == 1)
         {
             switch (t.value.at(0))
             {
@@ -415,6 +416,8 @@ std::vector<token> lexer::lex(std::vector<location> const& src)
                 CASE(':', tkn_type::colon)
                 CASE(',', tkn_type::comma)
                 CASE('=', tkn_type::assign_op)
+                CASE('<', tkn_type::lt_op)
+                CASE('>', tkn_type::gt_op)
                 CASE('+', tkn_type::plus_op)
                 CASE('-', tkn_type::minus_op)
                 CASE('*', tkn_type::star_op)

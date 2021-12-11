@@ -75,6 +75,29 @@ static char const* dump_dtmod(dtypemod m)
     chirp_unreachable("dump_dtmod");
 }
 
+static char const* dump_cast_kind(cast_kind k) {
+    switch (k)
+    {
+    case cast_kind::_invalid:
+        return "invalid";
+    case cast_kind::_explicit:
+        return "explicit_cast";
+    case cast_kind::_const:
+        return "const_cast";
+    case cast_kind::_grade:
+        return "grade_cast";
+    case cast_kind::_sign:
+        return "sign_cast";
+    case cast_kind::_cat:
+        return "cat_cast";
+    case cast_kind::_float:
+        return "float_cast";
+    case cast_kind::_bool:
+        return "bool_cast";
+    }
+    chirp_unreachable("dump_cast_kind");
+}
+
 static char const* dump_exprcat(exprcat c)
 {
     switch (c)
@@ -337,8 +360,7 @@ void text_ast_dumper::dump_basic_type(basic_type const& type)
     // Remember that order is reversed
     for (auto it = type.exttp.rbegin(), end = type.exttp.rend(); it != end; ++it)
     {
-        dtypemod w = static_cast<dtypemod>(*it);
-        write_color(dump_dtmod(w), c_color_type);
+        write_color(dump_dtmod(*it), c_color_type);
         std::cout << ' ';
     }
     write_color(dump_dtname(type.basetp), c_color_type);
@@ -359,8 +381,7 @@ void text_ast_dumper::dump_expr_type(basic_type const& type, exprcat cat)
     // Remember that order is reversed
     for (auto it = type.exttp.rbegin(), end = type.exttp.rend(); it != end; ++it)
     {
-        dtypemod w = static_cast<dtypemod>(*it);
-        write_color(dump_dtmod(w), c_color_type);
+        write_color(dump_dtmod(*it), c_color_type);
         std::cout << ' ';
     }
     write_color(dump_dtname(type.basetp), c_color_type);
@@ -511,10 +532,18 @@ void text_ast_dumper::dump_cast_expr(cast_expr const& n)
     indent(depth);
     write_color("cast_expr ", c_color_expr);
     print_location(n.loc);
+    std::cout << ' ';
+    if (n.ckind == cast_kind::_invalid)
+        begin_color(c_color_type_error);
+    else
+        begin_color(c_color_type_cat);
+    std::cout << dump_cast_kind(n.ckind);
+    end_color();
     std::cout << '\n';
     ++depth;
-    // Exception: always print type of a cast expression
-    dump_expr_type(n.type, n.cat);
+    // Exception: always print type of a cast expression, if it's an explicit cast
+    if (show_expr_types or n.ckind == cast_kind::_explicit)
+        dump_expr_type(n.type, n.cat);
     dump_expr(*n.operand);
     --depth;
 }

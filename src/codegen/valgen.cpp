@@ -75,7 +75,7 @@ std::string codegen::emit_datatype(basic_type const& type)
 
     for (auto d : type.exttp)
     {
-        switch (static_cast<dtypemod>(d))
+        switch (d)
         {
             case dtypemod::_ptr:
                 result += "*";

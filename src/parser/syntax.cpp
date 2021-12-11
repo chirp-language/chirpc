@@ -57,7 +57,7 @@ nullptr_literal parser::build_null_ptr_lit(token_location loc)
 {
     nullptr_literal node;
     node.type.basetp = dtypename::_none;
-    node.type.exttp.push_back(static_cast<std::byte>(dtypemod::_ptr));
+    node.type.exttp.push_back(dtypemod::_ptr);
     node.cat = exprcat::rval;
     node.loc = loc;
     return node;

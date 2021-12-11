@@ -73,9 +73,9 @@ basic_type parser::parse_datatype()
     // Mods before the typename
     while (is_datamod())
     {
-        type.exttp.push_back(static_cast<std::byte>(get_dtypemod(peek().type)));
+        type.exttp.push_back(get_dtypemod(peek().type));
 
-        if (static_cast<dtypemod>(get_dtypemod(peek().type)) == dtypemod::_ptr)
+        if (get_dtypemod(peek().type) == dtypemod::_ptr)
             has_candidate = true;
         skip();
     }

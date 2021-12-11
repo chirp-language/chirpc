@@ -75,6 +75,9 @@ tracker::symbol* tracker::lookup_sym(identifier const& name)
     auto lastend = syms.cend();
     for (auto scopeit = scopes.rbegin(), scopeend = scopes.rend(); scopeit != scopeend; ++scopeit)
     {
+        if (scopeit->begin == syms.cend())
+            // Skip empty scope
+            continue;
         for (symlist::const_iterator it = scopeit->begin; it != lastend; ++it)
         {
             if ((**it).name.name == name.name)

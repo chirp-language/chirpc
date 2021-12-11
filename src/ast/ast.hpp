@@ -8,7 +8,6 @@ All possible AST nodes are defined here
 #include "../shared/location_provider.hpp"
 #include "../shared/system.hpp"
 #include <string>
-#include <vector>
 #include <memory>
 // === SHARED ===
 
@@ -159,35 +158,6 @@ enum class expr_kind
     cast,
 };
 
-enum class exprcat
-{
-    unset, // unknown/unassigned type
-    lval, // lvalue, i.e. has memory location
-    rval, // rvalue, i.e. a pure value (not tied to any object, can be used as an operand)
-    error, // result of an invalid operation
-};
-
-struct basic_type
-{
-    // Type modifiers 'exttp' are stored in reverse order of declaration, for easier manipulation
-    // For example, `ptr unsigned char` -> basic_type { .basetp = _char, .exttp = [_unsigned, _ptr] }
-    dtypename basetp; // The basic type specifier
-    std::vector<std::byte> exttp; // Enums are cast to/from a byte bc why not
-
-    basic_type()
-        : basetp(dtypename::_none) {}
-    
-    bool operator==(basic_type const& o) const
-    {
-        return basetp == o.basetp and exttp == o.exttp;
-    }
-
-    bool operator!=(basic_type const& o) const
-    {
-        return !operator==(o);
-    }
-};
-
 class expr : public ast_node
 {
     public:
@@ -196,6 +166,11 @@ class expr : public ast_node
     expr_kind kind;
     basic_type type;
     exprcat cat;
+
+    bool has_error() const
+    {
+        return cat == exprcat::error;
+    }
 
     protected:
     expr(expr_kind kind)
@@ -243,17 +218,6 @@ public:
         : expr(expr_kind::call), callee(std::move(callee)), args(std::move(args)) {}
 };
 
-// Left-Side stuff
-
-// Left Side Operand type
-
-enum class loptype
-{
-    access, // Array Accessor []
-    ident,
-    lunop, // left unary operator
-};
-
 class id_ref_expr : public expr
 {
     public:
@@ -271,15 +235,6 @@ class id_ref_expr : public expr
         return new_node<id_ref_expr>(std::move(ident));
     }
 };
-
-#if 0
-class loperand : public expr
-{
-    public:
-    std::unique_ptr<ast_node> node;
-    loptype type;
-};
-#endif
 
 class string_literal : public expr
 {
@@ -314,12 +269,26 @@ class nullptr_literal : public expr
     nullptr_literal() : expr(expr_kind::nulllit) {}
 };
 
+enum class cast_kind
+{
+    _invalid,  // Invalid cast operation
+    _explicit, // Cast spelled in the program, (expression) as(type)
+    _const,    // Cast between const-qualified and non-const-qualified types
+    _grade,    // Cast between types of different sizes/characteristics
+    _sign,     // Cast between integral types of different signs (signed, unsigned, unspecified)
+    _cat,      // Value category conversion
+    _float,    // Floating point conversion, between floats and ints
+    _bool,     // Boolean conversion
+};
+
 class cast_expr : public expr
 {
     public:
     exprh operand;
+    cast_kind ckind;
 
-    cast_expr() : expr(expr_kind::cast) {}
+    cast_expr(cast_kind ckind)
+        : expr(expr_kind::cast), ckind(ckind) {}
 };
 
 // === Declarations ===

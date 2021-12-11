@@ -9,7 +9,7 @@ import "math.trig";
 namespace mem
 {
 	extern "malloc"
-		func ptr alloc(long: size);
+		func ptr alloc(unsigned long: size);
 }
 
 namespace io
@@ -29,7 +29,7 @@ namespace oslib
 # Forward function declarations
 func ptr const char type_name(int: id);
 func ptr const char find_cstr_end(ptr const char); # Unnamed parameters
-func none memcpy(ptr: dest, ptr const: src, int: count);
+func ptr memcpy(ptr: dest, ptr const: src, unsigned long: count);
 
 # Functions
 func ptr const char type_name(int: id)
@@ -64,12 +64,12 @@ func ptr const char find_cstr_end(ptr const char: s)
 	ret s;
 }
 
-func none memcpy(ptr: dest, ptr const: src, int: count)
+func ptr memcpy(ptr: dest, ptr const: src, unsigned long: count)
 {
 	# Pointer convertions (TODO: type-check)
-	ptr byte: _dest = dest as ptr char;
-	ptr const byte: _src = src as ptr const char;
-	# Convert to bool (TODO)
+	ptr byte: _dest = dest as ptr byte;
+	ptr const byte: _src = src as ptr const byte;
+	# Convert to bool
 	while count
 	{
 		# lvalue assignment (TODO)
@@ -78,6 +78,7 @@ func none memcpy(ptr: dest, ptr const: src, int: count)
 		_dest = _dest + 1;
 		_src = _src + 1;
 	}
+	ret dest;
 }
 
 # Program entry point
@@ -89,7 +90,7 @@ entry
 	const int: my_string_size = my_string_end - my_string + 1;
 	ptr char: my_heap_str = mem.alloc(my_string_size);
 	memcpy(my_heap_str, my_string, my_string_size);
-	ptr char: a = alloca (3 as long) as(ptr char);
+	ptr char: a = alloca 3 as(ptr char);
 	deref a = 'h';
 	deref (a + 1) = 'i';
 	deref (a + 2) = 0;
