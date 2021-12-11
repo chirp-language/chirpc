@@ -1,0 +1,5 @@
+namespace mem
+{
+	extern "malloc"
+		func ptr alloc(unsigned long: size);
+}
