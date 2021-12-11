@@ -80,7 +80,7 @@ class token
     location loc;
 
     // Utility Function
-    std::string util_dump();
+    std::string util_dump(location_run* run);
 };
 
 char const* exprop_id(tkn_type op);

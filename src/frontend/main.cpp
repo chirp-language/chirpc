@@ -72,9 +72,10 @@ int main(int argc, char** argv)
     {
         std::cout << "Tokens:\n";
 
+        location_run run;
         for (token &t : tkns)
         {
-            std::cout << t.util_dump() << '\n';
+            std::cout << t.util_dump(&run) << '\n';
         }
     }
     // Parsing

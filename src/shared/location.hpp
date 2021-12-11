@@ -22,6 +22,12 @@ public:
     int len = 0; // Length of the token
 };
 
+// State of location printer on a specific task, like AST dump, token dump, etc.
+struct location_run
+{
+	location const* last_loc = nullptr;
+};
+
 // Stolen from clang
 struct token_location
 {
@@ -48,3 +54,5 @@ struct location_range
     constexpr location_range(token_location b, token_location e) noexcept
         : begin(b), end(e) {}
 };
+
+void print_loc_single(location const& loc, std::string& str, location_run* run);

@@ -163,6 +163,9 @@ char const* exprop_id(tkn_type op)
 
 void text_ast_dumper::dump_ast(ast_root const& root)
 {
+    location_run run;
+    if (loc_prov)
+        loc_prov->begin_run(run);
     write_color("Top Level:\n", c_color_top_level);
 
     #if 0
@@ -251,6 +254,8 @@ void text_ast_dumper::dump_ast(ast_root const& root)
     else {
         write_color("-- No entry --\n", c_color_top_level_unavail);
     }
+    if (loc_prov)
+        loc_prov->end_run();
 }
 
 void text_ast_dumper::dump_identifier(identifier const& n)
