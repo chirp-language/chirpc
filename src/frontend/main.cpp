@@ -1,13 +1,12 @@
 // This manages to pretty much interface all components with eachothers
 #include "cmd.hpp"
-#include "color.hpp"
-#include "lexer/lexer.hpp"
-#include "parser/parser.hpp"
-#include "codegen/codegen.hpp"
-#include "frontend/frontend.hpp"
-#include "ast/ast_dumper.hpp"
-#include "seman/analyser.hpp"
-#include "seman/sym_dumper.hpp"
+#include "../lexer/lexer.hpp"
+#include "../parser/parser.hpp"
+#include "../codegen/codegen.hpp"
+#include "../frontend/frontend.hpp"
+#include "../ast/ast_dumper.hpp"
+#include "../seman/analyser.hpp"
+#include "../seman/sym_dumper.hpp"
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -35,7 +34,7 @@ int main(int argc, char** argv)
 
     if (options.error)
     {
-        std::cout << "Error in provided arguments\n";
+        std::cerr << "Error in provided arguments\n";
         return -1;
     }
 
@@ -45,7 +44,7 @@ int main(int argc, char** argv)
 
     if (!f)
     {
-        std::cout << "Can't open file: \"" << options.filename << "\"\n";
+        std::cerr << "Can't open file: \"" << options.filename << "\"\n";
         return -1;
     }
 
@@ -136,35 +135,31 @@ int main(int argc, char** argv)
     // Outputting generated content
     frontend frontend;
 
-    if (!frontend.find_compiler())
+    if (!options.no_outgen)
     {
-        if (options.has_color)
+        if (!frontend.find_compiler())
         {
-            std::cerr << apply_color("[TOOL MISSING] ", color::red);
+            print_color("[TOOL MISSING] ", options.has_color, std::cerr, color::red);
+
+            std::cerr << "Couldn't find supported C compiler on this machine.\n";
+            std::cerr << "Supported compilers are clang and gcc\n";
+            std::cerr << "To specify C compiler use option -compiler-path, and then the path to the compiler.\n";
+
+            return -1;
         }
-        else
+
+        frontend.make_tmp_folder();
+
+        frontend.write_out("dump", generator.get_result());
+
+        // Tooling
+        // (use the compiler)
+
+        // Cleanup
+        if (!options.keep_tmp)
         {
-            std::cerr << "[TOOL MISSING] ";
+            frontend.remove_tmp_folder();
         }
-
-        std::cerr << "Couldn't find supported C compiler on this machine.\n";
-        std::cerr << "Supported compilers are clang and gcc\n";
-        std::cerr << "To specify C compiler use option -compiler-path, and then the path to the compiler.\n";
-
-        return -1;
-    }
-
-    frontend.make_tmp_folder();
-
-    frontend.write_out("dump", generator.get_result());
-
-    // Tooling
-    // (use the compiler)
-
-    // Cleanup
-    if (!options.keep_tmp)
-    {
-        frontend.remove_tmp_folder();
     }
 
     return 0;

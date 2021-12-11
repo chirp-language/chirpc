@@ -1,5 +1,6 @@
 #include "diagnostic.hpp"
-#include "../color.hpp"
+#include "color.hpp"
+#include "system.hpp"
 #include "location_provider.hpp"
 #include <iostream>
 #include <charconv>
@@ -44,36 +45,15 @@ void diagnostic_manager::show(diagnostic const& d)
 
     if (d.type.is_warning())
     {
-        if (has_color)
-        {
-            os << apply_color("[WARNING] ", color::red | color::green | color::bright | color::bold);
-        }
-        else
-        {
-            os << "[WARNING] ";
-        }
+        print_color("[WARNING] ", has_color, os, color::red | color::green | color::bright | color::bold);
     }
     else if (d.type.is_error())
     {
-        if (has_color)
-        {
-            os << apply_color("[ERROR] ", color::red | color::bright | color::bold);
-        }
-        else
-        {
-            os << "[ERROR] ";
-        }
+        print_color("[ERROR] ", has_color, os, color::red | color::bright | color::bold);
     }
     else if (d.type.is_note())
     {
-        if (has_color)
-        {
-            os << apply_color("[NOTE] ", color::green | color::blue | color::bright | color::bold);
-        }
-        else
-        {
-            os << "[NOTE] ";
-        }
+        print_color("[NOTE] ", has_color, os, color::green | color::blue | color::bright | color::bold);
     }
 
     os << d.msg;
@@ -103,14 +83,7 @@ void diagnostic_manager::show(diagnostic const& d)
                 os << "\n    | \n";
             }
 
-            if (has_color)
-            {
-                os << apply_color(get_spacing(tloc.line + 1, '>'), color::red | color::green | color::bright | color::bold);
-            }
-            else
-            {
-                os << get_spacing(tloc.line + 1, '>');
-            }
+            print_color(get_spacing(tloc.line + 1, '>'), has_color, os, color::red | color::green | color::bright | color::bold);
             os << replace_tabs(current_source->at(tloc.line));
             os << '\n';
 
@@ -133,14 +106,7 @@ void diagnostic_manager::show(diagnostic const& d)
                     else
                         indentation += '^';
                 }
-                if (has_color)
-                {
-                    os << apply_color(std::move(indentation), color::green | color::bright);
-                }
-                else
-                {
-                    os << indentation;
-                }
+                print_color(indentation, has_color, os, color::green | color::bright);
                 os << '\n';
             }
             if (tloc.line + 1 < current_source->size() && is_important(current_source->at(tloc.line + 1)))
@@ -157,3 +123,11 @@ void diagnostic_manager::show(diagnostic const& d)
         }
     }
 }
+
+#ifdef __CHIRP_UNREACHABLE_AVAILABLE
+[[noreturn]]void __chirp_unreachable(char const* message)
+{
+    std::cerr << "\nUnreachable code has been reached: " << message << '\n';
+    std::abort();
+}
+#endif

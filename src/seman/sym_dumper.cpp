@@ -1,5 +1,4 @@
 #include "sym_dumper.hpp"
-#include "../color.hpp"
 
 constexpr color c_color_decl = color::green | color::bright | color::bold;
 constexpr color c_color_identifier = color::blue | color::bright;

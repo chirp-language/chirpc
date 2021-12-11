@@ -6,6 +6,7 @@ All possible AST nodes are defined here
 */
 #include "types.hpp"
 #include "../shared/location_provider.hpp"
+#include "../shared/system.hpp"
 #include <string>
 #include <vector>
 #include <memory>

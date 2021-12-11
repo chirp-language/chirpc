@@ -4,7 +4,7 @@ This should be overhaul, rn this is very hacky.
 */
 #pragma once
 
-#include <iostream>
+#include <ostream>
 
 enum class color
 {
@@ -26,4 +26,28 @@ constexpr color operator&(color a, color b)
     return static_cast<color>(static_cast<unsigned>(a) & static_cast<unsigned>(b));
 }
 
-std::string apply_color(std::string txt, color c);
+void begin_color(std::ostream& os, color clr);
+void end_color(std::ostream& os);
+
+struct color_scope
+{
+    bool use_color;
+    std::ostream& os;
+    color_scope(bool use_color, std::ostream& os, color clr)
+        : use_color(use_color), os(os)
+    {
+        if (use_color)
+            begin_color(os, clr);
+    }
+    ~color_scope()
+    {
+        if (use_color)
+            end_color(os);
+    }
+};
+
+inline void print_color(std::string const& txt, bool use_color, std::ostream& os, color clr)
+{
+    color_scope cs(use_color, os, clr);
+    os << txt;
+}

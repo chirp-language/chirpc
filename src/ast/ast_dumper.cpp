@@ -1,5 +1,4 @@
 #include "ast_dumper.hpp"
-#include "../color.hpp"
 
 #include <iostream>
 #include <queue>
@@ -13,6 +12,7 @@ constexpr color c_color_top_level = color::blue | color::bright | color::bold;
 constexpr color c_color_top_level_unavail = color::red | color::bright | color::bold;
 constexpr color c_color_type = color::green;
 constexpr color c_color_type_cat = color::green | color::blue;
+constexpr color c_color_type_error = color::red | color::bright | color::bold;
 constexpr color c_color_expr = color::blue | color::bright | color::bold;
 constexpr color c_color_decl = color::green | color::bright | color::bold;
 constexpr color c_color_stmt = color::red | color::blue | color::bright | color::bold;
@@ -25,40 +25,6 @@ void text_dumper_base::indent(int depth)
         std::cout << ' ';
 }
 
-void text_dumper_base::write_color(std::string txt, color c) {
-    begin_color(c);
-    std::cout << txt;
-    end_color();
-}
-
-void text_dumper_base::begin_color(color c)
-{
-    if (has_colors) {
-        #ifdef __unix__
-        // Doesn't care if it's on a VT100 terminal or not
-        // will do coloring anyway.
-        std::cout << "\033[";
-        unsigned int col = static_cast<unsigned int>(c);
-        if ((c & color::bright) != color::blank)
-            std::cout << (90 + (col & 7));
-        else
-            std::cout << (30 + (col & 7));
-        if ((c & color::bold) != color::blank)
-            std::cout << ";1";
-        std::cout << 'm';
-        #endif
-    }
-}
-
-void text_dumper_base::end_color()
-{
-    if (has_colors) {
-        #ifdef __unix__
-        std::cout << "\033[m";
-        #endif
-    }
-}
-
 void text_ast_dumper::print_location(location_range loc) {
     if (loc_prov)
         write_color(loc_prov->print_loc(loc), c_color_location);
@@ -67,7 +33,7 @@ void text_ast_dumper::print_location(location_range loc) {
 }
 
 // I don't even care about names now
-static std::string dump_dtname(dtypename n)
+static char const* dump_dtname(dtypename n)
 {
     switch (n)
     {
@@ -87,12 +53,11 @@ static std::string dump_dtname(dtypename n)
         return "bool";
     case dtypename::_none:
         return "none";
-    default:
-        return "unknown";
     }
+    chirp_unreachable("dump_dtname");
 }
 
-static std::string dump_dtmod(dtypemod m)
+static char const* dump_dtmod(dtypemod m)
 {
     switch (m)
     {
@@ -106,12 +71,11 @@ static std::string dump_dtmod(dtypemod m)
         return "const";
     case dtypemod::_func:
         return "func";
-    default:
-        return "<invalid mod>";
     }
+    chirp_unreachable("dump_dtmod");
 }
 
-static std::string dump_exprcat(exprcat c)
+static char const* dump_exprcat(exprcat c)
 {
     switch (c)
     {
@@ -124,10 +88,10 @@ static std::string dump_exprcat(exprcat c)
         case exprcat::error:
             return "error";
     }
-    __builtin_unreachable();
+    chirp_unreachable("dump_exprcat");
 }
 
-std::string exprop_id(tkn_type op)
+char const* exprop_id(tkn_type op)
 {
     switch (op)
     {
@@ -385,7 +349,12 @@ void text_ast_dumper::dump_expr_type(basic_type const& type, exprcat cat)
 {
     indent(depth);
     std::cout << "expr_type ";
-    write_color(dump_exprcat(cat), c_color_type_cat);
+    if (cat == exprcat::error or cat == exprcat::unset)
+        begin_color(c_color_type_error);
+    else
+        begin_color(c_color_type_cat);
+    std::cout << dump_exprcat(cat);
+    end_color();
     std::cout << ' ';
     // Remember that order is reversed
     for (auto it = type.exttp.rbegin(), end = type.exttp.rend(); it != end; ++it)

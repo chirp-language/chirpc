@@ -5,7 +5,6 @@
 
 #include "location.hpp"
 #include "location_provider.hpp"
-#include "../cmd.hpp"
 #include <vector>
 #include <string>
 
@@ -110,6 +109,7 @@ public:
     std::vector<std::string> const* current_source = nullptr;
 };
 
-inline void diagnostic::report(diagnostic_manager& mng) && {
+inline void diagnostic::report(diagnostic_manager& mng) &&
+{
     mng.show(*this);
 }

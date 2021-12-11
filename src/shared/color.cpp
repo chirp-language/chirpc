@@ -1,23 +1,25 @@
 #include "color.hpp"
 
-std::string apply_color(std::string txt, color c) {
+void begin_color(std::ostream& os, color clr)
+{
 	#ifdef __unix__
-	std::string result;
 	// Doesn't care if it's on a VT100 terminal or not
 	// will do coloring anyway.
-	result += "\033[";
-	unsigned int col = static_cast<unsigned int>(c);
-	if ((c & color::bright) != color::blank)
-		result += std::to_string(90 + (col & 7));
+	os << "\033[";
+	unsigned int col = static_cast<unsigned int>(clr);
+	if ((clr & color::bright) != color::blank)
+		os << (90 + (col & 7));
 	else
-		result += std::to_string(30 + (col & 7));
-	if ((c & color::bold) != color::blank)
-		result += ";1";
-	result += 'm';
-    result += txt;
-	result += "\033[m";
-	return result;
-	#else
-	return txt;
+		os << (30 + (col & 7));
+	if ((clr & color::bold) != color::blank)
+		os << ";1";
+	os << 'm';
+	#endif
+}
+
+void end_color(std::ostream& os)
+{
+	#ifdef __unix__
+	os << "\033[m";
 	#endif
 }

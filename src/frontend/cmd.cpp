@@ -19,6 +19,7 @@ void cmd::write_help()
         "\t-dump-syms\tDumps the symbol table of the program\n"
         "\t-dump-syms-all\tDumps the symbol table of the program, including local and unnamed symbols\n"
         "\t-keep-tmp\tKeeps the temporary folder, instead of deleting it after compiling\n"
+        "\t-no-out-gen\tDon't emit an output file, only check program for correctness\n"
         "\t-show-unresolved-refs\tShow warnings whether an undefined symbol is referenced"
             "(no longer needed since semantic analysis already reports errors; currently no-op)\n"
         "\t-show-expr-types\tShow types in expressions (effective during an AST dump)\n"
@@ -85,6 +86,10 @@ cmd parse_cmd(int argc, char *argv[])
         else if (std::strcmp(argv[i], "-keep-tmp") == 0)
         {
             c.keep_tmp = true;
+        }
+        else if (std::strcmp(argv[i], "-no-out-gen") == 0)
+        {
+            c.no_outgen = true;
         }
         else if (std::strcmp(argv[i], "-show-unresolved-refs") == 0)
         {

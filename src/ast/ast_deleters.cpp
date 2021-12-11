@@ -23,6 +23,7 @@ void expr_node_deleter::operator()(expr* node) const
 		case expr_kind::cast:
 			return delete static_cast<cast_expr*>(node);
 	}
+	chirp_unreachable("Deleting unknown expr node");
 }
 
 void decl_node_deleter::operator()(decl* node) const
@@ -46,6 +47,7 @@ void decl_node_deleter::operator()(decl* node) const
 		case decl_kind::external:
 			return delete static_cast<extern_decl*>(node);
 	}
+	chirp_unreachable("Deleting unknown decl node");
 }
 
 void stmt_node_deleter::operator()(stmt* node) const
@@ -69,4 +71,5 @@ void stmt_node_deleter::operator()(stmt* node) const
 		case stmt_kind::null:
 			return delete static_cast<null_stmt*>(node);
 	}
+	chirp_unreachable("Deleting unknown stmt node");
 }

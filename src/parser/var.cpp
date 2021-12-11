@@ -24,11 +24,7 @@ static dtypename get_dtypename(tkn_type tok)
         default: ;
     }
     // Unknown type token
-    #ifndef NDEBUG
-    std::abort();
-    #else
-    __builtin_unreachable();
-    #endif
+    chirp_unreachable("get_dtypename");
 }
 
 static dtypemod get_dtypemod(tkn_type tok)
@@ -47,11 +43,7 @@ static dtypemod get_dtypemod(tkn_type tok)
         default: ;
     }
     // Unknown type token
-    #ifndef NDEBUG
-    std::abort();
-    #else
-    __builtin_unreachable();
-    #endif
+    chirp_unreachable("get_dtypemod");
 }
 
 bool parser::is_datatype()
