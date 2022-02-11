@@ -24,18 +24,19 @@ class ast_root;
 class identifier;
 class raw_qual_identifier;
 class qual_identifier;
+
 class expr;
 class binop;
 class unop;
 class arguments;
 class func_call;
 class id_ref_expr;
-class loperand;
 class string_literal;
 class integral_literal;
 class nullptr_literal;
 class cast_expr;
 class alloca_expr;
+
 class decl;
 class var_decl;
 class entry_decl;
@@ -45,6 +46,7 @@ class namespace_decl;
 class parameters;
 class func_decl;
 class func_def;
+
 class stmt;
 class decl_stmt;
 class assign_stmt;
@@ -246,14 +248,6 @@ class string_literal : public expr
     string_literal() : expr(expr_kind::strlit) {}
 };
 
-struct integer_value
-{
-    int64_t val;
-
-    integer_value() = default;
-    constexpr integer_value(int64_t v) : val(v) {}
-};
-
 class integral_literal : public expr
 {
     public:
@@ -335,15 +329,6 @@ class decl : public ast_node
 class ast_root : public decl
 {
 public:
-    #if 0
-    // Vectors are in order
-    std::vector<std::unique_ptr<import_decl>> imports;
-    std::vector<std::unique_ptr<extern_decl>> externs;
-    std::vector<std::unique_ptr<namespace_decl>> nspaces;
-    std::vector<std::unique_ptr<func_decl>> fdecls;
-    std::vector<std::unique_ptr<func_def>> fdefs;
-    std::unique_ptr<entry_decl> entry;
-    #endif
     std::vector<declh> top_decls;
     entry_decl* entry = nullptr;
 

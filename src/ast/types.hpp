@@ -1,4 +1,5 @@
 /*
+Type system v.1
 Contains an enum for each base datatypes, could be in ast.hpp, but
 since it's not an ast_node, I prefer having it here
 */
@@ -114,4 +115,12 @@ struct basic_type
     {
         return !operator==(o);
     }
+};
+
+struct integer_value
+{
+    int64_t val;
+
+    integer_value() = default;
+    constexpr integer_value(int64_t v) : val(v) {}
 };
