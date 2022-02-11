@@ -90,7 +90,7 @@ entry
 	const int: my_string_size = my_string_end - my_string + 1;
 	ptr char: my_heap_str = mem.alloc(my_string_size);
 	memcpy(my_heap_str, my_string, my_string_size);
-	ptr char: a = alloca 3 as(ptr char);
+	ptr char: a = alloca(char) 3;
 	deref a = 'h';
 	deref (a + 1) = 'i';
 	deref (a + 2) = 0;

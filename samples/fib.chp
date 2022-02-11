@@ -54,14 +54,14 @@ namespace io
 
 entry
 {
-	ptr char: small_buf = (alloca 5) as(ptr char);
+	ptr char: small_buf = alloca(char) 5;
 	unsigned long: buf_size = 5;
 	unsigned long: value = fib(5);
 	unsigned long: size = io.ulong_to_string(value, small_buf, buf_size);
 	if size > buf_size
 	{
 		buf_size = size;
-		small_buf = (alloca buf_size) as(ptr char);
+		small_buf = alloca(char) buf_size;
 		io.ulong_to_string(value, small_buf, buf_size);
 	}
 	io.write("Result of fib(5): ");
@@ -71,7 +71,7 @@ entry
 	if size > buf_size
 	{
 		buf_size = size;
-		small_buf = (alloca buf_size) as(ptr char);
+		small_buf = alloca(char) buf_size;
 		io.ulong_to_string(value, small_buf, buf_size);
 	}
 	io.write("Result of fib(50): ");
