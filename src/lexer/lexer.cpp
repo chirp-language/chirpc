@@ -1,5 +1,7 @@
 #include "lexer.hpp"
 
+#include "../shared/system.hpp"
+
 #include <iostream>
 #include <string_view>
 
@@ -143,18 +145,18 @@ std::vector<location> lexer::preprocess(std::vector<location> const& raw_tokens)
     platform target_platform;
 
 // Note: Linux should always be before the Unix macro
-#if defined(_WIN64) || defined(_WIN32) || defined(__WINDOWS__)
+#if CHIRP_SUBPLATFORM == CHIRP_PLATFORMID_WINNT
     target_platform = platform::WINDOWS;
-#elif defined(__linux) || defined(linux) || defined(__linux__)
+#elif CHIRP_SUBPLATFORM == CHIRP_PLATFORMID_LINUX
     target_platform = platform::LINUX;
-#elif defined(__DragonFly__) || defined(__FreeBSD)
+#elif CHIRP_SUBPLATFORM == CHIRP_PLATFORMID_BSD
     target_platform = platform::BSD;
-#elif defined(__APPLE__) || defined(macintosh) || defined(__MACH__)
+#elif CHIRP_SUBPLATFORM == CHIRP_PLATFORMID_APPLE
     target_platform = platform::OSX;
-#elif defined(__unix) || defined(unix)
+#elif CHIRP_SUBPLATFORM == CHIRP_PLATFORMID_UNIX
     target_platform = platform::UNIX;
 #else
-    target_platform = platform::UNKOWN;
+    target_platform = platform::UNKNOWN;
 #endif
 
     std::vector<location> result;
