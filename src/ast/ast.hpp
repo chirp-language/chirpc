@@ -35,6 +35,7 @@ class string_literal;
 class integral_literal;
 class nullptr_literal;
 class cast_expr;
+class alloca_expr;
 class decl;
 class var_decl;
 class entry_decl;
@@ -156,6 +157,7 @@ enum class expr_kind
     intlit,
     nulllit,
     cast,
+    alloca,
 };
 
 class expr : public ast_node
@@ -289,6 +291,16 @@ class cast_expr : public expr
 
     cast_expr(cast_kind ckind)
         : expr(expr_kind::cast), ckind(ckind) {}
+};
+
+class alloca_expr : public expr
+{
+    public:
+    basic_type alloc_type;
+    exprh size;
+
+    alloca_expr(basic_type type, exprh size)
+        : expr(expr_kind::alloca), alloc_type(std::move(type)), size(std::move(size)) {}
 };
 
 // === Declarations ===

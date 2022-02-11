@@ -40,6 +40,7 @@ class analyser
 	void visit_integral_literal(integral_literal&);
 	void visit_nullptr_literal(nullptr_literal&);
 	void visit_cast_expr(cast_expr&);
+	void visit_alloca_expr(alloca_expr&);
 	// Used to obtain a value ready for operations, by converting to rval and removing const
 	exprh convert_to_rvalue(exprh source);
 	// Converts to rvalue, then integral types -> int or long

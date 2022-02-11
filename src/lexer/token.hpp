@@ -49,11 +49,11 @@ enum class tkn_type
     compassign_op, // #= where the next token corresponds to the operation
     lt_op, gt_op, lteq_op, gteq_op, eqeq_op, noteq_op, // > < <= >= == !=
     plus_op, minus_op, star_op, slash_op, perc_op, // + - * / %
-    as_op, // as
     cmp_S = lt_op,
     cmp_E = noteq_op,
     binop_S = lt_op,
-    binop_E = as_op,
+    binop_E = perc_op,
+    as_op, // as
     ref_op, deref_op, // ref deref (unary)
     // + & - can be unary
     lparen, rparen, // ( )

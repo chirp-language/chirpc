@@ -43,6 +43,8 @@ void analyser::visit_expr(expr& node)
 			return visit_nullptr_literal(static_cast<nullptr_literal&>(node));
 		case expr_kind::cast:
 			return visit_cast_expr(static_cast<cast_expr&>(node));
+		case expr_kind::alloca:
+			return visit_alloca_expr(static_cast<alloca_expr&>(node));
 	}
 }
 
@@ -315,26 +317,6 @@ void analyser::visit_unop(unop& node)
 			node.type = node.operand->type;
 			node.type.exttp.pop_back();
 			break;
-		case tkn_type::kw_alloca:
-		{
-			basic_type size_type(dtypename::_long);
-			size_type.exttp.push_back(dtypemod::_unsigned);
-			// Type checking finally is in place!
-			auto promoted_expr = perform_implicit_conversions(
-				std::move(node.operand), size_type, exprcat::rval);
-			if (promoted_expr->cat == exprcat::error)
-			{
-				node.cat = exprcat::error;
-			}
-			else
-			{
-				node.cat = exprcat::rval;
-				node.type.basetp = dtypename::_none;
-				node.type.exttp.push_back(dtypemod::_ptr);
-			}
-			node.operand = std::move(promoted_expr);
-			break;
-		}
 		default:
 			chirp_unreachable("visit_unop");
 	}
@@ -432,6 +414,27 @@ void analyser::visit_cast_expr(cast_expr& node)
 {
 	// Category & type already set
 	visit_expr(*node.operand);
+}
+
+void analyser::visit_alloca_expr(alloca_expr& node)
+{
+	basic_type size_type(dtypename::_long);
+	size_type.exttp.push_back(dtypemod::_unsigned);
+	auto promoted_size = perform_implicit_conversions(
+		std::move(node.size), size_type, exprcat::rval);
+	if (promoted_size->cat == exprcat::error)
+	{
+		node.cat = exprcat::error;
+	}
+	else
+	{
+		node.cat = exprcat::rval;
+		node.type.basetp = dtypename::_none;
+		node.type.exttp.push_back(dtypemod::_ptr);
+	}
+	node.size = std::move(promoted_size);
+	node.type = node.alloc_type;
+	node.type.exttp.push_back(dtypemod::_ptr);
 }
 
 exprh analyser::convert_to_rvalue(exprh source)

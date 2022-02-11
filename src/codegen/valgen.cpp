@@ -146,10 +146,6 @@ std::string codegen::emit_unop(unop const& node)
         case tkn_type::deref_op:
             result += "*";
             break;
-        case tkn_type::kw_alloca:
-            // It just works, source: trust me
-            result += "__builtin_alloca";
-            break;
         default:
             result += exprop_id(node.op);
     }
@@ -157,6 +153,22 @@ std::string codegen::emit_unop(unop const& node)
     result += "(";
     result += emit_expr(*node.operand);
     result += ")";
+
+    return result;
+}
+
+std::string codegen::emit_alloca_expr(alloca_expr const& node)
+{
+    std::string result;
+
+    // It just works, source: trust me
+    result += "(";
+    result += emit_datatype(node.type);
+    result += ")__builtin_alloca((";
+    result += emit_expr(*node.size);
+    result += ")*sizeof(";
+    result += emit_datatype(node.alloc_type);
+    result += "))";
 
     return result;
 }
@@ -192,6 +204,8 @@ std::string codegen::emit_expr(expr const& node)
             return emit_nullptr_literal(static_cast<nullptr_literal const&>(node));
         case expr_kind::cast:
             return emit_cast_expr(static_cast<cast_expr const&>(node));
+        case expr_kind::alloca:
+            return emit_alloca_expr(static_cast<alloca_expr const&>(node));
     }
     #ifndef NDEBUG
     return "\n#error Bad expression, this is a bug\n";
