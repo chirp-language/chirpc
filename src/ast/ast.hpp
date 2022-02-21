@@ -6,8 +6,8 @@ All possible AST nodes are defined here
 */
 #include "types.hpp"
 #include "../shared/location_provider.hpp"
+#include "../shared/system.hpp"
 #include <string>
-#include <vector>
 #include <memory>
 // === SHARED ===
 
@@ -18,20 +18,25 @@ public:
 };
 
 // Forward declarations
+class tracker_symbol;
+
 class ast_root;
 class identifier;
+class raw_qual_identifier;
 class qual_identifier;
+
 class expr;
 class binop;
 class unop;
 class arguments;
 class func_call;
 class id_ref_expr;
-class loperand;
 class string_literal;
 class integral_literal;
 class nullptr_literal;
 class cast_expr;
+class alloca_expr;
+
 class decl;
 class var_decl;
 class entry_decl;
@@ -41,6 +46,7 @@ class namespace_decl;
 class parameters;
 class func_decl;
 class func_def;
+
 class stmt;
 class decl_stmt;
 class assign_stmt;
@@ -126,12 +132,17 @@ class identifier : public ast_node
     }
 };
 
-class qual_identifier : public ast_node
+class raw_qual_identifier
 {
     public:
     // The parts vector for a.b.c.foo() would be:
     // {"a","b","c","foo"}.. Further in vector => More nested
     std::vector<identifier> parts;
+};
+
+class qual_identifier : public ast_node, public raw_qual_identifier
+{
+    public:
     bool is_global = false; // Start at global namespace
 };
 
@@ -148,35 +159,7 @@ enum class expr_kind
     intlit,
     nulllit,
     cast,
-};
-
-enum class exprcat
-{
-    unset, // unknown/unassigned type
-    lval, // lvalue, i.e. has memory location
-    rval, // rvalue, i.e. a pure value (not tied to any object, can be used as an operand)
-    error, // result of an invalid operation
-};
-
-struct basic_type
-{
-    // Type modifiers 'exttp' are stored in reverse order of declaration, for easier manipulation
-    // For example, `ptr unsigned char` -> basic_type { .basetp = _char, .exttp = [_unsigned, _ptr] }
-    dtypename basetp; // The basic type specifier
-    std::vector<std::byte> exttp; // Enums are cast to/from a byte bc why not
-
-    basic_type()
-        : basetp(dtypename::_none) {}
-    
-    bool operator==(basic_type const& o) const
-    {
-        return basetp == o.basetp and exttp == o.exttp;
-    }
-
-    bool operator!=(basic_type const& o) const
-    {
-        return !operator==(o);
-    }
+    alloca,
 };
 
 class expr : public ast_node
@@ -187,6 +170,11 @@ class expr : public ast_node
     expr_kind kind;
     basic_type type;
     exprcat cat;
+
+    bool has_error() const
+    {
+        return cat == exprcat::error;
+    }
 
     protected:
     expr(expr_kind kind)
@@ -234,17 +222,6 @@ public:
         : expr(expr_kind::call), callee(std::move(callee)), args(std::move(args)) {}
 };
 
-// Left-Side stuff
-
-// Left Side Operand type
-
-enum class loptype
-{
-    access, // Array Accessor []
-    ident,
-    lunop, // left unary operator
-};
-
 class id_ref_expr : public expr
 {
     public:
@@ -263,29 +240,12 @@ class id_ref_expr : public expr
     }
 };
 
-#if 0
-class loperand : public expr
-{
-    public:
-    std::unique_ptr<ast_node> node;
-    loptype type;
-};
-#endif
-
 class string_literal : public expr
 {
     public:
     std::string value;
 
     string_literal() : expr(expr_kind::strlit) {}
-};
-
-struct integer_value
-{
-    int64_t val;
-
-    integer_value() = default;
-    constexpr integer_value(int64_t v) : val(v) {}
 };
 
 class integral_literal : public expr
@@ -305,12 +265,36 @@ class nullptr_literal : public expr
     nullptr_literal() : expr(expr_kind::nulllit) {}
 };
 
+enum class cast_kind
+{
+    _invalid,  // Invalid cast operation
+    _explicit, // Cast spelled in the program, (expression) as(type)
+    _const,    // Cast between const-qualified and non-const-qualified types
+    _grade,    // Cast between types of different sizes/characteristics
+    _sign,     // Cast between integral types of different signs (signed, unsigned, unspecified)
+    _cat,      // Value category conversion
+    _float,    // Floating point conversion, between floats and ints
+    _bool,     // Boolean conversion
+};
+
 class cast_expr : public expr
 {
     public:
     exprh operand;
+    cast_kind ckind;
 
-    cast_expr() : expr(expr_kind::cast) {}
+    cast_expr(cast_kind ckind)
+        : expr(expr_kind::cast), ckind(ckind) {}
+};
+
+class alloca_expr : public expr
+{
+    public:
+    basic_type alloc_type;
+    exprh size;
+
+    alloca_expr(basic_type type, exprh size)
+        : expr(expr_kind::alloca), alloc_type(std::move(type)), size(std::move(size)) {}
 };
 
 // === Declarations ===
@@ -332,7 +316,11 @@ class decl : public ast_node
     public:
     using node_base = decl; // For node type identification
 
+    decl(decl const&) = delete;
+    decl& operator=(decl const&) = delete;
+
     decl_kind kind;
+    tracker_symbol* symbol = nullptr; // Assiociated symbol
 
     protected:
     decl(decl_kind kind) : kind(kind) {}
@@ -341,15 +329,6 @@ class decl : public ast_node
 class ast_root : public decl
 {
 public:
-    #if 0
-    // Vectors are in order
-    std::vector<std::unique_ptr<import_decl>> imports;
-    std::vector<std::unique_ptr<extern_decl>> externs;
-    std::vector<std::unique_ptr<namespace_decl>> nspaces;
-    std::vector<std::unique_ptr<func_decl>> fdecls;
-    std::vector<std::unique_ptr<func_def>> fdefs;
-    std::unique_ptr<entry_decl> entry;
-    #endif
     std::vector<declh> top_decls;
     entry_decl* entry = nullptr;
 
@@ -386,6 +365,7 @@ class extern_decl : public decl
 {
     public:
     std::string real_name;
+    token_location name_loc;
     declh inner_decl;
 
     extern_decl() : decl(decl_kind::external) {}
@@ -448,6 +428,9 @@ class stmt : public ast_node
 {
     public:
     using node_base = stmt; // For node type identification
+
+    stmt(stmt const&) = delete;
+    stmt& operator=(stmt const&) = delete;
 
     // There's a bunch of them so gotta make another enum smh
     stmt_kind kind;

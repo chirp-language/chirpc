@@ -1,6 +1,7 @@
 #include "frontend.hpp"
 
 #include "fs.hpp"
+#include "os.hpp"
 
 void frontend::make_tmp_folder()
 {
@@ -12,26 +13,44 @@ bool frontend::find_compiler()
     this->has_gcc = false;
     this->has_clang = false;
 
-    #if defined(__unix__) || defined(__APPLE_CC__)
-    // This is utterly terrible
-    if (system("which gcc > /dev/null 2>&1") == 0)
+    #if defined(CHIRP_PLATFORM_UNIX)
+    // This is slightly less utterly terrible
+    char const* cmd[] = {"which", /* prog */nullptr, nullptr};
+    file_open_descriptor descs[] = {
+        {0, OS_FILE_DEVNULL},
+        {1, OS_FILE_DEVNULL},
+        {2, OS_FILE_DEVNULL},
+        {-1, -1}
+    };
+    cmd[1] = "gcc";
+    if (proc_exec(cmd, descs) == 0)
     {
         this->has_gcc = true;
         return true;
     }
-    else if (system("which clang > /dev/null 2>&1") == 0)
+    cmd[1] = "clang";
+    if (proc_exec(cmd, descs) == 0)
     {
         this->has_clang = true;
         return true;
     }
-    #elif defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-    // This is utterly terrible
-    if (system("where.exe gcc > nul") == 0)
+    #elif defined(CHIRP_PLATFORM_WINNT)
+    // This is slightly less utterly terrible
+    char const* cmd[] = {"where", /* prog */nullptr, nullptr};
+    file_open_descriptor descs[] = {
+        {0, OS_FILE_DEVNULL},
+        {1, OS_FILE_DEVNULL},
+        {2, OS_FILE_DEVNULL},
+        {-1, -1}
+    };
+    cmd[1] = "gcc";
+    if (proc_exec(cmd, descs) == 0)
     {
         this->has_gcc = true;
         return true;
     }
-    else if (system("where.exe clang > nul") == 0)
+    cmd[1] = "clang";
+    if (proc_exec(cmd, descs) == 0)
     {
         this->has_clang = true;
         return true;

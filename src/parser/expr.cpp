@@ -34,6 +34,7 @@ static int get_operator_precedence(tkn_type op)
         case tkn_type::deref_op:
             return static_cast<int>(precedence_class::ref);
         case tkn_type::as_op:
+        case tkn_type::kw_alloca:
             return static_cast<int>(precedence_class::as);
         case tkn_type::star_op:
         case tkn_type::slash_op:
@@ -87,7 +88,8 @@ exprh parser::parse_subexpr_op(exprh lhs, int max_prec)
             basic_type newtp = parse_datatype();
             if (has_paren)
                 expect(tkn_type::rparen);
-            auto ecast = new_node<cast_expr>();
+            auto ecast = new_node<cast_expr>(cast_kind::_explicit);
+            ecast->loc = location_range(lhs->loc.begin, loc_peekb());
             ecast->operand = std::move(lhs);
             ecast->type = std::move(newtp);
             ecast->cat = exprcat::rval;
@@ -117,6 +119,21 @@ exprh parser::parse_unary_expr()
             // Integral promotion (for now, no-op)
             skip();
             return parse_unary_expr();
+        case tkn_type::kw_alloca: // Huehuehue
+        {
+            auto lop = loc_peek();
+            basic_type type = dtypename::_byte;
+            skip();
+            if (match(tkn_type::lparen)) {
+                type = parse_datatype();
+                expect(tkn_type::rparen);
+            }
+            exprh size = parse_unary_expr();
+            auto lend = size->loc.end;
+            auto node = new_node<alloca_expr>(std::move(type), std::move(size));
+            node->loc = location_range(lop, lend);
+            return node;
+        }
         case tkn_type::minus_op: // Negation
         case tkn_type::ref_op:   // Address-of
         case tkn_type::deref_op: // Dereference

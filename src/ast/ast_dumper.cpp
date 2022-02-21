@@ -1,6 +1,4 @@
 #include "ast_dumper.hpp"
-#include "../color.hpp"
-#include "ast.hpp"
 
 #include <iostream>
 #include <queue>
@@ -14,41 +12,17 @@ constexpr color c_color_top_level = color::blue | color::bright | color::bold;
 constexpr color c_color_top_level_unavail = color::red | color::bright | color::bold;
 constexpr color c_color_type = color::green;
 constexpr color c_color_type_cat = color::green | color::blue;
+constexpr color c_color_type_error = color::red | color::bright | color::bold;
 constexpr color c_color_expr = color::blue | color::bright | color::bold;
 constexpr color c_color_decl = color::green | color::bright | color::bold;
 constexpr color c_color_stmt = color::red | color::blue | color::bright | color::bold;
 constexpr color c_color_identifier = color::blue | color::bright;
 constexpr color c_color_location = color::red | color::green;
 
-static std::string indent(int x)
+void text_dumper_base::indent(int depth)
 {
-    std::string result;
-    result.resize(x * 3, ' ');
-    return result;
-}
-
-void text_ast_dumper::write_color(std::string txt, color c) {
-    if (has_colors) {
-        #ifdef __unix__
-        // Doesn't care if it's on a VT100 terminal or not
-        // will do coloring anyway.
-        std::cout << "\033[";
-        unsigned int col = static_cast<unsigned int>(c);
-        if ((c & color::bright) != color::blank)
-            std::cout << (90 + (col & 7));
-        else
-            std::cout << (30 + (col & 7));
-        if ((c & color::bold) != color::blank)
-            std::cout << ";1";
-        std::cout << 'm';
-        #endif
-    }
-    std::cout << txt;
-    if (has_colors) {
-        #ifdef __unix__
-        std::cout << "\033[m";
-        #endif
-    }
+    for (int i = 0; i < depth * 3; ++i)
+        std::cout << ' ';
 }
 
 void text_ast_dumper::print_location(location_range loc) {
@@ -59,7 +33,7 @@ void text_ast_dumper::print_location(location_range loc) {
 }
 
 // I don't even care about names now
-static std::string dump_dtname(dtypename n)
+static char const* dump_dtname(dtypename n)
 {
     switch (n)
     {
@@ -79,12 +53,11 @@ static std::string dump_dtname(dtypename n)
         return "bool";
     case dtypename::_none:
         return "none";
-    default:
-        return "unknown";
     }
+    chirp_unreachable("dump_dtname");
 }
 
-static std::string dump_dtmod(dtypemod m)
+static char const* dump_dtmod(dtypemod m)
 {
     switch (m)
     {
@@ -98,12 +71,34 @@ static std::string dump_dtmod(dtypemod m)
         return "const";
     case dtypemod::_func:
         return "func";
-    default:
-        return "<invalid mod>";
     }
+    chirp_unreachable("dump_dtmod");
 }
 
-static std::string dump_exprcat(exprcat c)
+static char const* dump_cast_kind(cast_kind k) {
+    switch (k)
+    {
+    case cast_kind::_invalid:
+        return "invalid";
+    case cast_kind::_explicit:
+        return "explicit_cast";
+    case cast_kind::_const:
+        return "const_cast";
+    case cast_kind::_grade:
+        return "grade_cast";
+    case cast_kind::_sign:
+        return "sign_cast";
+    case cast_kind::_cat:
+        return "cat_cast";
+    case cast_kind::_float:
+        return "float_cast";
+    case cast_kind::_bool:
+        return "bool_cast";
+    }
+    chirp_unreachable("dump_cast_kind");
+}
+
+static char const* dump_exprcat(exprcat c)
 {
     switch (c)
     {
@@ -116,10 +111,10 @@ static std::string dump_exprcat(exprcat c)
         case exprcat::error:
             return "error";
     }
-    __builtin_unreachable();
+    chirp_unreachable("dump_exprcat");
 }
 
-std::string exprop_id(tkn_type op)
+char const* exprop_id(tkn_type op)
 {
     switch (op)
     {
@@ -151,6 +146,8 @@ std::string exprop_id(tkn_type op)
         return "ref";
     case tkn_type::deref_op:
         return "deref";
+    case tkn_type::kw_alloca:
+        return "alloca";
     // Assignments
     case tkn_type::assign_op:
         return "=";
@@ -166,6 +163,9 @@ std::string exprop_id(tkn_type op)
 
 void text_ast_dumper::dump_ast(ast_root const& root)
 {
+    location_run run;
+    if (loc_prov)
+        loc_prov->begin_run(run);
     write_color("Top Level:\n", c_color_top_level);
 
     #if 0
@@ -254,11 +254,13 @@ void text_ast_dumper::dump_ast(ast_root const& root)
     else {
         write_color("-- No entry --\n", c_color_top_level_unavail);
     }
+    if (loc_prov)
+        loc_prov->end_run();
 }
 
 void text_ast_dumper::dump_identifier(identifier const& n)
 {
-    std::cout << indent(depth);
+    indent(depth);
     write_color("identifier ", c_color_identifier);
     print_location(n.loc);
     std::cout << ' ' << n.name;
@@ -267,15 +269,15 @@ void text_ast_dumper::dump_identifier(identifier const& n)
 
 void text_ast_dumper::dump_qual_identifier(qual_identifier const& n)
 {
-    std::cout << indent(depth);
+    indent(depth);
     write_color("qual_identifier ", c_color_identifier);
     print_location(n.loc);
     std::cout << ' ';
-    int i = 0;
+    int i = 0, len = n.parts.size();
     for (auto const& id : n.parts)
     {
         std::cout << id.name;
-        if (++i != n.parts.size())
+        if (++i != len)
         {
             std::cout << ".";
         }
@@ -358,13 +360,12 @@ void text_ast_dumper::dump_stmt(stmt const& node)
 
 void text_ast_dumper::dump_basic_type(basic_type const& type)
 {
-    std::cout << indent(depth);
+    indent(depth);
     std::cout << "basic_type ";
     // Remember that order is reversed
     for (auto it = type.exttp.rbegin(), end = type.exttp.rend(); it != end; ++it)
     {
-        dtypemod w = static_cast<dtypemod>(*it);
-        write_color(dump_dtmod(w), c_color_type);
+        write_color(dump_dtmod(*it), c_color_type);
         std::cout << ' ';
     }
     write_color(dump_dtname(type.basetp), c_color_type);
@@ -373,15 +374,19 @@ void text_ast_dumper::dump_basic_type(basic_type const& type)
 
 void text_ast_dumper::dump_expr_type(basic_type const& type, exprcat cat)
 {
-    std::cout << indent(depth);
+    indent(depth);
     std::cout << "expr_type ";
-    write_color(dump_exprcat(cat), c_color_type_cat);
+    if (cat == exprcat::error or cat == exprcat::unset)
+        begin_color(c_color_type_error);
+    else
+        begin_color(c_color_type_cat);
+    std::cout << dump_exprcat(cat);
+    end_color();
     std::cout << ' ';
     // Remember that order is reversed
     for (auto it = type.exttp.rbegin(), end = type.exttp.rend(); it != end; ++it)
     {
-        dtypemod w = static_cast<dtypemod>(*it);
-        write_color(dump_dtmod(w), c_color_type);
+        write_color(dump_dtmod(*it), c_color_type);
         std::cout << ' ';
     }
     write_color(dump_dtname(type.basetp), c_color_type);
@@ -390,7 +395,7 @@ void text_ast_dumper::dump_expr_type(basic_type const& type, exprcat cat)
 
 void text_ast_dumper::dump_binop(binop const& n)
 {
-    std::cout << indent(depth);
+    indent(depth);
     write_color("binop ", c_color_expr);
     print_location(n.loc);
     std::cout << " (";
@@ -408,7 +413,7 @@ void text_ast_dumper::dump_binop(binop const& n)
 
 void text_ast_dumper::dump_unop(unop const& n)
 {
-    std::cout << indent(depth);
+    indent(depth);
     write_color("unop ", c_color_expr);
     print_location(n.loc);
     std::cout << " (";
@@ -425,7 +430,7 @@ void text_ast_dumper::dump_unop(unop const& n)
 
 void text_ast_dumper::dump_arguments(arguments const& n)
 {
-    std::cout << indent(depth);
+    indent(depth);
     write_color("arguments ", c_color_expr);
     print_location(n.loc);
     std::cout << '\n';
@@ -439,7 +444,7 @@ void text_ast_dumper::dump_arguments(arguments const& n)
 
 void text_ast_dumper::dump_func_call(func_call const& n)
 {
-    std::cout << indent(depth);
+    indent(depth);
     write_color("function_call ", c_color_expr);
     print_location(n.loc);
     std::cout << '\n';
@@ -453,7 +458,7 @@ void text_ast_dumper::dump_func_call(func_call const& n)
 
 void text_ast_dumper::dump_id_ref_expr(id_ref_expr const& n)
 {
-    std::cout << indent(depth);
+    indent(depth);
     write_color("id_ref_expr ", c_color_expr);
     print_location(n.loc);
     std::cout << ' ';
@@ -477,7 +482,7 @@ void text_ast_dumper::dump_id_ref_expr(id_ref_expr const& n)
 
 /*void text_ast_dumper::dump_loperand(loperand const& n)
 {
-    std::cout << indent(depth);
+    indent(depth);
     write_color("left_operand:", c_color_expr);
     print_location(n.loc);
     std::cout << '\n';
@@ -485,7 +490,7 @@ void text_ast_dumper::dump_id_ref_expr(id_ref_expr const& n)
 
 void text_ast_dumper::dump_string_literal(string_literal const& n)
 {
-    std::cout << indent(depth);
+    indent(depth);
     write_color("string_literal ", c_color_expr);
     print_location(n.loc);
     std::cout << " \"";
@@ -502,7 +507,7 @@ void text_ast_dumper::dump_string_literal(string_literal const& n)
 
 void text_ast_dumper::dump_integral_literal(integral_literal const& n)
 {
-    std::cout << indent(depth);
+    indent(depth);
     write_color("integral_literal ", c_color_expr);
     print_location(n.loc);
     std::cout << ' ';
@@ -515,7 +520,7 @@ void text_ast_dumper::dump_integral_literal(integral_literal const& n)
 
 void text_ast_dumper::dump_nullptr_literal(nullptr_literal const& n)
 {
-    std::cout << indent(depth);
+    indent(depth);
     write_color("nullptr_literal ", c_color_expr);
     print_location(n.loc);
     std::cout << '\n';
@@ -529,13 +534,21 @@ void text_ast_dumper::dump_nullptr_literal(nullptr_literal const& n)
 
 void text_ast_dumper::dump_cast_expr(cast_expr const& n)
 {
-    std::cout << indent(depth);
+    indent(depth);
     write_color("cast_expr ", c_color_expr);
     print_location(n.loc);
+    std::cout << ' ';
+    if (n.ckind == cast_kind::_invalid)
+        begin_color(c_color_type_error);
+    else
+        begin_color(c_color_type_cat);
+    std::cout << dump_cast_kind(n.ckind);
+    end_color();
     std::cout << '\n';
     ++depth;
-    // Exception: always print type of a cast expression
-    dump_expr_type(n.type, n.cat);
+    // Exception: always print type of a cast expression, if it's an explicit cast
+    if (show_expr_types or n.ckind == cast_kind::_explicit)
+        dump_expr_type(n.type, n.cat);
     dump_expr(*n.operand);
     --depth;
 }
@@ -544,7 +557,7 @@ void text_ast_dumper::dump_cast_expr(cast_expr const& n)
 
 void text_ast_dumper::dump_var_decl(var_decl const& n)
 {
-    std::cout << indent(depth);
+    indent(depth);
     write_color("variable_declaration ", c_color_decl);
     print_location(n.loc);
     std::cout << '\n';
@@ -558,7 +571,7 @@ void text_ast_dumper::dump_var_decl(var_decl const& n)
 
 void text_ast_dumper::dump_entry_decl(entry_decl const& n)
 {
-    std::cout << indent(depth);
+    indent(depth);
     write_color("entry_declaration ", c_color_decl);
     print_location(n.loc);
     std::cout << ' ';
@@ -571,12 +584,13 @@ void text_ast_dumper::dump_entry_decl(entry_decl const& n)
 
 void text_ast_dumper::dump_import_decl(import_decl const& n)
 {
-    std::cout << indent(depth);
+    indent(depth);
     write_color("import_declaration ", c_color_decl);
     print_location(n.loc);
     std::cout << '\n';
     ++depth;
-    std::cout << indent(depth) << "filename: \"";
+    indent(depth);
+    std::cout << "filename: \"";
     write_color(n.filename, c_color_identifier);
     std::cout << "\"\n";
     --depth;
@@ -584,13 +598,14 @@ void text_ast_dumper::dump_import_decl(import_decl const& n)
 
 void text_ast_dumper::dump_extern_decl(extern_decl const& n)
 {
-    std::cout << indent(depth);
+    indent(depth);
     write_color("extern ", c_color_decl);
     print_location(n.loc);
     std::cout << '\n';
 
     ++depth;
-    std::cout << indent(depth) << "real name: \"";
+    indent(depth);
+    std::cout << "real name: \"";
     write_color(n.real_name, c_color_identifier);
     std::cout << "\"\n";
     dump_decl(*n.inner_decl);
@@ -599,7 +614,7 @@ void text_ast_dumper::dump_extern_decl(extern_decl const& n)
 
 void text_ast_dumper::dump_namespace_decl(namespace_decl const& n)
 {
-    std::cout << indent(depth);
+    indent(depth);
     write_color("namespace_declaration ", c_color_decl);
     print_location(n.loc);
     std::cout << '\n';
@@ -615,7 +630,7 @@ void text_ast_dumper::dump_namespace_decl(namespace_decl const& n)
 
 void text_ast_dumper::dump_parameters(parameters const& n)
 {
-    std::cout << indent(depth);
+    indent(depth);
     write_color("parameters ", c_color_decl);
     print_location(n.loc);
     std::cout << '\n';
@@ -629,7 +644,7 @@ void text_ast_dumper::dump_parameters(parameters const& n)
 
 void text_ast_dumper::dump_func_decl(func_decl const& n)
 {
-    std::cout << indent(depth);
+    indent(depth);
     write_color("function_declaration ", c_color_decl);
     print_location(n.loc);
     std::cout << '\n';
@@ -642,7 +657,7 @@ void text_ast_dumper::dump_func_decl(func_decl const& n)
 
 void text_ast_dumper::dump_func_def(func_def const& n)
 {
-    std::cout << indent(depth);
+    indent(depth);
     write_color("function_definition ", c_color_decl);
     print_location(n.loc);
     std::cout << '\n';
@@ -658,7 +673,7 @@ void text_ast_dumper::dump_func_def(func_def const& n)
 
 void text_ast_dumper::dump_decl_stmt(decl_stmt const& n)
 {
-    std::cout << indent(depth);
+    indent(depth);
     write_color("declaration_statement ", c_color_stmt);
     print_location(n.loc);
     std::cout << '\n';
@@ -669,7 +684,7 @@ void text_ast_dumper::dump_decl_stmt(decl_stmt const& n)
 
 void text_ast_dumper::dump_assign_stmt(assign_stmt const& n)
 {
-    std::cout << indent(depth);
+    indent(depth);
     write_color("assign_statement ", c_color_stmt);
     print_location(n.loc);
     std::cout << " (";
@@ -685,7 +700,7 @@ void text_ast_dumper::dump_assign_stmt(assign_stmt const& n)
 
 void text_ast_dumper::dump_compound_stmt(compound_stmt const& n)
 {
-    std::cout << indent(depth);
+    indent(depth);
     write_color("compound_statement ", c_color_stmt);
     print_location(n.loc);
     std::cout << '\n';
@@ -699,7 +714,7 @@ void text_ast_dumper::dump_compound_stmt(compound_stmt const& n)
 
 void text_ast_dumper::dump_ret_stmt(ret_stmt const& n)
 {
-    std::cout << indent(depth);
+    indent(depth);
     write_color("ret_statement ", c_color_stmt);
     print_location(n.loc);
     std::cout << '\n';
@@ -710,7 +725,7 @@ void text_ast_dumper::dump_ret_stmt(ret_stmt const& n)
 
 void text_ast_dumper::dump_conditional_stmt(conditional_stmt const& n)
 {
-    std::cout << indent(depth);
+    indent(depth);
     write_color("conditional_statement ", c_color_stmt);
     print_location(n.loc);
     std::cout << '\n';
@@ -724,7 +739,7 @@ void text_ast_dumper::dump_conditional_stmt(conditional_stmt const& n)
 
 void text_ast_dumper::dump_iteration_stmt(iteration_stmt const& n)
 {
-    std::cout << indent(depth);
+    indent(depth);
     write_color("iteration_statement ", c_color_stmt);
     print_location(n.loc);
     std::cout << '\n';
@@ -736,7 +751,7 @@ void text_ast_dumper::dump_iteration_stmt(iteration_stmt const& n)
 
 void text_ast_dumper::dump_expr_stmt(expr_stmt const& n)
 {
-    std::cout << indent(depth);
+    indent(depth);
     write_color("expression_statement ", c_color_stmt);
     print_location(n.loc);
     std::cout << '\n';
@@ -747,7 +762,7 @@ void text_ast_dumper::dump_expr_stmt(expr_stmt const& n)
 
 void text_ast_dumper::dump_null_stmt(stmt const& n)
 {
-    std::cout << indent(depth);
+    indent(depth);
     write_color("null_statement ", c_color_stmt);
     print_location(n.loc);
     std::cout << '\n';

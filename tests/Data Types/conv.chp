@@ -1,0 +1,19 @@
+# This file is intended to test various conversion cases
+entry
+{
+	# Integral conversions
+	int: a = +5;
+	int: b = +'X';
+	signed int: neg = -15;
+	float: fl = 0;
+	int: zero = fl;
+	# Boolean conversions
+	bool: True = true;
+	if True {}
+	if 0 {}
+	if 123 {}
+	if fl {}
+	if null {}
+	ptr const ptr int: Null = null as ptr const ptr int;
+	if Null {}
+}

@@ -1,5 +1,7 @@
 #include "lexer.hpp"
 
+#include "../shared/system.hpp"
+
 #include <iostream>
 #include <string_view>
 
@@ -143,18 +145,18 @@ std::vector<location> lexer::preprocess(std::vector<location> const& raw_tokens)
     platform target_platform;
 
 // Note: Linux should always be before the Unix macro
-#if defined(_WIN64) || defined(_WIN32) || defined(__WINDOWS__)
+#if CHIRP_SUBPLATFORM == CHIRP_PLATFORMID_WINNT
     target_platform = platform::WINDOWS;
-#elif defined(__linux) || defined(linux) || defined(__linux__)
+#elif CHIRP_SUBPLATFORM == CHIRP_PLATFORMID_LINUX
     target_platform = platform::LINUX;
-#elif defined(__DragonFly__) || defined(__FreeBSD)
+#elif CHIRP_SUBPLATFORM == CHIRP_PLATFORMID_BSD
     target_platform = platform::BSD;
-#elif defined(__APPLE__) || defined(macintosh) || defined(__MACH__)
+#elif CHIRP_SUBPLATFORM == CHIRP_PLATFORMID_APPLE
     target_platform = platform::OSX;
-#elif defined(__unix) || defined(unix)
+#elif CHIRP_SUBPLATFORM == CHIRP_PLATFORMID_UNIX
     target_platform = platform::UNIX;
 #else
-    target_platform = platform::UNKOWN;
+    target_platform = platform::UNKNOWN;
 #endif
 
     std::vector<location> result;
@@ -382,6 +384,7 @@ std::vector<token> lexer::lex(std::vector<location> const& src)
         MATCH_KW(true)
         MATCH_KW(false)
         MATCH_KW(null)
+        MATCH_KW(alloca)
         #undef MATCH_KW
         // Types
         #define MATCH_DT(v) MATCH(#v, tkn_type::dt_##v)
@@ -402,7 +405,8 @@ std::vector<token> lexer::lex(std::vector<location> const& src)
         #undef MATCH_DM
         #undef MATCH
         // Symbols
-        /*else*/ if (t.loc.len == 1)
+        /* else */
+        if (t.loc.len == 1)
         {
             switch (t.value.at(0))
             {
@@ -414,6 +418,8 @@ std::vector<token> lexer::lex(std::vector<location> const& src)
                 CASE(':', tkn_type::colon)
                 CASE(',', tkn_type::comma)
                 CASE('=', tkn_type::assign_op)
+                CASE('<', tkn_type::lt_op)
+                CASE('>', tkn_type::gt_op)
                 CASE('+', tkn_type::plus_op)
                 CASE('-', tkn_type::minus_op)
                 CASE('*', tkn_type::star_op)

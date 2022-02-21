@@ -16,10 +16,14 @@ void cmd::write_help()
         "--- Utility Options ---\n"
         "\t-dump-tokens\tDumps the lexer tokens of the source file\n"
         "\t-dump-ast\tDumps the AST in a human readable view\n"
+        "\t-dump-syms\tDumps the symbol table of the program\n"
+        "\t-dump-syms-all\tDumps the symbol table of the program, including local and unnamed symbols\n"
         "\t-keep-tmp\tKeeps the temporary folder, instead of deleting it after compiling\n"
+        "\t-no-out-gen\tDon't emit an output file, only check program for correctness\n"
         "\t-show-unresolved-refs\tShow warnings whether an undefined symbol is referenced"
             "(no longer needed since semantic analysis already reports errors; currently no-op)\n"
         "\t-show-expr-types\tShow types in expressions (effective during an AST dump)\n"
+        "\t-soft-type-checks\tDon't generate errors on type mismatches\n"
     ;
 }
 
@@ -69,9 +73,23 @@ cmd parse_cmd(int argc, char *argv[])
         {
             c.dump_ast = true;
         }
+        else if (std::strcmp(argv[i], "-dump-syms") == 0)
+        {
+            c.dump_syms = true;
+            c.dump_syms_extra = false;
+        }
+        else if (std::strcmp(argv[i], "-dump-syms-all") == 0)
+        {
+            c.dump_syms = true;
+            c.dump_syms_extra = true;
+        }
         else if (std::strcmp(argv[i], "-keep-tmp") == 0)
         {
             c.keep_tmp = true;
+        }
+        else if (std::strcmp(argv[i], "-no-out-gen") == 0)
+        {
+            c.no_outgen = true;
         }
         else if (std::strcmp(argv[i], "-show-unresolved-refs") == 0)
         {
@@ -80,6 +98,10 @@ cmd parse_cmd(int argc, char *argv[])
         else if (std::strcmp(argv[i], "-show-expr-types") == 0)
         {
             c.show_expr_types = true;
+        }
+        else if (std::strcmp(argv[i], "-soft-type-checks") == 0)
+        {
+            c.soft_type_checks = true;
         }
         else
         {

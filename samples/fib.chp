@@ -1,7 +1,7 @@
-func int fib(int: n)
+func unsigned long fib(unsigned int: n)
 {
-	int: a = 0;
-	int: b = 1;
+	unsigned long: a = 0;
+	unsigned long: b = 1;
 	while n != 0
 	{
 		const int: tmp = b;
@@ -15,10 +15,65 @@ func int fib(int: n)
 import "io"
 namespace io
 {
-	func none print(ptr const char: msg, int: param);
+	func none write(ptr const char: str);
+	func none print(ptr const char: str);
+
+	# Returns number of chars needed to store the string, including zero-terminator
+	func unsigned long ulong_to_string(unsigned long: val, ptr char: str, unsigned long: buflen)
+	{
+		unsigned long: size = 1;
+		unsigned long: _val = val;
+		unsigned long: ct = 1;
+		unsigned long: idx = 0;
+		while _val / ct >= 10
+		{
+			ct = ct * 10;
+			size = size + 1;
+		}
+		while ct != 1
+		{
+			if idx == buflen
+			{
+				ct = 1;
+			}
+			else
+			{
+				ct = ct / 10;
+				deref(str + idx) = _val / ct + '0';
+				_val = _val - _val / ct * ct;
+				idx = idx + 1;
+			}
+		}
+		if idx != buflen
+		{
+			deref(str + idx) = 0;
+		}
+		ret size + 1;
+	}
 }
 
 entry
 {
-	io.print("Result of fib(5): ", fib(5));
+	ptr char: small_buf = alloca(char) 5;
+	unsigned long: buf_size = 5;
+	unsigned long: value = fib(5);
+	unsigned long: size = io.ulong_to_string(value, small_buf, buf_size);
+	if size > buf_size
+	{
+		buf_size = size;
+		small_buf = alloca(char) buf_size;
+		io.ulong_to_string(value, small_buf, buf_size);
+	}
+	io.write("Result of fib(5): ");
+	io.print(small_buf);
+	value = fib(50);
+	size = io.ulong_to_string(value, small_buf, buf_size);
+	if size > buf_size
+	{
+		buf_size = size;
+		small_buf = alloca(char) buf_size;
+		io.ulong_to_string(value, small_buf, buf_size);
+	}
+	io.write("Result of fib(50): ");
+	io.print(small_buf);
 }

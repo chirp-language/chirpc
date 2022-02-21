@@ -11,6 +11,23 @@ namespace math
     }
 }
 
+# Test nested namespaces
+namespace a
+{
+    int: xxx = 5;
+    namespace b
+    {
+        namespace c
+        {
+            func none foo()
+            {
+                # Reference outer declaration
+                xxx = 6;
+            }
+        }
+    }
+}
+
 entry
 {
     math.add(1,1);

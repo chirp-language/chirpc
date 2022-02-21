@@ -3,12 +3,17 @@
 #include "../ast/types.hpp"
 #include <string>
 
-std::string codegen::emit_qual_identifier(qual_identifier const& ident)
+std::string codegen::emit_raw_qual_identifier(raw_qual_identifier const& ident)
 {
-    std::string result;
+    // Call this only on fully expanded identifiers
+    #ifndef NDEBUG
+    if (ident.parts.empty())
+    {
+        return "/* OH NO: Identifier not expanded */";
+    }
+    #endif
 
-    // This is even more hacky beyond any belief (pt. 2)
-    // Should probably (definitely) normalize access path first
+    std::string result;
     for (auto id = ident.parts.cbegin(), end = ident.parts.cend() - 1; id != end; ++id)
     {
         result += emit_identifier(*id) + "$";
@@ -22,9 +27,16 @@ std::string codegen::emit_identifier(identifier const& ident)
     return ident.name;
 }
 
+std::string codegen::emit_decl_symbol_name(decl const* node)
+{
+    if (node and node->symbol)
+        return emit_raw_qual_identifier(node->symbol->full_name);
+    return "/*! spotted unexpanded identifier */";
+}
+
 std::string codegen::emit_id_ref_expr(id_ref_expr const& node)
 {
-    return emit_qual_identifier(node.ident);
+    return emit_decl_symbol_name(node.target);
 }
 
 // This is not finished
@@ -63,7 +75,7 @@ std::string codegen::emit_datatype(basic_type const& type)
 
     for (auto d : type.exttp)
     {
-        switch (static_cast<dtypemod>(d))
+        switch (d)
         {
             case dtypemod::_ptr:
                 result += "*";
@@ -96,7 +108,8 @@ std::string codegen::emit_string_literal(string_literal const& node)
 
 std::string codegen::emit_integral_literal(integral_literal const& node)
 {
-    return "(" + std::to_string(node.value.val) + ")";
+    // Negative values shouldn't cause much problems, so I'm not adding parens
+    return std::to_string(node.value.val);
 }
 
 std::string codegen::emit_nullptr_literal(nullptr_literal const& node)
@@ -139,7 +152,23 @@ std::string codegen::emit_unop(unop const& node)
 
     result += "(";
     result += emit_expr(*node.operand);
-    result += ") ";
+    result += ")";
+
+    return result;
+}
+
+std::string codegen::emit_alloca_expr(alloca_expr const& node)
+{
+    std::string result;
+
+    // It just works, source: trust me
+    result += "(";
+    result += emit_datatype(node.type);
+    result += ")__builtin_alloca((";
+    result += emit_expr(*node.size);
+    result += ")*sizeof(";
+    result += emit_datatype(node.alloc_type);
+    result += "))";
 
     return result;
 }
@@ -175,6 +204,8 @@ std::string codegen::emit_expr(expr const& node)
             return emit_nullptr_literal(static_cast<nullptr_literal const&>(node));
         case expr_kind::cast:
             return emit_cast_expr(static_cast<cast_expr const&>(node));
+        case expr_kind::alloca:
+            return emit_alloca_expr(static_cast<alloca_expr const&>(node));
     }
     #ifndef NDEBUG
     return "\n#error Bad expression, this is a bug\n";

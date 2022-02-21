@@ -1,0 +1,22 @@
+# Include this or not?
+namespace io
+{
+	extern "fputs"
+		func int __libc_fputs(ptr const char: string, ptr: fileio);
+	extern "fputc"
+		func int __libc_fputc(int: ch, ptr: fileio);
+	extern "stdout"
+		ptr: __libc_stdout;
+
+	func none write(ptr const char: string)
+	{
+		__libc_fputs(string, __libc_stdout);
+	}
+
+	func none print(ptr const char: string)
+	{
+		__libc_fputs(string, __libc_stdout);
+		# Newline
+		__libc_fputc(10, __libc_stdout);
+	}
+}

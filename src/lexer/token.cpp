@@ -25,6 +25,7 @@ char const* token_names[] = {
     tknstr(kw_true    )
     tknstr(kw_false   )
     tknstr(kw_null    )
+    tknstr(kw_alloca  )
     tknstr(dt_int     )
     tknstr(dt_char    )
     tknstr(dt_float   )
@@ -73,24 +74,15 @@ char const* token_names[] = {
 
 static_assert(std::size(token_names) == static_cast<int>(tkn_type::eof) + 1, "Size of token names array doesn't match number of tokens");
 
-std::string token::util_dump(){
+std::string token::util_dump(location_run* run)
+{
     std::string result;
 
     result += token_names[static_cast<int>(this->type)];
     result += "   '";
     result += this->value;
-	result += "' <";
-	result += loc.filename;
-	result += ":";
-	if (loc.line == -1)
-		result += "invalid";
-	else
-		result += std::to_string(loc.line+1);
-	result += ":";
-	if (loc.start == -1)
-		result += "invalid";
-	else
-		result += std::to_string(loc.start+1);
+    result += "' <";
+    print_loc_single(loc, result, run);
     result += ">";
     return result;
 }

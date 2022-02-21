@@ -1,15 +1,33 @@
 #include "tracker.hpp"
 
-bool tracker::bind_sym(identifier const& name, decl const& target)
+#include <algorithm>
+
+tracker::symbol* tracker::decl_sym()
+{
+    auto* sym = new symbol;
+    table.push_back(std::unique_ptr<tracker::symbol>(sym));
+    return sym;
+}
+
+tracker::symbol* tracker::decl_sym(identifier const& name, decl& target)
+{
+    auto* sym = decl_sym();
+    sym->has_name = !name.name.empty();
+    sym->name = name;
+    sym->target = &target;
+    return sym;
+}
+
+bool tracker::bind_sym(tracker::symbol* sym)
 {
     // Search for collisions, the current depth only
-    if (auto prev = find_sym_cur(name))
+    if (auto* prev = find_sym_cur(sym->name))
     {
         // Found a collision
         {
             diagnostic(diagnostic_type::location_err)
-                .at(target.loc)
-                .reason("Redefinition of a variable/function")
+                .at(sym->target->loc)
+                .reason("Redefinition of a symbol")
                 .report(diagnostics);
         }
         {
@@ -20,45 +38,51 @@ bool tracker::bind_sym(identifier const& name, decl const& target)
         }
         return false;
     }
-    push_sym_unsafe(name, target);
+    push_sym_unsafe(sym);
     return true;
 }
 
-void tracker::push_sym_unsafe(identifier const& name, decl const& target)
+void tracker::push_sym_unsafe(tracker::symbol* sym)
 {
-    tracked_sym v;
-    v.name = name;
-    v.depth = depth;
-    v.target = &target;
-    syms.push_back(v);
+    if (sym->target)
+        sym->target->symbol = sym;
+    if (sym->has_name)
+    {
+        if (sym->is_global)
+            sym->full_name = consolidate_path(sym->name);
+        else
+            sym->full_name.parts.push_back(sym->name);
+    }
+    syms.push_back(sym);
+    // FIXME: This only considers the immediately enclosing scope
     if (scopes.back().begin == syms.end())
         --scopes.back().begin;
 }
 
-tracker::tracked_sym* tracker::find_sym_cur(identifier const& name)
+tracker::symbol* tracker::find_sym_cur(identifier const& name)
 {
-    for (auto it = syms.rbegin(), end = syms.rend(); it != end; ++it)
+    for (auto it = syms.rbegin(), end = std::reverse_iterator(scopes.back().begin); it != end; ++it)
     {
-        if (it->depth != depth)
-            break;
-
-        if (it->name.name == name.name)
-            return &*it;
+        if ((**it).name.name == name.name)
+            return & **it;
     }
     return nullptr;
 }
 
 // Linear Search, inefficient.
-decl const* tracker::lookup_sym(identifier const& name) const
+tracker::symbol* tracker::lookup_sym(identifier const& name)
 {
     auto lastend = syms.cend();
     for (auto scopeit = scopes.rbegin(), scopeend = scopes.rend(); scopeit != scopeend; ++scopeit)
     {
+        if (scopeit->begin == syms.cend())
+            // Skip empty scope
+            continue;
         for (symlist::const_iterator it = scopeit->begin; it != lastend; ++it)
         {
-            if (it->name.name == name.name)
+            if ((**it).name.name == name.name)
             {
-                return it->target;
+                return *it;
             }
         }
         lastend = scopeit->begin;
@@ -66,15 +90,15 @@ decl const* tracker::lookup_sym(identifier const& name) const
     return nullptr;
 }
 
-decl const* tracker::lookup_sym_qual(qual_identifier const& name) const
+tracker::symbol* tracker::lookup_sym_qual(qual_identifier const& name)
 {
-    decl const* top_decl;
+    symbol* scope;
     identifier const* id = &name.parts.at(0);
     if (name.is_global)
-        top_decl = top_scope;
+        scope = get_top();
     else
-        top_decl = lookup_sym(*id);
-    if (!top_decl)
+        scope = lookup_sym(*id);
+    if (!scope)
     {
         diagnostic(diagnostic_type::location_err)
             .at(id->loc)
@@ -85,11 +109,11 @@ decl const* tracker::lookup_sym_qual(qual_identifier const& name) const
     for (size_t ii = 1, size = name.parts.size(); ii < size; ++ii)
     {
         id = &name.parts[ii];
-        top_decl = lookup_decl_sym(*top_decl, *id);
-        if (!top_decl)
+        scope = lookup_decl_sym(*scope->target, *id);
+        if (!scope)
             return nullptr;
     }
-    return top_decl;
+    return scope;
 }
 
 static identifier const* get_declaration_name(decl const& dec)
@@ -110,7 +134,7 @@ static identifier const* get_declaration_name(decl const& dec)
     }
 }
 
-decl const* tracker::lookup_decl_sym(decl const& decl_scope, identifier const& name) const
+tracker::symbol* tracker::lookup_decl_sym(decl const& decl_scope, identifier const& name)
 {
     declh const* begin;
     declh const* end;
@@ -134,7 +158,7 @@ decl const* tracker::lookup_decl_sym(decl const& decl_scope, identifier const& n
     while (begin != end)
     {
         if (auto n = get_declaration_name(**begin); name.name == n->name)
-            return (*begin).get();
+            return (**begin).symbol;
         ++begin;
     }
     diagnostic(diagnostic_type::location_err)
@@ -142,6 +166,15 @@ decl const* tracker::lookup_decl_sym(decl const& decl_scope, identifier const& n
         .reason("Couldn't resolve identifier")
         .report(diagnostics);
     return nullptr;
+}
+
+void tracker::push_scope(symbol* sym)
+{
+    ++depth;
+    auto& s = scopes.emplace_back();
+    s.begin = syms.end();
+    s.sym = sym;
+    sym->is_scope = true;
 }
 
 // This function is basically efficient
@@ -152,11 +185,25 @@ void tracker::pop_scope()
     --depth;
 }
 
-void tracker::push_scope(identifier const* name, decl const* target)
+void tracker::gen_top_symbol()
 {
-    ++depth;
-    auto& s = scopes.emplace_back();
-    s.begin = syms.end();
-    s.scope_name = name;
-    s.scope_target = target;
+    auto* top = decl_sym();
+    top->target = top_scope;
+    top->is_global = true;
+    top->has_storage = false;
+    push_scope(top);
+}
+
+raw_qual_identifier tracker::consolidate_path(identifier const& name)
+{
+    raw_qual_identifier id;
+    for (auto const& scope : scopes)
+    {
+        if (scope.sym and scope.sym->has_name)
+        {
+            id.parts.push_back(scope.sym->name);
+        }
+    }
+    id.parts.push_back(name);
+    return id;
 }

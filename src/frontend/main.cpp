@@ -1,12 +1,12 @@
 // This manages to pretty much interface all components with eachothers
 #include "cmd.hpp"
-#include "color.hpp"
-#include "lexer/lexer.hpp"
-#include "parser/parser.hpp"
-#include "codegen/codegen.hpp"
-#include "frontend/frontend.hpp"
-#include "ast/ast_dumper.hpp"
-#include "seman/analyser.hpp"
+#include "../lexer/lexer.hpp"
+#include "../parser/parser.hpp"
+#include "../codegen/codegen.hpp"
+#include "../frontend/frontend.hpp"
+#include "../ast/ast_dumper.hpp"
+#include "../seman/analyser.hpp"
+#include "../seman/sym_dumper.hpp"
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -34,7 +34,7 @@ int main(int argc, char** argv)
 
     if (options.error)
     {
-        std::cout << "Error in provided arguments\n";
+        std::cerr << "Error in provided arguments\n";
         return -1;
     }
 
@@ -44,7 +44,7 @@ int main(int argc, char** argv)
 
     if (!f)
     {
-        std::cout << "Can't open file: \"" << options.filename << "\"\n";
+        std::cerr << "Can't open file: \"" << options.filename << "\"\n";
         return -1;
     }
 
@@ -72,9 +72,10 @@ int main(int argc, char** argv)
     {
         std::cout << "Tokens:\n";
 
+        location_run run;
         for (token &t : tkns)
         {
-            std::cout << t.util_dump() << '\n';
+            std::cout << t.util_dump(&run) << '\n';
         }
     }
     // Parsing
@@ -85,18 +86,32 @@ int main(int argc, char** argv)
 
     // Semantic analysis
     analyser seman(p.get_ast(), diagnostics);
+    seman.soft_type_checks = options.soft_type_checks;
     seman.analyse();
 
     if (options.dump_ast)
     {
         if (options.dump_tkns)
         {
-            std::cout << "--------------------" << '\n';
+            std::cout << "--------------------\n";
         }
 
         text_ast_dumper dumper(options.has_color, options.show_expr_types, &p);
 
         dumper.dump_ast(p.get_ast());
+        std::cout << '\n';
+    }
+
+    if (options.dump_syms)
+    {
+        if (options.dump_tkns or options.dump_ast)
+        {
+            std::cout << "--------------------\n";
+        }
+
+        text_symbol_dumper dumper(options.has_color, options.dump_syms_extra, seman.get_tracker());
+
+        dumper.dump_symbols();
         std::cout << '\n';
     }
 
@@ -106,30 +121,8 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    frontend frontend;
-
-    if (!frontend.find_compiler())
-    {
-        if (options.has_color)
-        {
-            std::cerr << apply_color("[TOOL MISSING] ", color::red);
-        }
-        else
-        {
-            std::cerr << "[TOOL MISSING] ";
-        }
-
-        std::cerr << "Couldn't find supported C compiler on this machine.\n";
-        std::cerr << "Supported compilers are clang and gcc\n";
-        std::cerr << "To specify C compiler use option -compiler-path, and then the path to the compiler.\n";
-
-        return -1;
-    }
-
     // Code Generation
     codegen generator(diagnostics);
-
-    auto t = std::make_unique<tracker>(diagnostics);
 
     generator.set_tree(&p.get_ast(), options.filename);
     generator.gen();
@@ -140,17 +133,34 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    frontend.make_tmp_folder();
+    // Outputting generated content
+    frontend frontend;
 
-    frontend.write_out("dump", generator.get_result());
-
-    // Tooling
-    // (use the compiler)
-
-    // Cleanup
-    if (!options.keep_tmp)
+    if (!options.no_outgen)
     {
-        frontend.remove_tmp_folder();
+        if (!frontend.find_compiler())
+        {
+            print_color("[TOOL MISSING] ", options.has_color, std::cerr, color::red);
+
+            std::cerr << "Couldn't find supported C compiler on this machine.\n";
+            std::cerr << "Supported compilers are clang and gcc\n";
+            std::cerr << "To specify C compiler use option -compiler-path, and then the path to the compiler.\n";
+
+            return -1;
+        }
+
+        frontend.make_tmp_folder();
+
+        frontend.write_out("dump", generator.get_result());
+
+        // Tooling
+        // (use the compiler)
+
+        // Cleanup
+        if (!options.keep_tmp)
+        {
+            frontend.remove_tmp_folder();
+        }
     }
 
     return 0;

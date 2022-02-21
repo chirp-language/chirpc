@@ -18,10 +18,14 @@ public:
     // Options
     bool dump_tkns = false;
     bool dump_ast = false;
+    bool dump_syms = false;
+    bool dump_syms_extra = false;
     bool keep_tmp = false;
+    bool no_outgen = false;
     bool has_color = true;
     bool ignore_unresolved_refs = true;
     bool show_expr_types = false;
+    bool soft_type_checks = false;
 
     std::string filename;
     void write_help();

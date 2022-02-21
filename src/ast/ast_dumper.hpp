@@ -3,18 +3,16 @@
 #pragma once
 
 #include "ast.hpp"
+#include "../shared/text_dumper_base.hpp"
 
-enum class color;
-
-class text_ast_dumper {
-    bool has_colors;
+class text_ast_dumper : public text_dumper_base {
     bool show_expr_types;
     int depth = 0;
     location_provider* loc_prov;
 
     public:
     text_ast_dumper(bool enable_colors, bool show_expr_types, location_provider* loc_prov = nullptr)
-        : has_colors(enable_colors), show_expr_types(show_expr_types), loc_prov(loc_prov)
+        : text_dumper_base(enable_colors), show_expr_types(show_expr_types), loc_prov(loc_prov)
     {}
 
     void dump_ast(ast_root const& root);
@@ -32,7 +30,6 @@ class text_ast_dumper {
     void dump_arguments(arguments const&);
     void dump_func_call(func_call const&);
     void dump_id_ref_expr(id_ref_expr const&);
-    void dump_loperand(loperand const&) = delete;
     void dump_string_literal(string_literal const&);
     void dump_integral_literal(integral_literal const&);
     void dump_nullptr_literal(nullptr_literal const&);
@@ -57,6 +54,5 @@ class text_ast_dumper {
     void dump_null_stmt(stmt const&); // null_stmt contains no further members
 
     private:
-    void write_color(std::string, color);
     void print_location(location_range);
 };
