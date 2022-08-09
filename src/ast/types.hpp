@@ -5,6 +5,7 @@ since it's not an ast_node, I prefer having it here
 */
 #pragma once
 
+#include <stdint.h>
 #include <vector>
 
 // Almost all of the keywords here, are also keywords in C++ 

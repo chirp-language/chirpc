@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/resource.h>
 #include <fcntl.h>
 
 int proc_exec(char const* const argv[], file_open_descriptor const descs[], bool use_path)
@@ -57,7 +58,14 @@ int proc_exec(char const* const argv[], file_open_descriptor const descs[], bool
                 dup2(fd_src, fd_dst);
             ++fd_dst;
         }
-        closefrom(max_used_fd);
+
+        // Taken from oracle website
+        struct rlimit rl;
+        int i;
+        getrlimit(RLIMIT_NOFILE, &rl);
+        for (i = max_used_fd; i < rl.rlim_max; i++)
+            (void) close(i);
+
         if (use_path)
             execvp(argv[0], const_cast<char**>(argv));
         else

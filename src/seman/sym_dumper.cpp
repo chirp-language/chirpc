@@ -13,12 +13,12 @@ static std::string indent(int x)
 
 void text_symbol_dumper::dump_symbols()
 {
-	dump(*tracker.get_top());
+	dump(*m_tracker.get_top());
 	if (dump_syms_extra)
 	{
 		std::cout << "Anonymous syms\n";
 		++depth;
-		for (auto& sym : tracker.table)
+		for (auto& sym : m_tracker.table)
 			if (!sym->is_global)
 				dump(*sym);
 		--depth;
