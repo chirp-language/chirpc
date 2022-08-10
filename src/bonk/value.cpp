@@ -20,7 +20,12 @@ bonk::value::value(int t, void* d)
 bonk::value::value(const value& value2)
 {
     this->type = value2.type;
-    
+
+    if(type == 2)
+    {
+        this->data = new std::map<std::string, bonk::value>;
+        static_cast<std::map<std::string,bonk::value>*>(this->data)->insert(static_cast<std::map<std::string,bonk::value>*>(value2.data)->begin(), static_cast<std::map<std::string,bonk::value>*>(value2.data)->end());
+    }
     if(type == 3)
     {
         this->data = new int;

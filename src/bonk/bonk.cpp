@@ -183,3 +183,45 @@ std::map<std::string, bonk::value> bonk::parse_file(std::string filename)
 
     return map;
 }
+
+std::string bonk::to_string(const std::string& name,const bonk::value& v)
+{
+    std::string txt;
+
+    if(v.type == 0)
+    {
+        txt = "# error";
+    }
+    else if(v.type == 1)
+
+    {
+        txt = "# none";
+    }
+    else if(v.type == 2)
+    {
+        std::map<std::string, bonk::value>* m = static_cast<std::map<std::string, bonk::value>*>(v.data);
+
+        txt = "list " +  name + "\n";
+
+        for(const std::pair<std::string, bonk::value>& x : *m)
+        {
+            txt += bonk::to_string(x.first, x.second) + "\n";
+        }
+
+        txt += "end";
+    }
+    else if(v.type == 3)
+    {
+        txt += "int " +  name + " " + std::to_string(*static_cast<int*>(v.data));
+    }
+    else if(v.type == 4)
+    {
+        txt += "str " +  name + " " + *static_cast<std::string*>(v.data);
+    }
+    else if(v.type == 5)
+    {
+        txt += "bool " +  name + " " + std::to_string(*static_cast<bool*>(v.data));
+    }
+
+    return txt;
+}

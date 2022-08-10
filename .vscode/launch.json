@@ -5,14 +5,13 @@
             "name": "Build and Run project",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/chirpc",
+            "program": "${workspaceFolder}/build/chirpc",
             "args": [
                 "samples/invalid.chp",
-                "-dump-tokens",
-                "-dump-ast"
+                "-cache",
             ],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/build",
             "environment": [],
             "MIMode": "gdb",
             "setupCommands": [
