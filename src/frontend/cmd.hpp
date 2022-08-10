@@ -26,6 +26,7 @@ public:
     bool ignore_unresolved_refs = true;
     bool show_expr_types = false;
     bool soft_type_checks = false;
+    bool cache = false;
 
     std::string filename;
     void write_help();

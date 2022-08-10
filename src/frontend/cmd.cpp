@@ -12,6 +12,7 @@ void cmd::write_help()
         "\t--help\tDisplays this help message\n"
         "\t--version\tDisplays the compiler version\n"
         "\t-v\tActivates verbose mode(Experimental)\n"
+        "\t-cache\tOnly parses file and caches it\n"
         "\t-no-coloring\tDisables the coloring in prompts\n"
         "--- Utility Options ---\n"
         "\t-dump-tokens\tDumps the lexer tokens of the source file\n"
@@ -64,6 +65,10 @@ cmd parse_cmd(int argc, char *argv[])
         else if (std::strcmp(argv[i], "-no-coloring") == 0)
         {
             c.has_color = false;
+        }
+        else if (std::strcmp(argv[i], "-cache") == 0)
+        {
+            c.cache = true;
         }
         else if (std::strcmp(argv[i], "-dump-tokens") == 0)
         {

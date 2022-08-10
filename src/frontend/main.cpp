@@ -1,5 +1,6 @@
 // This manages to pretty much interface all components with eachothers
 #include "cmd.hpp"
+#include "../bonk/bonk.hpp"
 #include "../lexer/lexer.hpp"
 #include "../parser/parser.hpp"
 #include "../codegen/codegen.hpp"
@@ -36,6 +37,15 @@ int main(int argc, char** argv)
     {
         std::cerr << "Error in provided arguments\n";
         return -1;
+    }
+
+    if(options.cache)
+    {
+        std::cout<<"Cache mode"<<std::endl;
+
+        std::map<std::string, bonk::value> bconfig = bonk::parse_file("config.bk");
+
+        return 0;
     }
 
     // Lets do the reading here cuz why the f not
