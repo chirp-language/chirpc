@@ -166,19 +166,12 @@ std::map<std::string, bonk::value> bonk::parse_file(std::string filename)
             break;
         }
 
-        std::cout<<">"<<words.at(i)<<"<"<<std::endl;
-
         std::string name;
         bonk::value v = parse_field(i, words, name);
         //std::cout<<name<<std::endl;
         map[name] = v;
 
         i++;
-    }
-
-    for(auto const& x : map)
-    {
-        std::cout<<x.first<<":"<<x.second<<std::endl;
     }
 
     return map;
