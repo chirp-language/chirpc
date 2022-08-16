@@ -19,32 +19,7 @@ bonk::value::value(int t, void* d)
 
 bonk::value::value(const value& value2)
 {
-    this->type = value2.type;
-
-    if(type == 2)
-    {
-        this->data = new std::map<std::string, bonk::value>;
-        static_cast<std::map<std::string,bonk::value>*>(this->data)->insert(static_cast<std::map<std::string,bonk::value>*>(value2.data)->begin(), static_cast<std::map<std::string,bonk::value>*>(value2.data)->end());
-    }
-    if(type == 3)
-    {
-        this->data = new int;
-        *static_cast<int*>(this->data) = *static_cast<int*>(value2.data);
-    }
-    else if(type == 4)
-    {
-        this->data = new std::string;
-        *static_cast<std::string*>(this->data) = *static_cast<std::string*>(value2.data);
-    }
-    else if(type == 5)
-    {
-        this->data = new bool;
-        *static_cast<bool*>(this->data)  = *static_cast<bool*>(value2.data);
-    }
-    else
-    {
-        this->data = nullptr;
-    }
+    this->copy(value2);
 }
 
 bonk::value::~value()
@@ -90,4 +65,39 @@ std::ostream& bonk::operator<<(std::ostream& os, const bonk::value& v)
         }
     }
     return os;
+}
+
+void bonk::value::copy(const value& value2)
+{
+    this->type = value2.type;
+
+    if(value2.data == nullptr)
+    {
+        return;
+    }
+
+    if(type == 2)
+    {
+        this->data = new std::map<std::string, bonk::value>;
+        static_cast<std::map<std::string,bonk::value>*>(this->data)->insert(static_cast<std::map<std::string,bonk::value>*>(value2.data)->begin(), static_cast<std::map<std::string,bonk::value>*>(value2.data)->end());
+    }
+    else if(type == 3)
+    {
+        this->data = new int;
+        *static_cast<int*>(this->data) = *static_cast<int*>(value2.data);
+    }
+    else if(type == 4)
+    {
+        this->data = new std::string;
+        *static_cast<std::string*>(this->data) = *static_cast<std::string*>(value2.data);
+    }
+    else if(type == 5)
+    {
+        this->data = new bool;
+        *static_cast<bool*>(this->data)  = *static_cast<bool*>(value2.data);
+    }
+    else
+    {
+        this->data = nullptr;
+    }
 }

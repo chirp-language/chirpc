@@ -8,6 +8,7 @@
 #include "../ast/ast_dumper.hpp"
 #include "../seman/analyser.hpp"
 #include "../seman/sym_dumper.hpp"
+#include "../cache/cache.hpp"
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -39,17 +40,6 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    if(options.cache)
-    {
-        std::cout<<"Cache mode"<<std::endl;
-
-        std::map<std::string, bonk::value> bconfig = bonk::parse_file("config.bk");
-
-        return 0;
-    }
-
-    // Lets do the reading here cuz why the f not
-    // Also kinda like very inefficient
     std::ifstream f(options.filename);
 
     if (!f)
@@ -131,11 +121,20 @@ int main(int argc, char** argv)
         return -1;
     }
 
+    cache cgen;
+
     // Code Generation
     codegen generator(diagnostics);
-
+    generator.set_cache(&cgen);
     generator.set_tree(&p.get_ast(), options.filename);
     generator.gen();
+
+    if(options.cache)
+    {
+        std::cout<<"Cache mode"<<std::endl;
+        cgen.write_to_file(options.filename + ".bk");
+        return 0;
+    }
 
     if (generator.errored)
     {

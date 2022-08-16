@@ -6,6 +6,15 @@
 
 bonk::value parse_list(int& i, std::vector<std::string>& words);
 
+bonk::value bonk::make_string(std::string txt)
+{
+    bonk::value val;
+    val.type = 4;
+    val.data = new std::string;
+    *static_cast<std::string*>(val.data) = txt;
+    return val;
+}
+
 bonk::value parse_field(int& i, std::vector<std::string>& words, std::string& name)
 {
     int t = 0;

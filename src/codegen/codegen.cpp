@@ -14,6 +14,11 @@ void codegen::set_tree(ast_root* t, std::string f)
     this->filename = std::move(f);
 }
 
+void codegen::set_cache(cache* c)
+{
+    this->m_cache = c;
+}
+
 std::string&& codegen::get_result()
 {
     return std::move(result);  

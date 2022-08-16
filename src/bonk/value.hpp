@@ -24,8 +24,11 @@ namespace bonk
         // 3 - int
         // 4 - string
         // 5 - bool
-
         void* data;
+        
         int type;
+
+        private:
+        void copy(const value&);
     };
 }

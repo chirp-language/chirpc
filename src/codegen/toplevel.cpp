@@ -1,5 +1,7 @@
 #include "codegen.hpp"
 
+#include <utility>
+
 std::string codegen::emit_entry_decl(entry_decl const& e)
 {
     std::string result;
@@ -13,10 +15,22 @@ std::string codegen::emit_namespace_decl(namespace_decl const& e)
 {
     std::string result;
 
+    // for caching
+    std::vector<std::pair<std::string,std::string>> idk;
+
     for(auto const& d : e.decls)
     {
-        result += emit_decl(*d);
+        std::string r;
+        r = emit_decl(*d);
+        idk.push_back(
+            std::make_pair(
+                emit_decl_symbol_name(d.get()),
+                r
+            ));
+        result += r;
     }
+
+    this->m_cache->keep_namespace(e,idk);
 
     return result;
 }

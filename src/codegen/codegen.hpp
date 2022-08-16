@@ -1,6 +1,7 @@
 #pragma once
 #include "../seman/tracker.hpp"
 #include "../ast/ast.hpp"
+#include "../cache/cache.hpp"
 #include "../shared/diagnostic.hpp"
 #include <string>
 #include <vector>
@@ -11,6 +12,7 @@ class codegen
     void gen();
 
     void set_tree(ast_root*, std::string);
+    void set_cache(cache*);
 
     // The name is pretty bad ngl
     std::string&& get_result();
@@ -58,6 +60,7 @@ class codegen
     void gen_toplevel();
 
     ast_root* m_tree;
+    cache* m_cache;
     std::string result;
     std::string filename;
 };
