@@ -1,6 +1,7 @@
 #include "cache.hpp"
 
 #include <iostream>
+#include <algorithm>
 #include <fstream>
 
 bool cache::write_to_file(std::string filename)
@@ -41,11 +42,16 @@ void cache::keep_namespace(const namespace_decl& e, std::vector<std::pair<std::s
     
     static_cast<std::map<std::string, bonk::value>*>(val.data)->insert(std::make_pair("type",bonk::make_string("namespace")));
 
-    bonk::value v2;
+    bonk::value src = bonk::make_list();
+    for(const auto& x : decls)
+    {
+        // Remove  new lines
+        std::string str = x.second;
+        str.erase(std::remove(str.begin(), str.end(), '\n'), str.cend());
+        bonk::insert_list(src, x.first, bonk::make_string(str));
+        //std::cout<<x.first<<":"<<x.second<<std::endl;
+    }
+    bonk::insert_list(val, "sources", src);
 
-    v2 = val;
-
-    auto p  = std::make_pair(e.ident.name, val);
-
-    this->data.push_back(p);
+    this->data.push_back(std::make_pair(e.ident.name, val));
 }

@@ -6,13 +6,44 @@
 
 bonk::value parse_list(int& i, std::vector<std::string>& words);
 
-bonk::value bonk::make_string(std::string txt)
+bonk::value bonk::make_string(const std::string& txt)
 {
     bonk::value val;
     val.type = 4;
     val.data = new std::string;
     *static_cast<std::string*>(val.data) = txt;
     return val;
+}
+
+bonk::value bonk::make_int(const int& v)
+{
+    bonk::value val;
+    val.type = 3;
+    val.data = new int;
+    *static_cast<int*>(val.data) = v;
+    return val;
+}
+
+bonk::value bonk::make_bool(const bool& v)
+{
+    bonk::value val;
+    val.type = 5;
+    val.data = new bool;
+    *static_cast<bool*>(val.data) = v;
+    return val;
+}
+
+bonk::value bonk::make_list()
+{
+    bonk::value val;
+    val.type = 2;
+    val.data = new std::map<std::string, bonk::value>;
+    return val;
+}
+
+void bonk::insert_list(bonk::value& list, const std::string& n,const bonk::value& v)
+{
+    static_cast<std::map<std::string, bonk::value>*>(list.data)->insert(std::make_pair(n,v));
 }
 
 bonk::value parse_field(int& i, std::vector<std::string>& words, std::string& name)
