@@ -5,9 +5,9 @@
 #include <iostream>
 #include <string_view>
 
-static inline std::string_view token_value(std::vector<std::string> const& source, location const& loc)
+static inline std::string_view token_value(source_buffer const& source, location const& loc)
 {
-    return std::string_view(source.at(loc.line)).substr(loc.start, loc.len);
+    return source.get().substr(source.get_line_position(loc.line) + loc.start, loc.len);
 }
 
 static inline bool is_ident_begin(char c)
@@ -30,7 +30,7 @@ std::vector<location> lexer::lex_raw()
     size_t nline = 0; // line counter
     location loc;
     loc.filename = fname;
-    for (std::string const& line : source)
+    for (auto line : source)
     {
         for (size_t i = 0; i < line.size(); )
         {
@@ -91,10 +91,10 @@ std::vector<location> lexer::lex_raw()
                 loc.len = i - loc.start;
                 result.push_back(loc);
             }
-            else if (isspace(line.at(i)))
+            else if (chirp_isspace(line.at(i)))
             {
                 ++i;
-                while (i < line.size() && isspace(line.at(i)) != 0)
+                while (i < line.size() && chirp_isspace(line.at(i)) != 0)
                 {
                     ++i;
                 }
@@ -160,7 +160,7 @@ std::vector<location> lexer::preprocess(std::vector<location> const& raw_tokens)
 #endif
 
     std::vector<location> result;
-    size_t nline = -1;
+    int nline = -1;
     size_t raw_depth = 0;
     size_t nested_depth = 0;
 
@@ -236,7 +236,7 @@ std::vector<location> lexer::preprocess(std::vector<location> const& raw_tokens)
                             p = platform::UNKNOWN;
                         }
 
-                        if (target_platform == p)
+                        if (target_platform == p and p != platform::UNKNOWN)
                             ++nested_depth;
                         else
                             // Skip until an @end directive spotted
@@ -279,7 +279,7 @@ std::vector<location> lexer::preprocess(std::vector<location> const& raw_tokens)
     }
 
     // EOF
-    result.push_back(location(source.size(), fname));
+    result.push_back(location(source.line_count(), fname));
 
     return result;
 }
@@ -289,7 +289,7 @@ bool all_spaces(std::string const& txt)
 {
     for (char c : txt)
     {
-        if (isspace(c) == 0)
+        if (chirp_isspace(c) == 0)
         {
             return false;
         }
@@ -491,3 +491,13 @@ std::vector<token> lexer::lex(std::vector<location> const& src)
 
     return result;
 }
+
+unsigned char chirp_ctype_space[0x21] =
+{
+    /* 0x00 */
+    1, 0, 0, 0, 0, 0, 0, 0, /* backspace */ 0, 1, 1, 1, 1, 1, 0, 0,
+    /* 0x10 */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    /* 0x20 */
+    1,
+};

@@ -5,6 +5,7 @@
 
 #include "location.hpp"
 #include "location_provider.hpp"
+#include "source_buffer.hpp"
 #include <vector>
 #include <string>
 
@@ -72,18 +73,18 @@ public:
     diagnostic& operator=(diagnostic const&) = delete;
     diagnostic& operator=(diagnostic &&) = default;
 
-    diagnostic&& of_type(diagnostic_type type) && {
-        this->type = type;
+    diagnostic&& of_type(diagnostic_type _type) && {
+        type = _type;
         return std::move(*this);
     }
 
-    diagnostic&& at(location_range loc) && {
-        this->loc = loc;
+    diagnostic&& at(location_range _loc) && {
+        loc = _loc;
         return std::move(*this);
     }
 
-    diagnostic&& reason(std::string&& msg) && {
-        this->msg = std::move(msg);
+    diagnostic&& reason(std::string&& _msg) && {
+        msg = std::move(_msg);
         return std::move(*this);
     }
 
@@ -106,7 +107,7 @@ public:
     void show(diagnostic const&);
 
     location_provider const* loc_prov = nullptr;
-    std::vector<std::string> const* current_source = nullptr;
+    source_buffer const* current_source = nullptr;
 };
 
 inline void diagnostic::report(diagnostic_manager& mng) &&

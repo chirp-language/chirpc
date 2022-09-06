@@ -8,11 +8,13 @@
 #include "../ast/ast_dumper.hpp"
 #include "../seman/analyser.hpp"
 #include "../seman/sym_dumper.hpp"
+#include "../frontend/fs.hpp"
 #include <iostream>
 #include <sstream>
 #include <fstream>
 #include <vector>
 #include <string>
+#include <cstring>
 
 // Returns 0 if everything goes normal
 // Returns -1 if bad code
@@ -41,39 +43,30 @@ int main(int argc, char** argv)
 
     if(options.cache)
     {
-        std::cout<<"Cache mode"<<std::endl;
+        std::cout << "Cache mode" << std::endl;
 
-        std::map<std::string, bonk::value> bconfig = bonk::parse_file("config.bk");
+        bonk::list bconfig = bonk::parse_file("config.bk");
+
+        std::cout << bonk::serialize("config.bk", *bconfig) << std::endl;
 
         return 0;
     }
 
     // Lets do the reading here cuz why the f not
-    // Also kinda like very inefficient
-    std::ifstream f(options.filename);
+    std::string source;
 
-    if (!f)
+    if (int err = read_file_to_string(options.filename.c_str(), source); err < 0)
     {
-        std::cerr << "Can't open file: \"" << options.filename << "\"\n";
+        std::cerr << "Failed to read file \"" << options.filename << "\". Reason: " << std::strerror(err) << '\n';
         return -1;
     }
 
-    //Doesn't need to use HackySTL to be hacky :^)
-    std::vector<std::string> content;
-    std::string line;
-
-    while (std::getline(f, line))
-    {
-        content.push_back(line);
-    }
-
-    f.close();
-
     // Preprocessing & Lexing
+    source_buffer buffer(std::move(source));
     diagnostic_manager diagnostics(std::cerr, options.has_color);
-    diagnostics.current_source = &content;
+    diagnostics.current_source = &buffer;
 
-    lexer lex(content, options.filename, diagnostics);
+    lexer lex(buffer, options.filename, diagnostics);
     auto raw = lex.lex_raw();
     auto proccesed = lex.preprocess(raw);
     auto tkns = lex.lex(proccesed);
