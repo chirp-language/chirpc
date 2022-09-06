@@ -41,14 +41,11 @@ int main(int argc, char** argv)
 
     if(options.cache)
     {
-        std::cout<<"Cache mode"<<std::endl;
+        std::cout << "Cache mode" << std::endl;
 
-        std::map<std::string, bonk::value> bconfig = bonk::parse_file("config.bk");
+        bonk::list bconfig = bonk::parse_file("config.bk");
 
-        for(const auto& x : bconfig)
-        {
-            std::cout<<bonk::to_string(x.first, x.second)<<std::endl;
-        }
+        std::cout << bonk::serialize("config.bk", *bconfig) << std::endl;
 
         return 0;
     }

@@ -1,0 +1,11 @@
+# This is a test file to test bonk parser
+list io
+list sources
+str fputc extern int fputc(int ch, void* fileio); # End of line comment
+str fputs extern int fputs(char const* string, void* fileio);
+str io$print void io$print(char const* string){fputs(string,stdout);fputc(10,stdout);}
+str io$write void io$write(char const* string)(fputs(string,stdout);}
+str stdout extern void* stdout;
+end
+str type namespace
+end

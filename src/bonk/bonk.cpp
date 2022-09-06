@@ -1,227 +1,254 @@
 #include "bonk.hpp"
 
-#include <fstream>
 #include <vector>
 #include <iostream>
+#include <cstring>
+#include <charconv>
 
-bonk::value parse_list(int& i, std::vector<std::string>& words);
+#include "../frontend/fs.hpp"
+#include "../lexer/lexer.hpp"
 
-bonk::value parse_field(int& i, std::vector<std::string>& words, std::string& name)
+using token_iterator = std::vector<std::string_view>::const_iterator;
+
+static bonk::list parse_list(token_iterator& words, token_iterator const words_end);
+
+static bonk::handle parse_field(token_iterator& words, token_iterator const words_end, std::string& name)
 {
-    int t = 0;
-    if(words.at(i) == "int")
-    {
-        t = 3;
-    }
-    else if(words.at(i) == "str")
-    {
-        t = 4;
-    }
-    else if(words.at(i) == "bool")
-    {
-        t = 5;
-    }
-    else if(words.at(i) == "list")
-    {
-        t = 2;
-    }
-    else if(words.at(i) == "end")
-    {
-        // not supposed to happen
-        t = 1;
-    }
+    bonk::value_type t = bonk::error_t;
 
-    i++;
+    if (words + 2 >= words_end)
+        return nullptr;
 
-    if(t != 1)
+    if (*words == "int")
     {
-        name = words.at(i);
+        t = bonk::int_t;
     }
-
-    i++;
-
-    if(t ==  2)
+    else if (*words == "str")
     {
-        return parse_list(i, words);
+        t = bonk::string_t;
+    }
+    else if (*words == "bool")
+    {
+        t = bonk::bool_t;
+    }
+    else if (*words == "list")
+    {
+        t = bonk::list_t;
     }
     else
     {
-        void* value;
-
-        if(t == 3)
-        {
-            value = new int;
-            *static_cast<int*>(value) = std::stoi(words.at(i));
-        }
-        else if(t == 4)
-        {
-            value = new std::string;
-            *static_cast<std::string*>(value) = words.at(i);
-        }
-        else if(t == 5)
-        {
-            value = new bool;
-
-            if(words.at(i) == "true")
-            {
-                *static_cast<bool*>(value) = true;
-            }
-            else
-            {
-                *static_cast<bool*>(value) = false;
-            }
-        }
-        return bonk::value(t, value);
+        return nullptr;
     }
+    ++words;
+
+    name = *words;
+    ++words;
+
+    if (t == bonk::list_t)
+        return parse_list(words, words_end);
+
+    if (t == bonk::int_t)
+    {
+        long val;
+        auto res = std::from_chars(words->begin(), words->end(), val, 10);
+        if (res.ec != std::errc())
+            return nullptr;
+        return bonk::new_int(val);
+    }
+
+    if (t == bonk::string_t)
+    {
+        auto string_start = words;
+        while (words != words_end and *words != "\n")
+            ++words;
+        if (words == words_end)
+            return nullptr;
+        --words;
+        return bonk::new_string(std::string_view(string_start->data(), words->data() + words->size() - string_start->data()));
+    }
+
+    if (t == bonk::bool_t)
+    {
+        if (*words == "true")
+            return bonk::get_true();
+        else if (*words == "false")
+            return bonk::get_false();
+        else
+            return nullptr;
+    }
+
+    return nullptr;
 }
 
-bonk::value parse_list(int& i, std::vector<std::string>& words)
+bonk::list parse_list(token_iterator& words, token_iterator const words_end)
 {
-    std::map<std::string, bonk::value>* value = new std::map<std::string, bonk::value>;
-    bonk::value list(2, value);
+    std::map<std::string, bonk::handle> map;
     
-    while(i < words.size())
+    while (words < words_end)
     {
-        while(i < words.size() && words.at(i).at(0) == '\n')
+        while (words < words_end && *words == "\n")
         {
-            i++;
+            ++words;
         }
 
-        if(i >= words.size())
-        {
+        if (words >= words_end)
             break;
-        }
 
-        if(words.at(i) == "end")
+        if (*words == "end")
         {
             break;
         }
         else
         {
+            std::cout << ">" << *words << "<" << std::endl;
+
             std::string name;
-            bonk::value v = parse_field(i, words, name);
-            value->insert(std::pair<std::string,bonk::value>(name,v));
+            bonk::handle v = parse_field(words, words_end, name);
+            if (!v)
+                chirp_unreachable("Parse error");
+            map.insert_or_assign(std::move(name), std::move(v));
         }
-        i++;
+        ++words;
     }
-    return list;
+
+    return bonk::new_list_from_map(std::move(map));
 }
 
-std::map<std::string, bonk::value> bonk::parse_file(std::string filename)
+bonk::list bonk::parse_file(std::string filename)
 {
-    std::map<std::string, bonk::value> map;
-
-    std::ifstream file(filename);
-
-    if(!file)
+    std::string source;
+    if (int res = read_file_to_string(filename.c_str(), source); res < 0)
     {
-        std::cout<<"BONK CANT OPEN FILE "<<filename<<std::endl;
+        std::cerr << "BONK CANT OPEN FILE \"" << filename << "\" Reason: " << std::strerror(res) << std::endl;
+        return nullptr;
     }
 
-    std::string line;
-    std::vector<std::string> words;
-    while (std::getline(file, line))
+    std::vector<std::string_view> tokens;
+    size_t tok_beg = 0;
+    for (size_t pos = 0; pos != source.size(); )
     {
+        static const char nltok = '\n';
 
-        std::string word;
-        for(char c : line)
+        char const* ch = source.data() + pos;
+        if (*ch == '#')
         {
-            if(line.at(0) == '#'){}
-            else if(!isspace(c)  && c != '\n')
+            if (tok_beg != pos)
             {
-                word += c;
+                tokens.push_back(std::string_view(source.data() + tok_beg, pos - tok_beg));
             }
-            else
+            ++pos;
+            ++ch;
+            while (pos < source.size() and *ch != '\n' and *ch != '\r')
             {
-                if(!word.empty())
-                {
-                    words.push_back(word);
-                }
-                word.clear();
+                ++pos;
+                ++ch;
             }
+            // Skip "\r\n"
+            if (ch[-1] == '\r' and ch[0] == '\n')
+                ++pos;
+
+            tokens.push_back(std::string_view(&nltok, 1));
+            tok_beg = pos;
+            continue;
         }
 
-        if(!word.empty())
+        if (chirp_isspace(*ch))
         {
-            words.push_back(word);
-            word.clear();
+            if (tok_beg != pos)
+            {
+                tokens.push_back(std::string_view(source.data() + tok_beg, pos - tok_beg));
+            }
+
+            do
+            {
+                if (*ch == '\n')
+                   tokens.push_back(std::string_view(&nltok, 1));
+                ++pos;
+                ++ch;
+            } while (pos < source.size() and chirp_isspace(*ch));
+            tok_beg = pos;
+            continue;
         }
 
-        words.push_back("\n");
+        ++pos;
     }
-    file.close();
 
-    int i = 0;
     int lcount = 0;
-    while(i < words.size())
+    std::map<std::string, bonk::handle> map;
+    for (auto it = tokens.cbegin(), end = tokens.cend(); it != end; )
     {
-        while(i < words.size() && words.at(i).at(0) == '\n')
+        if (*it == "\n")
         {
-            lcount++;
-            i++;
+            ++lcount;
+            ++it;
+            continue;
         }
 
-        if(i >= words.size())
-        {
-            break;
-        }
-
-        std::cout<<">"<<words.at(i)<<"<"<<std::endl;
+        std::cout << ">" << *it << "<" << std::endl;
 
         std::string name;
-        bonk::value v = parse_field(i, words, name);
-        //std::cout<<name<<std::endl;
-        map[name] = v;
-
-        i++;
+        bonk::handle v = parse_field(it, end, name);
+        if (!v)
+            chirp_unreachable("Parse error");
+        //std::cout << name << std::endl;
+        map.insert_or_assign(std::move(name), std::move(v));
+        ++it;
     }
 
-    for(auto const& x : map)
+    for (auto const& x : map)
     {
-        std::cout<<x.first<<":"<<x.second<<std::endl;
+        std::cout << x.first << ":" << *x.second << std::endl;
     }
 
-    return map;
+    return bonk::new_list_from_map(std::move(map));
 }
 
-std::string bonk::to_string(const std::string& name,const bonk::value& v)
+static void serialize_value(std::string& txt, std::string_view name, const bonk::value& v)
+{
+    switch (v.type)
+    {
+        case bonk::error_t:
+        default:
+            txt += "# error\n";
+            break;
+        case bonk::none_t:
+            txt += "# none\n";
+            break;
+        case bonk::list_t:
+        {
+            ((txt += "list ") += name) += "\n";
+
+            auto& lst = static_cast<const bonk::list_value&>(v);
+            auto values = lst.elements();
+            auto names = lst.names();
+
+            name = "-";
+            for (size_t index = 0; index != lst.length; ++index)
+            {
+                if (names.data)
+                    name = names.data[index]->data();
+                serialize_value(txt, name, *values.data[index]);
+            }
+
+            txt += "end\n";
+            break;
+        }
+        case bonk::int_t:
+            ((((txt += "int ") += name) += " ") += std::to_string(static_cast<const bonk::int_value&>(v).value)) += "\n";
+            break;
+        case bonk::string_t:
+            ((((txt += "str ") += name) += " ") += static_cast<const bonk::string_value&>(v).data()) += "\n";
+            break;
+        case bonk::bool_t:
+            (((txt += "bool ") += name) += (static_cast<const bonk::bool_value&>(v).value ? " true" : " false")) += "\n";
+            break;
+    }
+}
+
+std::string bonk::serialize(const std::string& name, const bonk::value& v)
 {
     std::string txt;
-
-    if(v.type == 0)
-    {
-        txt = "# error";
-    }
-    else if(v.type == 1)
-
-    {
-        txt = "# none";
-    }
-    else if(v.type == 2)
-    {
-        std::map<std::string, bonk::value>* m = static_cast<std::map<std::string, bonk::value>*>(v.data);
-
-        txt = "list " +  name + "\n";
-
-        for(const std::pair<std::string, bonk::value>& x : *m)
-        {
-            txt += bonk::to_string(x.first, x.second) + "\n";
-        }
-
-        txt += "end";
-    }
-    else if(v.type == 3)
-    {
-        txt += "int " +  name + " " + std::to_string(*static_cast<int*>(v.data));
-    }
-    else if(v.type == 4)
-    {
-        txt += "str " +  name + " " + *static_cast<std::string*>(v.data);
-    }
-    else if(v.type == 5)
-    {
-        txt += "bool " +  name + " " + std::to_string(*static_cast<bool*>(v.data));
-    }
-
+    txt.reserve(32);
+    serialize_value(txt, name, v);
     return txt;
 }
