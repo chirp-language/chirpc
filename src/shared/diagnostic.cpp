@@ -2,6 +2,7 @@
 #include "color.hpp"
 #include "system.hpp"
 #include "location_provider.hpp"
+#include "../lexer/lexer.hpp"
 #include <iostream>
 #include <charconv>
 
@@ -28,11 +29,11 @@ static inline std::string replace_tabs(std::string s)
     return s;
 }
 
-static bool is_important(std::string const& line)
+static bool is_important(std::string_view line)
 {
     for (char c : line)
     {
-        if(!isspace(c))
+        if(!chirp_isspace(c))
             return true;
     }
     return false;
@@ -79,16 +80,16 @@ void diagnostic_manager::show(diagnostic const& d)
             {
                 //os << "    | ";
                 os << get_spacing(tloc.line);
-                os << replace_tabs(current_source->at(tloc.line - 1));
+                os << replace_tabs(std::string(current_source->at(tloc.line - 1)));
                 os << "\n    | \n";
             }
 
             print_color(get_spacing(tloc.line + 1, '>'), has_color, os, color::red | color::green | color::bright | color::bold);
-            os << replace_tabs(current_source->at(tloc.line));
+            os << replace_tabs(std::string(current_source->at(tloc.line)));
             os << '\n';
 
             {
-                auto const& line = current_source->at(tloc.line);
+                auto line = current_source->at(tloc.line);
                 std::string indentation;
                 os << "    | ";
 
@@ -109,11 +110,11 @@ void diagnostic_manager::show(diagnostic const& d)
                 print_color(indentation, has_color, os, color::green | color::bright);
                 os << '\n';
             }
-            if (tloc.line + 1 < current_source->size() && is_important(current_source->at(tloc.line + 1)))
+            if (tloc.line + 1 < (int)current_source->line_count() && is_important(current_source->at(tloc.line + 1)))
             {
                 //os << "    | ";
                 os << get_spacing(tloc.line + 2);
-                os << replace_tabs(current_source->at(tloc.line + 1));
+                os << replace_tabs(std::string(current_source->at(tloc.line + 1)));
                 os << '\n';
             }
         }
