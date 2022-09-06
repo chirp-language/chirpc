@@ -184,8 +184,6 @@ bonk::list bonk::parse_file(std::string filename)
             continue;
         }
 
-        std::cout << ">" << *it << "<" << std::endl;
-
         std::string name;
         bonk::handle v = parse_field(it, end, name);
         if (!v)
@@ -193,11 +191,6 @@ bonk::list bonk::parse_file(std::string filename)
         //std::cout << name << std::endl;
         map.insert_or_assign(std::move(name), std::move(v));
         ++it;
-    }
-
-    for (auto const& x : map)
-    {
-        std::cout << x.first << ":" << *x.second << std::endl;
     }
 
     return bonk::new_list_from_map(std::move(map));

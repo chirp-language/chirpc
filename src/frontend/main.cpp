@@ -8,11 +8,13 @@
 #include "../ast/ast_dumper.hpp"
 #include "../seman/analyser.hpp"
 #include "../seman/sym_dumper.hpp"
+#include "../frontend/fs.hpp"
 #include <iostream>
 #include <sstream>
 #include <fstream>
 #include <vector>
 #include <string>
+#include <cstring>
 
 // Returns 0 if everything goes normal
 // Returns -1 if bad code
