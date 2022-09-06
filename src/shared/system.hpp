@@ -15,7 +15,7 @@
 #define CHIRP_SUBPLATFORM CHIRP_PLATFORMID_LINUX
 #elif defined(__APPLE__) || defined(macintosh) || defined(__MACH__)
 #define CHIRP_SUBPLATFORM CHIRP_PLATFORMID_APPLE
-#elif defined(__DragonFly__) || defined(__FreeBSD)
+#elif defined(__DragonFly__) || defined(__FreeBSD) || defined(__NETBSD__) || defined(__OpenBSD__)
 #define CHIRP_SUBPLATFORM CHIRP_PLATFORMID_BSD
 #else
 #define CHIRP_SUBPLATFORM CHIRP_PLATFORMID_UNIX
@@ -29,6 +29,10 @@
 #define CHIRP_PLATFORM_UNKNOWN
 #define CHIRP_PLATFORM CHIRP_PLATFORMID_UNKNOWN
 #define CHIRP_SUBPLATFORM CHIRP_PLATFORMID_UNKNOWN
+#endif
+
+#if __cplusplus >= 202002L
+#define CHIRP_CXX_20
 #endif
 
 #ifdef NDEBUG

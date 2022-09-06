@@ -24,3 +24,10 @@ class lexer
 	std::string const& fname;
 	diagnostic_manager& diagnostics;
 };
+
+extern unsigned char chirp_ctype_space[0x21];
+
+inline bool chirp_isspace(unsigned char ch)
+{
+	return ch <= 0x20 and chirp_ctype_space[ch];
+}

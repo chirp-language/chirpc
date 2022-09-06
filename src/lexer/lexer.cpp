@@ -91,10 +91,10 @@ std::vector<location> lexer::lex_raw()
                 loc.len = i - loc.start;
                 result.push_back(loc);
             }
-            else if (isspace(line.at(i)))
+            else if (chirp_isspace(line.at(i)))
             {
                 ++i;
-                while (i < line.size() && isspace(line.at(i)) != 0)
+                while (i < line.size() && chirp_isspace(line.at(i)) != 0)
                 {
                     ++i;
                 }
@@ -289,7 +289,7 @@ bool all_spaces(std::string const& txt)
 {
     for (char c : txt)
     {
-        if (isspace(c) == 0)
+        if (chirp_isspace(c) == 0)
         {
             return false;
         }
@@ -491,3 +491,13 @@ std::vector<token> lexer::lex(std::vector<location> const& src)
 
     return result;
 }
+
+unsigned char chirp_ctype_space[0x21] =
+{
+    /* 0x00 */
+    1, 0, 0, 0, 0, 0, 0, 0, /* backspace */ 0, 1, 1, 1, 1, 1, 0, 0,
+    /* 0x10 */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    /* 0x20 */
+    1,
+};
